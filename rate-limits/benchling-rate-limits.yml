@@ -1,0 +1,53 @@
+name: Benchling Rate Limits
+description: Benchling enforces both request-rate limits (requests per 30 seconds) and throughput limits (objects created or updated per hour) to ensure platform stability. Limits vary by key type. Apps have independent per-app limits so they do not consume a shared tenant budget.
+url: https://docs.benchling.com/docs/rate-limiting
+
+rate_limits:
+
+  - name: User API Key Limit
+    description: Aggregate limit across all personal/user API keys within a single tenant.
+    limit: 60
+    window: 30 seconds
+    scope: per-tenant (all user keys combined)
+    key_type: user_api_key
+
+  - name: App API Key Limit
+    description: Per-app limit for individual Benchling App keys. Apps have independent budgets so one heavy app does not throttle others.
+    limit: 300
+    window: 30 seconds
+    scope: per-app-key
+    key_type: app_client_credentials
+
+  - name: Combined App Tenant Limit
+    description: Aggregate ceiling for all Benchling Apps operating within a single tenant. This limit is not reflected in response headers.
+    limit: 1000
+    window: 30 seconds
+    scope: per-tenant (all apps combined)
+    key_type: app_client_credentials
+    note: Not exposed via rate-limit response headers.
+
+  - name: Platform-Wide Throughput Limit
+    description: Limits the total number of objects (entities, containers, results, etc.) created or updated across all API calls over a rolling hour window. Applies to entire tenant and adjusts dynamically under system load.
+    limit: tens of thousands of objects
+    window: 1 hour
+    scope: per-tenant (all keys combined)
+    dynamic: true
+    note: Exact threshold may change in response to system load. Most tenants operate well below this ceiling.
+
+response_headers:
+  - name: x-rate-limit-limit
+    description: Total requests allowed in the current window period.
+  - name: x-rate-limit-remaining
+    description: Remaining requests available in the current window.
+  - name: x-rate-limit-reset
+    description: Seconds until the current rate-limit window resets.
+
+error_handling:
+  http_status: 429
+  error_type: invalid_request_error
+  message: "Rate limit exceeded."
+  recommended_strategy: Exponential backoff with randomized jitter; maximum recommended delay of ~15 seconds.
+
+escalation:
+  description: Rate limits can be increased upon request to Benchling support for tenants with legitimate high-volume use cases.
+  contact: https://benchling.com/contact
