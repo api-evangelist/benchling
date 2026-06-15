@@ -1,0 +1,1360 @@
+"""
+Benchling GraphQL Schema
+Derived from the Benchling REST API v2 for life sciences R&D cloud platform.
+Covers notebook entries, sequences, molecules, assay results, registration,
+inventory management, plates, workflows, and collaboration.
+"""
+
+# ─────────────────────────────────────────────
+# Scalars
+# ─────────────────────────────────────────────
+
+scalar DateTime
+scalar JSON
+scalar Upload
+
+# ─────────────────────────────────────────────
+# Enums
+# ─────────────────────────────────────────────
+
+enum ArchiveReason {
+  MADE_IN_ERROR
+  RETIRED
+  EXPENDED
+  SHIPPED
+  CONTAMINATED
+  EXPIRED
+  MISSING
+  OTHER
+}
+
+enum NamingStrategy {
+  NEW_IDS
+  IDS_FROM_NAMES
+  DELETE_NAMES
+  SET_FROM_NAME_PARTS
+  REPLACE_NAMES_FROM_PARTS
+}
+
+enum EntityType {
+  DNA_SEQUENCE
+  RNA_SEQUENCE
+  AA_SEQUENCE
+  CUSTOM_ENTITY
+  MOLECULE
+  MIXTURE
+}
+
+enum SequenceType {
+  LINEAR
+  CIRCULAR
+}
+
+enum StrandType {
+  SINGLE
+  DOUBLE
+}
+
+enum NucleotideType {
+  DNA
+  RNA
+}
+
+enum ReviewStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum WorkflowTaskStatus {
+  UNSCHEDULED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ContainerStatus {
+  AVAILABLE
+  RESERVED
+  IN_USE
+  DISCARDED
+  PENDING_DISPOSAL
+}
+
+enum AssayRunStatus {
+  ACTIVE
+  RETIRED
+}
+
+enum NotebookEntryStatus {
+  DRAFT
+  LOCKED
+  REVIEW_REQUESTED
+  APPROVED
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+enum CheckoutStatus {
+  CHECKED_OUT
+  AVAILABLE
+}
+
+enum MixtureUnit {
+  uL
+  mL
+  L
+  g
+  kg
+  mg
+  ug
+  ng
+  pg
+}
+
+# ─────────────────────────────────────────────
+# Common / Shared Types
+# ─────────────────────────────────────────────
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type UserSummary {
+  id: ID!
+  handle: String!
+  name: String!
+  email: String!
+}
+
+type TeamSummary {
+  id: ID!
+  name: String!
+}
+
+type OrganizationSummary {
+  id: ID!
+  name: String!
+  handle: String!
+}
+
+type FieldValue {
+  displayValue: String
+  value: JSON
+  isMulti: Boolean!
+}
+
+type CustomField {
+  fieldDefinitionId: ID!
+  name: String!
+  value: FieldValue
+}
+
+type Folder {
+  id: ID!
+  name: String!
+  parentFolderId: ID
+  projectId: ID
+}
+
+type Project {
+  id: ID!
+  name: String!
+  owner: UserSummary
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  isArchived: Boolean!
+  archiveReason: ArchiveReason
+}
+
+type Schema {
+  id: ID!
+  name: String!
+  fieldDefinitions: [FieldDefinition!]!
+}
+
+type FieldDefinition {
+  id: ID!
+  name: String!
+  type: String!
+  isRequired: Boolean!
+  isMulti: Boolean!
+}
+
+type Creator {
+  id: ID!
+  handle: String!
+  name: String!
+}
+
+type AuditLog {
+  id: ID!
+  entityId: ID!
+  entityType: String!
+  action: String!
+  performedAt: DateTime!
+  performedBy: UserSummary!
+  changes: JSON
+}
+
+# ─────────────────────────────────────────────
+# Registry / Entity Types
+# ─────────────────────────────────────────────
+
+type RegistrySchema {
+  id: ID!
+  name: String!
+  prefix: String!
+  fieldDefinitions: [FieldDefinition!]!
+}
+
+type EntityRegistration {
+  registryId: ID!
+  entityRegistryId: String!
+  namingStrategy: NamingStrategy!
+  folderId: ID
+}
+
+# ─────────────────────────────────────────────
+# DNA / RNA / AA Sequences
+# ─────────────────────────────────────────────
+
+type DNASequence {
+  id: ID!
+  name: String!
+  bases: String!
+  length: Int!
+  isCircular: Boolean!
+  schema: Schema
+  registrationOrigin: EntityRegistration
+  customFields: [CustomField!]!
+  aliases: [String!]!
+  annotations: [SequenceAnnotation!]!
+  primers: [Primer!]!
+  translations: [Translation!]!
+  creator: Creator!
+  folderId: ID
+  projectId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+  archiveReason: ArchiveReason
+}
+
+type DNASequenceConnection {
+  edges: [DNASequenceEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type DNASequenceEdge {
+  cursor: String!
+  node: DNASequence!
+}
+
+type RNASequence {
+  id: ID!
+  name: String!
+  bases: String!
+  length: Int!
+  isCircular: Boolean!
+  schema: Schema
+  customFields: [CustomField!]!
+  aliases: [String!]!
+  annotations: [SequenceAnnotation!]!
+  creator: Creator!
+  folderId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type RNASequenceConnection {
+  edges: [RNASequenceEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type RNASequenceEdge {
+  cursor: String!
+  node: RNASequence!
+}
+
+type AASequence {
+  id: ID!
+  name: String!
+  aminoAcids: String!
+  length: Int!
+  schema: Schema
+  customFields: [CustomField!]!
+  aliases: [String!]!
+  annotations: [SequenceAnnotation!]!
+  creator: Creator!
+  folderId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type AASequenceConnection {
+  edges: [AASequenceEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AASequenceEdge {
+  cursor: String!
+  node: AASequence!
+}
+
+type SequenceAnnotation {
+  id: ID!
+  name: String!
+  start: Int!
+  end: Int!
+  strand: Int
+  color: String
+  type: String
+  notes: String
+}
+
+type Primer {
+  id: ID!
+  name: String!
+  bases: String!
+  bindPosition: Int!
+  bindLength: Int!
+  overhangLength: Int!
+  strand: Int!
+}
+
+type Translation {
+  id: ID!
+  start: Int!
+  end: Int!
+  strand: Int!
+  geneticCode: String!
+  aminoAcids: String!
+  regions: [TranslationRegion!]!
+}
+
+type TranslationRegion {
+  start: Int!
+  end: Int!
+  aminoAcidStart: Int!
+  aminoAcidEnd: Int!
+}
+
+# ─────────────────────────────────────────────
+# Molecule & Mixture
+# ─────────────────────────────────────────────
+
+type Molecule {
+  id: ID!
+  name: String!
+  chemicalFormula: String
+  molecularWeight: Float
+  inchi: String
+  inchiKey: String
+  smiles: String
+  schema: Schema
+  customFields: [CustomField!]!
+  aliases: [String!]!
+  creator: Creator!
+  folderId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type MoleculeConnection {
+  edges: [MoleculeEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type MoleculeEdge {
+  cursor: String!
+  node: Molecule!
+}
+
+type Mixture {
+  id: ID!
+  name: String!
+  schema: Schema
+  customFields: [CustomField!]!
+  aliases: [String!]!
+  amount: Float
+  units: MixtureUnit
+  components: [MixtureComponent!]!
+  creator: Creator!
+  folderId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type MixtureComponent {
+  component: JSON
+  amount: Float
+  units: MixtureUnit
+  storedAmount: Float
+  storedUnits: MixtureUnit
+}
+
+type MixtureConnection {
+  edges: [MixtureEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type MixtureEdge {
+  cursor: String!
+  node: Mixture!
+}
+
+# ─────────────────────────────────────────────
+# Custom Entity
+# ─────────────────────────────────────────────
+
+type CustomEntity {
+  id: ID!
+  name: String!
+  schema: Schema
+  customFields: [CustomField!]!
+  aliases: [String!]!
+  creator: Creator!
+  folderId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type CustomEntityConnection {
+  edges: [CustomEntityEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type CustomEntityEdge {
+  cursor: String!
+  node: CustomEntity!
+}
+
+# ─────────────────────────────────────────────
+# Assay Results & Runs
+# ─────────────────────────────────────────────
+
+type AssaySchema {
+  id: ID!
+  name: String!
+  type: String!
+  fieldDefinitions: [FieldDefinition!]!
+  systemFields: [FieldDefinition!]!
+}
+
+type AssayRun {
+  id: ID!
+  name: String
+  schema: AssaySchema!
+  status: AssayRunStatus!
+  fields: [CustomField!]!
+  creator: Creator!
+  projectId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type AssayRunConnection {
+  edges: [AssayRunEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AssayRunEdge {
+  cursor: String!
+  node: AssayRun!
+}
+
+type AssayResult {
+  id: ID!
+  schema: AssaySchema!
+  projectId: ID
+  runId: ID
+  fields: [CustomField!]!
+  createdAt: DateTime!
+  isReviewed: Boolean!
+  archiveReason: ArchiveReason
+}
+
+type AssayResultConnection {
+  edges: [AssayResultEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AssayResultEdge {
+  cursor: String!
+  node: AssayResult!
+}
+
+# ─────────────────────────────────────────────
+# Notebook Entries
+# ─────────────────────────────────────────────
+
+type Entry {
+  id: ID!
+  name: String!
+  displayId: String
+  schema: Schema
+  fields: [CustomField!]!
+  days: [EntryDay!]!
+  authors: [UserSummary!]!
+  reviewers: [UserSummary!]!
+  status: NotebookEntryStatus!
+  reviewStatus: ReviewStatus
+  assignedReviewers: [UserSummary!]!
+  creator: Creator!
+  folderId: ID
+  projectId: ID
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type EntryDay {
+  date: String!
+  notes: [EntryNote!]!
+}
+
+type EntryNote {
+  id: ID!
+  type: String!
+  text: String
+  tables: JSON
+  links: [EntryNoteLink!]!
+}
+
+type EntryNoteLink {
+  id: ID!
+  type: String!
+  name: String!
+  url: String
+  webURL: String
+}
+
+type EntryConnection {
+  edges: [EntryEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type EntryEdge {
+  cursor: String!
+  node: Entry!
+}
+
+type EntrySchema {
+  id: ID!
+  name: String!
+  dayNoteSchemas: [Schema!]!
+  fieldDefinitions: [FieldDefinition!]!
+}
+
+# ─────────────────────────────────────────────
+# Inventory: Locations, Containers, Plates, Boxes
+# ─────────────────────────────────────────────
+
+type Location {
+  id: ID!
+  name: String!
+  barcode: String
+  schema: Schema
+  fields: [CustomField!]!
+  parentStorageId: ID
+  breadcrumbs: [LocationBreadcrumb!]!
+  creator: Creator!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type LocationBreadcrumb {
+  id: ID!
+  type: String!
+  name: String!
+}
+
+type LocationConnection {
+  edges: [LocationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type LocationEdge {
+  cursor: String!
+  node: Location!
+}
+
+type Container {
+  id: ID!
+  name: String
+  barcode: String
+  quantity: ContainerQuantity
+  status: ContainerStatus!
+  schema: Schema
+  fields: [CustomField!]!
+  checkoutStatus: CheckoutStatus!
+  checkedOutAt: DateTime
+  checkedOutTo: UserSummary
+  contents: [ContainerContent!]!
+  parentStorageId: ID
+  parentStorageType: String
+  position: String
+  projectId: ID
+  creator: Creator!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type ContainerQuantity {
+  value: Float!
+  units: String!
+}
+
+type ContainerContent {
+  batch: Batch
+  concentration: ContainerQuantity
+}
+
+type ContainerConnection {
+  edges: [ContainerEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ContainerEdge {
+  cursor: String!
+  node: Container!
+}
+
+type Plate {
+  id: ID!
+  name: String
+  barcode: String
+  schema: Schema
+  fields: [CustomField!]!
+  wells: [Well!]!
+  type: String!
+  size: Int!
+  parentStorageId: ID
+  creator: Creator!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type Well {
+  position: String!
+  volume: ContainerQuantity
+  contents: [ContainerContent!]!
+}
+
+type PlateConnection {
+  edges: [PlateEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type PlateEdge {
+  cursor: String!
+  node: Plate!
+}
+
+type Box {
+  id: ID!
+  name: String
+  barcode: String
+  schema: Schema
+  fields: [CustomField!]!
+  gridDimensions: BoxGridDimensions
+  size: Int!
+  filledPositions: Int!
+  emptyPositions: Int!
+  parentStorageId: ID
+  creator: Creator!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type BoxGridDimensions {
+  numRows: Int!
+  numColumns: Int!
+}
+
+type BoxConnection {
+  edges: [BoxEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BoxEdge {
+  cursor: String!
+  node: Box!
+}
+
+# ─────────────────────────────────────────────
+# Batches
+# ─────────────────────────────────────────────
+
+type Batch {
+  id: ID!
+  name: String
+  displayId: String
+  schema: Schema
+  fields: [CustomField!]!
+  entity: JSON
+  archiveReason: ArchiveReason
+  creator: Creator!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type BatchConnection {
+  edges: [BatchEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type BatchEdge {
+  cursor: String!
+  node: Batch!
+}
+
+# ─────────────────────────────────────────────
+# Workflows
+# ─────────────────────────────────────────────
+
+type WorkflowTaskSchema {
+  id: ID!
+  name: String!
+  fieldDefinitions: [FieldDefinition!]!
+  outputFieldDefinitions: [FieldDefinition!]!
+}
+
+type WorkflowTask {
+  id: ID!
+  schema: WorkflowTaskSchema!
+  status: WorkflowTaskStatus!
+  fields: [CustomField!]!
+  outputFields: [CustomField!]!
+  assignee: UserSummary
+  scheduledOn: String
+  clonedFrom: ID
+  executionOrigin: JSON
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type WorkflowTaskConnection {
+  edges: [WorkflowTaskEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type WorkflowTaskEdge {
+  cursor: String!
+  node: WorkflowTask!
+}
+
+type WorkflowTaskGroup {
+  id: ID!
+  name: String!
+  schema: WorkflowTaskSchema!
+  tasks: [WorkflowTask!]!
+  watchedBy: [UserSummary!]!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  webURL: String!
+}
+
+type WorkflowTaskGroupConnection {
+  edges: [WorkflowTaskGroupEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type WorkflowTaskGroupEdge {
+  cursor: String!
+  node: WorkflowTaskGroup!
+}
+
+# ─────────────────────────────────────────────
+# Users and Teams
+# ─────────────────────────────────────────────
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  handle: String!
+  isActive: Boolean!
+  isSuspended: Boolean!
+  team: [TeamSummary!]!
+  organization: OrganizationSummary
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  cursor: String!
+  node: User!
+}
+
+type Team {
+  id: ID!
+  name: String!
+  members: [UserSummary!]!
+  organizationId: ID
+}
+
+type TeamConnection {
+  edges: [TeamEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TeamEdge {
+  cursor: String!
+  node: Team!
+}
+
+# ─────────────────────────────────────────────
+# Events / Webhooks
+# ─────────────────────────────────────────────
+
+type AppCanvasElement {
+  id: ID!
+  type: String!
+  channel: String
+  data: JSON
+}
+
+type Event {
+  id: ID!
+  eventType: String!
+  createdAt: DateTime!
+  schema: Schema
+  entity: JSON
+  changes: JSON
+}
+
+type EventConnection {
+  edges: [EventEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type EventEdge {
+  cursor: String!
+  node: Event!
+}
+
+# ─────────────────────────────────────────────
+# Tasks (async bulk operations)
+# ─────────────────────────────────────────────
+
+type AsyncTask {
+  id: ID!
+  status: String!
+  message: String
+  response: JSON
+  errors: [TaskError!]
+}
+
+type TaskError {
+  message: String!
+  entityId: ID
+  index: Int
+}
+
+# ─────────────────────────────────────────────
+# Input Types
+# ─────────────────────────────────────────────
+
+input DNASequenceCreateInput {
+  name: String!
+  bases: String!
+  isCircular: Boolean!
+  schemaId: ID
+  folderId: ID
+  aliases: [String!]
+  customFields: JSON
+  annotations: [SequenceAnnotationInput!]
+}
+
+input DNASequenceUpdateInput {
+  name: String
+  bases: String
+  isCircular: Boolean
+  schemaId: ID
+  folderId: ID
+  aliases: [String!]
+  customFields: JSON
+  annotations: [SequenceAnnotationInput!]
+}
+
+input RNASequenceCreateInput {
+  name: String!
+  bases: String!
+  isCircular: Boolean!
+  schemaId: ID
+  folderId: ID
+  aliases: [String!]
+  customFields: JSON
+}
+
+input AASequenceCreateInput {
+  name: String!
+  aminoAcids: String!
+  schemaId: ID
+  folderId: ID
+  aliases: [String!]
+  customFields: JSON
+}
+
+input MoleculeCreateInput {
+  name: String!
+  chemicalFormula: String
+  molecularWeight: Float
+  smiles: String
+  inchi: String
+  schemaId: ID
+  folderId: ID
+  aliases: [String!]
+  customFields: JSON
+}
+
+input CustomEntityCreateInput {
+  name: String!
+  schemaId: ID!
+  folderId: ID
+  aliases: [String!]
+  customFields: JSON
+}
+
+input AssayRunCreateInput {
+  schemaId: ID!
+  name: String
+  projectId: ID
+  fields: JSON
+}
+
+input AssayResultCreateInput {
+  schemaId: ID!
+  projectId: ID
+  runId: ID
+  fields: JSON!
+}
+
+input EntryCreateInput {
+  name: String!
+  schemaId: ID
+  folderId: ID
+  customFields: JSON
+  initialTables: JSON
+  authorIds: [ID!]
+}
+
+input ContainerCreateInput {
+  schemaId: ID
+  barcode: String
+  name: String
+  parentStorageId: ID
+  quantity: ContainerQuantityInput
+  projectId: ID
+  fields: JSON
+}
+
+input ContainerQuantityInput {
+  value: Float!
+  units: String!
+}
+
+input PlateCreateInput {
+  schemaId: ID!
+  barcode: String
+  name: String
+  parentStorageId: ID
+  fields: JSON
+}
+
+input WorkflowTaskCreateInput {
+  schemaId: ID!
+  fields: JSON
+  assigneeId: ID
+  scheduledOn: String
+}
+
+input WorkflowTaskUpdateInput {
+  status: WorkflowTaskStatus
+  fields: JSON
+  outputFields: JSON
+  assigneeId: ID
+  scheduledOn: String
+}
+
+input LocationCreateInput {
+  name: String!
+  schemaId: ID
+  barcode: String
+  parentStorageId: ID
+  fields: JSON
+}
+
+input BatchCreateInput {
+  entityId: ID!
+  schemaId: ID
+  fields: JSON
+}
+
+input SequenceAnnotationInput {
+  name: String!
+  start: Int!
+  end: Int!
+  strand: Int
+  color: String
+  type: String
+  notes: String
+}
+
+input ArchiveInput {
+  ids: [ID!]!
+  reason: ArchiveReason!
+  shouldRemoveFromInventory: Boolean
+}
+
+input UnarchiveInput {
+  ids: [ID!]!
+}
+
+input RegisterEntitiesInput {
+  entityIds: [ID!]!
+  registryId: ID!
+  namingStrategy: NamingStrategy!
+}
+
+input ContainerTransferInput {
+  sourceContainerId: ID!
+  destinationContainerId: ID!
+  transferQuantity: ContainerQuantityInput!
+  sourceConcentration: ContainerQuantityInput
+  destinationConcentration: ContainerQuantityInput
+}
+
+# ─────────────────────────────────────────────
+# Query Root
+# ─────────────────────────────────────────────
+
+type Query {
+  # DNA Sequences
+  dnaSequence(id: ID!): DNASequence
+  dnaSequences(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+    modifiedAt: String
+    name: String
+    nameIncludes: String
+    registryId: ID
+  ): DNASequenceConnection!
+
+  # RNA Sequences
+  rnaSequence(id: ID!): RNASequence
+  rnaSequences(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+    modifiedAt: String
+    name: String
+  ): RNASequenceConnection!
+
+  # AA Sequences
+  aaSequence(id: ID!): AASequence
+  aaSequences(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+    modifiedAt: String
+    name: String
+  ): AASequenceConnection!
+
+  # Molecules
+  molecule(id: ID!): Molecule
+  molecules(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+    modifiedAt: String
+    name: String
+  ): MoleculeConnection!
+
+  # Mixtures
+  mixture(id: ID!): Mixture
+  mixtures(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+  ): MixtureConnection!
+
+  # Custom Entities
+  customEntity(id: ID!): CustomEntity
+  customEntities(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+    modifiedAt: String
+    name: String
+  ): CustomEntityConnection!
+
+  # Assay Runs
+  assayRun(id: ID!): AssayRun
+  assayRuns(
+    after: String
+    first: Int
+    schemaId: ID
+    projectId: ID
+    minCreatedTime: DateTime
+    maxCreatedTime: DateTime
+  ): AssayRunConnection!
+
+  # Assay Results
+  assayResult(id: ID!): AssayResult
+  assayResults(
+    after: String
+    first: Int
+    schemaId: ID
+    runId: ID
+    entityId: ID
+    minCreatedTime: DateTime
+    maxCreatedTime: DateTime
+  ): AssayResultConnection!
+
+  # Notebook Entries
+  entry(id: ID!): Entry
+  entries(
+    after: String
+    first: Int
+    schemaId: ID
+    folderId: ID
+    projectId: ID
+    name: String
+    modifiedAt: String
+    reviewStatus: ReviewStatus
+  ): EntryConnection!
+
+  # Inventory
+  container(id: ID!): Container
+  containers(
+    after: String
+    first: Int
+    schemaId: ID
+    barcode: String
+    parentStorageId: ID
+    batchId: ID
+  ): ContainerConnection!
+
+  plate(id: ID!): Plate
+  plates(
+    after: String
+    first: Int
+    schemaId: ID
+    barcode: String
+    parentStorageId: ID
+  ): PlateConnection!
+
+  box(id: ID!): Box
+  boxes(
+    after: String
+    first: Int
+    schemaId: ID
+    barcode: String
+    parentStorageId: ID
+  ): BoxConnection!
+
+  location(id: ID!): Location
+  locations(
+    after: String
+    first: Int
+    schemaId: ID
+    barcode: String
+    name: String
+  ): LocationConnection!
+
+  # Batches
+  batch(id: ID!): Batch
+  batches(
+    after: String
+    first: Int
+    schemaId: ID
+    modifiedAt: String
+    name: String
+  ): BatchConnection!
+
+  # Workflows
+  workflowTask(id: ID!): WorkflowTask
+  workflowTasks(
+    after: String
+    first: Int
+    schemaId: ID
+    assigneeId: ID
+    status: WorkflowTaskStatus
+    scheduledOn: String
+  ): WorkflowTaskConnection!
+
+  workflowTaskGroup(id: ID!): WorkflowTaskGroup
+  workflowTaskGroups(
+    after: String
+    first: Int
+    schemaId: ID
+  ): WorkflowTaskGroupConnection!
+
+  # Users & Teams
+  user(id: ID!): User
+  users(
+    after: String
+    first: Int
+    name: String
+    email: String
+  ): UserConnection!
+
+  team(id: ID!): Team
+  teams(
+    after: String
+    first: Int
+  ): TeamConnection!
+
+  # Projects & Folders
+  project(id: ID!): Project
+  folder(id: ID!): Folder
+
+  # Events
+  events(
+    after: String
+    first: Int
+    eventTypes: [String!]
+    createdAt: String
+  ): EventConnection!
+
+  # Schemas
+  assaySchema(id: ID!): AssaySchema
+  entrySchema(id: ID!): EntrySchema
+  registrySchema(id: ID!): RegistrySchema
+
+  # Audit
+  auditLogs(
+    entityId: ID!
+    entityType: String!
+    after: String
+    first: Int
+  ): [AuditLog!]!
+
+  # Async Tasks
+  asyncTask(taskId: ID!): AsyncTask
+}
+
+# ─────────────────────────────────────────────
+# Mutation Root
+# ─────────────────────────────────────────────
+
+type Mutation {
+  # DNA Sequences
+  createDNASequence(input: DNASequenceCreateInput!): DNASequence!
+  updateDNASequence(id: ID!, input: DNASequenceUpdateInput!): DNASequence!
+  archiveDNASequences(input: ArchiveInput!): AsyncTask!
+  unarchiveDNASequences(input: UnarchiveInput!): [DNASequence!]!
+
+  # RNA Sequences
+  createRNASequence(input: RNASequenceCreateInput!): RNASequence!
+  archiveRNASequences(input: ArchiveInput!): AsyncTask!
+
+  # AA Sequences
+  createAASequence(input: AASequenceCreateInput!): AASequence!
+  archiveAASequences(input: ArchiveInput!): AsyncTask!
+
+  # Molecules
+  createMolecule(input: MoleculeCreateInput!): Molecule!
+  archiveMolecules(input: ArchiveInput!): AsyncTask!
+
+  # Custom Entities
+  createCustomEntity(input: CustomEntityCreateInput!): CustomEntity!
+  archiveCustomEntities(input: ArchiveInput!): AsyncTask!
+
+  # Registry
+  registerEntities(input: RegisterEntitiesInput!): AsyncTask!
+  unregisterEntities(entityIds: [ID!]!): AsyncTask!
+
+  # Assay Runs
+  createAssayRun(input: AssayRunCreateInput!): AssayRun!
+  updateAssayRun(id: ID!, input: AssayRunCreateInput!): AssayRun!
+  archiveAssayRuns(input: ArchiveInput!): AsyncTask!
+
+  # Assay Results
+  createAssayResult(input: AssayResultCreateInput!): AssayResult!
+  createAssayResults(inputs: [AssayResultCreateInput!]!): AsyncTask!
+  archiveAssayResults(input: ArchiveInput!): AsyncTask!
+
+  # Notebook Entries
+  createEntry(input: EntryCreateInput!): Entry!
+  updateEntry(id: ID!, name: String, folderId: ID, fields: JSON): Entry!
+  archiveEntries(input: ArchiveInput!): AsyncTask!
+
+  # Inventory
+  createContainer(input: ContainerCreateInput!): Container!
+  updateContainer(id: ID!, input: ContainerCreateInput!): Container!
+  archiveContainers(input: ArchiveInput!): AsyncTask!
+  transferLiquid(input: ContainerTransferInput!): AsyncTask!
+  checkoutContainers(ids: [ID!]!, comment: String, assigneeId: ID): AsyncTask!
+  checkinContainers(ids: [ID!]!, comment: String): AsyncTask!
+
+  createPlate(input: PlateCreateInput!): Plate!
+  archivePlates(input: ArchiveInput!): AsyncTask!
+
+  createLocation(input: LocationCreateInput!): Location!
+  archiveLocations(input: ArchiveInput!): AsyncTask!
+
+  # Batches
+  createBatch(input: BatchCreateInput!): Batch!
+  archiveBatches(input: ArchiveInput!): AsyncTask!
+
+  # Workflows
+  createWorkflowTask(input: WorkflowTaskCreateInput!): WorkflowTask!
+  updateWorkflowTask(id: ID!, input: WorkflowTaskUpdateInput!): WorkflowTask!
+  archiveWorkflowTasks(input: ArchiveInput!): AsyncTask!
+
+  # Users
+  createUser(name: String!, email: String!, handle: String!): User!
+  updateUser(id: ID!, name: String, email: String): User!
+}
