@@ -1,0 +1,381 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Workflow Flowcharts API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Workflow flowcharts represent the nodes and edges that a flowchart is comprised of.
+  name: Workflow Flowcharts
+paths:
+  /workflow-flowcharts:
+    get:
+      description: List workflow flowcharts
+      operationId: listWorkflowFlowcharts
+      parameters:
+      - description: Comma separated list of workflow flowchart IDs
+        in: query
+        name: ids
+        schema:
+          example: wffc_5cJLQPFR,wffc_9jENXm4x
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: createdAt:desc
+          description: 'Method by which to order search results. Valid sorts are createdAt (creation time, most recent first). Optionally add :asc or :desc to specify ascending or descending order.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30.
+
+          '
+        in: query
+        name: createdAt
+        schema:
+          example: '2020-01-01'
+          format: date
+          type: string
+      - example: Im5ldyB0ZXN0Ig==
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowFlowchartPaginatedList'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: List workflow flowcharts
+      tags:
+      - Workflow Flowcharts
+  /workflow-flowcharts/{workflow_flowchart_id}:
+    get:
+      description: Get a workflow flowchart
+      operationId: getWorkflowFlowchart
+      parameters:
+      - description: The ID of the workflow flowchart
+        in: path
+        name: workflow_flowchart_id
+        required: true
+        schema:
+          example: wffc_giVNQcAF
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowFlowchart'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: Get a workflow flowchart
+      tags:
+      - Workflow Flowcharts
+components:
+  schemas:
+    WorkflowFlowchart:
+      properties:
+        createdAt:
+          description: The ISO formatted date and time that the flowchart was created
+          example: '2020-08-01T00:00:00.000Z'
+          nullable: false
+          type: string
+        edgeConfigs:
+          description: The edges of the flowchart
+          items:
+            $ref: '#/components/schemas/WorkflowFlowchartEdgeConfig'
+          readOnly: true
+          type: array
+        id:
+          description: The ID of the flowchart
+          example: wffc_7fc412
+          readOnly: true
+          type: string
+        migratedFromFlowchartId:
+          description: The ID of the flowchart that this was migrated from
+          example: wffc_1de847
+          nullable: true
+          readOnly: true
+          type: string
+        migratedToFlowchartId:
+          description: The ID of the flowchart that this was migrated to
+          example: wffc_df2993
+          nullable: true
+          readOnly: true
+          type: string
+        modifiedAt:
+          description: The ISO formatted date and time that the flowchart was last modified
+          example: '2020-08-01T00:00:00.000Z'
+          nullable: false
+          type: string
+        nodeConfigs:
+          description: The nodes of the flowchart
+          items:
+            $ref: '#/components/schemas/WorkflowFlowchartNodeConfig'
+          readOnly: true
+          type: array
+      type: object
+    WorkflowRouterFunction:
+      additionalProperties: false
+      properties:
+        edgeConfigId:
+          description: The ID of the workflow flowchart edge config associated with this function
+          example: wffcec_giVNQcTL
+          readOnly: true
+          type: string
+        id:
+          description: The function associated with a router node
+          example: wfrf_b2VJBmBj
+          readOnly: true
+          type: string
+        isDefault:
+          readOnly: true
+        name:
+          description: The name of a function associated with a router node
+          example: Rule 1
+          readOnly: true
+          type: string
+      type: object
+    WorkflowFlowchartPaginatedList:
+      properties:
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+        workflowFlowcharts:
+          items:
+            $ref: '#/components/schemas/WorkflowFlowchart'
+          type: array
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowTaskNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow task node config details
+          example: wftnd_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - TASK
+          type: string
+        taskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+      type: object
+    WorkflowOutputNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow output node config details
+          example: wfond_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - OUTPUT
+          type: string
+        outputSchema:
+          $ref: '#/components/schemas/SchemaSummary'
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    WorkflowFlowchartNodeConfig:
+      properties:
+        id:
+          description: The ID of the workflow flowchart node config
+          readOnly: true
+          type: string
+        nodeDetails:
+          discriminator:
+            mapping:
+              END: '#/components/schemas/WorkflowEndNodeDetails'
+              OUTPUT: '#/components/schemas/WorkflowOutputNodeDetails'
+              ROOT: '#/components/schemas/WorkflowRootNodeDetails'
+              ROUTER: '#/components/schemas/WorkflowRouterNodeDetails'
+              TASK: '#/components/schemas/WorkflowTaskNodeDetails'
+            propertyName: nodeType
+          oneOf:
+          - $ref: '#/components/schemas/WorkflowRootNodeDetails'
+          - $ref: '#/components/schemas/WorkflowOutputNodeDetails'
+          - $ref: '#/components/schemas/WorkflowTaskNodeDetails'
+          - $ref: '#/components/schemas/WorkflowRouterNodeDetails'
+          - $ref: '#/components/schemas/WorkflowEndNodeDetails'
+        nodeType:
+          description: The type associated with the node config
+          enum:
+          - ROOT
+          - OUTPUT
+          - TASK
+          - ROUTER
+          - END
+          type: string
+      type: object
+    WorkflowFlowchartEdgeConfig:
+      properties:
+        fromNodeConfigId:
+          description: The ID of the source workflow flowchart node config of this edge
+          example: wffcnc_giVNQcTL
+          readOnly: true
+          type: string
+        id:
+          description: The ID of the workflow flowchart edge config
+          example: wffcec_giVNQcTL
+          readOnly: true
+          type: string
+        toNodeConfigId:
+          description: The ID of the destination workflow flowchart node config of this edge
+          example: wffcnc_giVNQcAF
+          readOnly: true
+          type: string
+      type: object
+    WorkflowTaskSchemaSummary:
+      properties:
+        id:
+          description: The ID of the workflow task schema
+          type: string
+        name:
+          description: The name of the workflow task schema
+          type: string
+    WorkflowEndNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow flowchart end node config details
+          example: wftrnd_aB8Wi12c
+          readOnly: true
+          type: string
+        name:
+          description: The name of the end node
+          example: End 1
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - END
+          type: string
+      type: object
+    WorkflowRootNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow root node config details
+          example: wfrnd_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - ROOT
+          type: string
+        rootTaskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+      type: object
+    WorkflowRouterNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow router node config details
+          example: wfrnd_hbVJBcMC
+          readOnly: true
+          type: string
+        name:
+          description: The name of the router node
+          example: Router 1
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - ROUTER
+          type: string
+        routerFunctions:
+          description: Router functions associated with this router node
+          items:
+            $ref: '#/components/schemas/WorkflowRouterFunction'
+          readOnly: true
+          type: array
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

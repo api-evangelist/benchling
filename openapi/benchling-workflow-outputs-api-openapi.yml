@@ -1,0 +1,723 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Workflow Outputs API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Workflow outputs are outputs of a workflow task
+  name: Workflow Outputs
+paths:
+  /workflow-outputs:
+    get:
+      description: List workflow outputs
+      operationId: listWorkflowOutputs
+      parameters:
+      - description: Comma separated list of workflow output IDs
+        in: query
+        name: ids
+        schema:
+          example: wfout_5cJLQKVF,wfout_9jENXd3t
+          type: string
+      - description: Comma separated list of workflow IDs
+        in: query
+        name: workflowTaskGroupIds
+        schema:
+          example: prs_giVNQcTL,prst6m99v1
+          minLength: 1
+          type: string
+      - description: Comma separated list of workflow task IDs
+        in: query
+        name: workflowTaskIds
+        schema:
+          example: wftask_OnnsW08k,wftask_4ejSW7en
+          minLength: 1
+          type: string
+      - description: The ID of the workflow task schema of the workflow output
+        in: query
+        name: schemaId
+        schema:
+          example: prstsch_KnR9iVum
+          type: string
+      - description: Comma separated list of user IDs or "null"
+        in: query
+        name: watcherIds
+        schema:
+          example: ent_a0SApq3z,ent_asdf72354,null
+          minLength: 1
+          type: string
+      - description: Comma separated list of team IDs or "null"
+        in: query
+        name: responsibleTeamIds
+        schema:
+          example: team_Thepp2c7,team_QqHMbfqK,null
+          minLength: 1
+          type: string
+      - description: Comma separated list of entry IDs
+        in: query
+        name: creationOriginIds
+        schema:
+          example: etr_d00c97,etr_30ad79
+          type: string
+      - description: 'Comma separated list of bioentity or storable IDs. Maximum of 100. Returns workflow outputs where the output''s schema fields reference at least one of the provided items.
+
+          '
+        in: query
+        name: linkedItemIds.anyOf
+        schema:
+          example: bfi_ed1ef7,con_1c76c9
+          type: string
+      - description: 'Comma separated list of bioentity or storable IDs. Returns workflow outputs where the output''s schema fields reference all of the provided items.
+
+          '
+        in: query
+        name: linkedItemIds.allOf
+        schema:
+          example: bfi_ed1ef7,con_1c76c9
+          type: string
+      - description: 'Comma separated list of bioentity or storable IDs. Returns workflow outputs where the output''s schema fields do not reference any of the provided items.
+
+          '
+        in: query
+        name: linkedItemIds.noneOf
+        schema:
+          example: bfi_ed1ef7,con_1c76c9
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: The name of the workflow task
+        in: query
+        name: name
+        schema:
+          example: PR-1
+          type: string
+      - description: Part of the name of the workflow task
+        in: query
+        name: nameIncludes
+        schema:
+          example: PR
+          type: string
+      - description: Comma separated list of user IDs.
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - example: Im5ldyB0ZXN0Ig==
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Comma-separated list of Workflow Output Display IDs.
+        in: query
+        name: displayIds
+        schema:
+          example: ANG1-O1,ANG1-O2
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived workflow outputs. Use "ANY_ARCHIVED" to filter for archived workflow outputs regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowOutputsPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: List workflow outputs
+      tags:
+      - Workflow Outputs
+    post:
+      description: Create a new workflow output
+      operationId: createWorkflowOutput
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowOutputCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowOutput'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Create a new workflow output
+      tags:
+      - Workflow Outputs
+  /workflow-outputs/{workflow_output_id}:
+    get:
+      description: Get a workflow output
+      operationId: getWorkflowOutput
+      parameters:
+      - description: The ID of the workflow task output
+        in: path
+        name: workflow_output_id
+        required: true
+        schema:
+          example: wfout_5cJLQKVF
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowOutput'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: Get a workflow output
+      tags:
+      - Workflow Outputs
+    patch:
+      description: Update a workflow output
+      operationId: updateWorkflowOutput
+      parameters:
+      - description: The ID of the workflow output
+        in: path
+        name: workflow_output_id
+        required: true
+        schema:
+          example: wfout_5cJLQKVF
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowOutputUpdate'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowOutput'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: Update a workflow output
+      tags:
+      - Workflow Outputs
+  /workflow-outputs:archive:
+    post:
+      description: Archive one or more workflow outputs
+      operationId: archiveWorkflowOutputs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowOutputsArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowOutputsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Archive one or more workflow outputs
+      tags:
+      - Workflow Outputs
+  /workflow-outputs:bulk-create:
+    post:
+      description: Bulk create new workflow outputs
+      operationId: bulkCreateWorkflowOutputs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowOutputsBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Bulk create new workflow outputs
+      tags:
+      - Workflow Outputs
+  /workflow-outputs:bulk-update:
+    post:
+      description: Bulk update workflow outputs
+      operationId: bulkUpdateWorkflowOutputs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowOutputsBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Bulk update workflow outputs
+      tags:
+      - Workflow Outputs
+  /workflow-outputs:unarchive:
+    post:
+      description: Unarchive one or more workflow outputs
+      operationId: unarchiveWorkflowOutputs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowOutputsUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowOutputsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Unarchive one or more workflow outputs
+      tags:
+      - Workflow Outputs
+components:
+  schemas:
+    WorkflowTaskSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    WorkflowOutputWriteBase:
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+    WorkflowOutputArchiveReason:
+      description: 'The reason for archiving the provided workflow outputs. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Other
+      type: string
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    CreationOrigin:
+      properties:
+        application:
+          nullable: true
+          readOnly: true
+          type: string
+        originId:
+          nullable: true
+          readOnly: true
+          type: string
+        originModalUuid:
+          format: uuid
+          nullable: true
+          readOnly: true
+          type: string
+        originType:
+          nullable: true
+          readOnly: true
+          type: string
+      type: object
+    WorkflowOutputsPaginatedList:
+      properties:
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutput'
+          type: array
+      type: object
+    WorkflowOutputsBulkCreateRequest:
+      properties:
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutputBulkCreate'
+          maxItems: 100
+          type: array
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    WorkflowOutput:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputSummary'
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+          createdAt:
+            description: The ISO formatted date and time that the task was created
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          creationOrigin:
+            $ref: '#/components/schemas/CreationOrigin'
+          fields:
+            $ref: '#/components/schemas/Fields'
+          modifiedAt:
+            description: The ISO formatted date and time that the task was last modified
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          nextOutputs:
+            description: The outputs in the flowchart which are generated by this output.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          nextTasks:
+            description: The downstream tasks in the flowchart which are generated by this output.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          sourceOutputs:
+            description: The outputs in the flowchart which were used to generate this output.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          sourceTasks:
+            description: The tasks in the flowchart which were used to generate this output.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          webURL:
+            description: URL of the workflow output
+            format: uri
+            readOnly: true
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTaskSummary'
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowOutputBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+      - properties:
+          workflowOutputId:
+            description: The ID of the workflow output
+            example: wfout_5cJLQKVF
+            type: string
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    WorkflowOutputsArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type
+
+        '
+      properties:
+        workflowOutputIds:
+          items:
+            example: wfout_5cJLQKVF
+            type: string
+          type: array
+      type: object
+    WorkflowOutputsUnarchive:
+      properties:
+        workflowOutputIds:
+          items:
+            type: string
+          type: array
+      required:
+      - workflowOutputIds
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    WorkflowOutputsBulkUpdateRequest:
+      properties:
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutputBulkUpdate'
+          maxItems: 100
+          type: array
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    WorkflowOutputSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    WorkflowOutputCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+      - properties:
+          workflowTaskId:
+            description: The ID of the workflow task this output belogns to
+            example: wftask_OnnsW08k
+            type: string
+        required:
+        - workflowTaskId
+    WorkflowOutputUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    WorkflowOutputsArchive:
+      properties:
+        reason:
+          $ref: '#/components/schemas/WorkflowOutputArchiveReason'
+        workflowOutputIds:
+          items:
+            example: wfout_5cJLQKVF
+            type: string
+          type: array
+      required:
+      - workflowOutputIds
+      - reason
+      type: object
+    WorkflowOutputBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputCreate'
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

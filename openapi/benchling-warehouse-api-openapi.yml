@@ -1,0 +1,125 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Warehouse API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Manage warehouse credentials.
+  name: Warehouse
+paths:
+  /warehouse-credentials:
+    post:
+      description: 'Allows for programmatically generating credentials to connect to the Benchling warehouse. You must have a warehouse configured to access this endpoint.
+
+        The credentials will authenticate as the same user calling the API.
+
+        Note that expiresIn is required - only temporary credentials are currently allowed.
+
+        '
+      operationId: createWarehouseCredentials
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarehouseCredentialsCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseCredentials'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create Benchling Warehouse credentials
+      tags:
+      - Warehouse
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    WarehouseCredentialsCreate:
+      additionalProperties: false
+      properties:
+        expiresIn:
+          description: 'Duration, in seconds, that credentials should be active for. Must be greater than 0 and less than 3600.
+
+            '
+          maximum: 3599
+          minimum: 1
+          type: integer
+      required:
+      - expiresIn
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WarehouseCredentials:
+      properties:
+        expiresAt:
+          description: 'The time after which new connections using the username/password will not be permitted. Upon expiration, currently open connections are not terminated.
+
+            '
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        password:
+          description: The password to connect to the warehouse.
+          example: 9YC122LzxKW1Uq2q
+          readOnly: true
+          type: string
+        username:
+          description: The username to connect to the warehouse.
+          example: u$lpasteur_az
+          readOnly: true
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

@@ -1,0 +1,142 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Inventory API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Manage inventory wide objects.
+  name: Inventory
+paths:
+  /registries/{registry_id}:validate-barcodes:
+    post:
+      description: Validate barcodes on inventory objects.
+      operationId: validateBarcodes
+      parameters:
+      - description: ID of the registry to validate barcodes in.
+        in: path
+        name: registry_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BarcodesList'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarcodeValidationResults'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Validate barcodes
+      tags:
+      - Inventory
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BarcodeValidationResult:
+      properties:
+        barcode:
+          description: Barcode to validate.
+          type: string
+        isValid:
+          description: Whether the barcode is valid.
+          type: boolean
+        message:
+          description: If barcode is not valid, a message string explaining the error.
+          nullable: true
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BarcodeValidationResults:
+      properties:
+        validationResults:
+          items:
+            $ref: '#/components/schemas/BarcodeValidationResult'
+          type: array
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    BarcodesList:
+      additionalProperties: false
+      properties:
+        barcodes:
+          description: Array of barcodes to validate.
+          items:
+            type: string
+          type: array
+      required:
+      - barcodes
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

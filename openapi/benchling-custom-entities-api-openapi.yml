@@ -1,0 +1,1125 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Custom Entities API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Benchling supports custom entities for biological entities that are neither DNA, RNA, nor AA sequences. Custom entities must have an entity schema set and can have both schema fields and custom fields.
+
+    '
+  name: Custom Entities
+paths:
+  /custom-entities:
+    get:
+      description: List custom entities
+      operationId: listCustomEntities
+      parameters:
+      - in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models created within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for created models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models created after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: createdAt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of a custom entity. Restricts results to those with the specified name, alias, or entity registry ID.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: customEntities.id,customEntities.modifiedAt
+          type: string
+      - description: 'Name substring of a custom entity. Restricts results to those with names, aliases, or entity registry IDs that include the provided substring.
+
+          '
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: ID of a folder. Restricts results to those in the folder.
+        in: query
+        name: folderId
+        schema:
+          type: string
+      - description: 'Comma-separated list of entry IDs. Restricts results to custom entities mentioned in those entries.
+
+          '
+        in: query
+        name: mentionedIn
+        schema:
+          type: string
+      - description: ID of a project. Restricts results to those in the project.
+        in: query
+        name: projectId
+        schema:
+          type: string
+      - description: 'ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+
+          '
+        in: query
+        name: registryId
+        schema:
+          nullable: true
+          type: string
+      - description: 'ID of a schema. Restricts results to those of the specified schema.
+
+          '
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived custom entities. Use "ANY_ARCHIVED" to filter for archived custom entities regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Comma-separated list of resource IDs. Restricts results to those that mention the given items in the description.
+
+          '
+        in: query
+        name: mentions
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: bfi_blhxTUl1,bfi_y5bkDmJp,bfi_xwfILBog
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, aliases, or entity registry IDs, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, aliases, or entity registry IDs, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of entity registry IDs. Maximum of 100. Restricts results to those that match any of the specified registry IDs
+
+          '
+        in: query
+        name: entityRegistryIds.anyOf
+        schema:
+          example: TP001,TP002
+          type: string
+      - description: Comma separated list of users IDs
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: Comma separated list of user or app IDs. Maximum of 100.
+        in: query
+        name: authorIds.anyOf
+        schema:
+          example: ent_a0SApq3z,ent_b4AApz9b
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntitiesPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List custom entities
+      tags:
+      - Custom Entities
+    post:
+      description: Create a custom entity
+      operationId: createCustomEntity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntityCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntity'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '503':
+          description: Deprecated, a 429 is returned for too many requests
+      summary: Create a custom entity
+      tags:
+      - Custom Entities
+  /custom-entities/{custom_entity_id}:
+    get:
+      description: Get a custom entity
+      operationId: getCustomEntity
+      parameters:
+      - in: path
+        name: custom_entity_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntity'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get a custom entity
+      tags:
+      - Custom Entities
+    patch:
+      description: Update a custom entity
+      operationId: updateCustomEntity
+      parameters:
+      - in: path
+        name: custom_entity_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntityUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntity'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Update a custom entity
+      tags:
+      - Custom Entities
+  /custom-entities/{entity_registry_id}:upsert:
+    patch:
+      description: 'Create or update a registered custom entity.
+
+
+        Schema field links can be populated using entity registry IDs or API IDs. In the `value` field of the [Field](#/components/schemas/FieldWithResolution) resource, the object `{"entityRegistryId": ENTITY_REGISTRY_ID}` may be provided instead of the API ID if desired (see example value).
+
+        '
+      operationId: upsertCustomEntity
+      parameters:
+      - example: entity_registry_id_001
+        in: path
+        name: entity_registry_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntityUpsertRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntity'
+          description: Updated
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntity'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create or update a registered custom entity
+      tags:
+      - Custom Entities
+  /custom-entities:archive:
+    post:
+      description: Archive custom entities
+      operationId: archiveCustomEntities
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntitiesArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntitiesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive custom entities
+      tags:
+      - Custom Entities
+  /custom-entities:bulk-create:
+    post:
+      description: Bulk Create custom entities. Limit of 2500 custom entities per request.
+      operationId: bulkCreateCustomEntities
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntitiesBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of custom entities that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Create custom entities
+      tags:
+      - Custom Entities
+  /custom-entities:bulk-get:
+    get:
+      description: Bulk get custom entities by ID
+      operationId: bulkGetCustomEntities
+      parameters:
+      - description: 'Comma-separated list of IDs of custom entities to get.
+
+          '
+        in: query
+        name: customEntityIds
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: customEntities.id,customEntities.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntitiesList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk get custom entities by ID
+      tags:
+      - Custom Entities
+  /custom-entities:bulk-update:
+    post:
+      description: Bulk Update custom entities
+      operationId: bulkUpdateCustomEntities
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntitiesBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of custom entities that were updated.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Update custom entities
+      tags:
+      - Custom Entities
+  /custom-entities:bulk-upsert:
+    post:
+      description: 'All entities and their schemas must be within the same registry.
+
+
+        This operation performs the following actions:
+
+        1. Any existing objects are looked up in Benchling by the provided entity registry ID.
+
+        2. Then, all objects are either created or updated accordingly, temporarily skipping any schema field links between objects.
+
+        3. Schema field links can be populated using entity registry IDs or API IDs. In the `value` field of the [Field](#/components/schemas/FieldWithResolution) resource, the object `{"entityRegistryId": ENTITY_REGISTRY_ID}` may be provided instead of the API ID if desired (see example value). You may link to objects being created in the same operation.
+
+        4. Entities are registered, using the provided name and entity registry ID.
+
+
+        If any action fails, the whole operation is canceled and no objects are created or updated.
+
+
+        Limit of 2500 custom entities per request.
+
+        '
+      operationId: bulkUpsertCustomEntities
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntitiesBulkUpsertRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns the resources of the objects that were upserted.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk upsert custom entities
+      tags:
+      - Custom Entities
+  /custom-entities:unarchive:
+    post:
+      description: Unarchive custom entities
+      operationId: unarchiveCustomEntities
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomEntitiesUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomEntitiesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive custom entities
+      tags:
+      - Custom Entities
+components:
+  schemas:
+    CustomEntityBaseRequest:
+      properties:
+        aliases:
+          description: Aliases to add to the custom entity
+          items:
+            type: string
+          type: array
+        authorIds:
+          description: IDs of users to set as the custom entity's authors.
+          items:
+            type: string
+          type: array
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the custom entity. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Schema fields to set on the custom entity. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: ID of the folder that the entity is moved into
+          type: string
+        name:
+          type: string
+        schemaId:
+          type: string
+      type: object
+    CustomEntity:
+      properties:
+        aliases:
+          items:
+            example: sBN000
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Custom Entity in the API.
+          example: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: sBN000
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          example: lib_R8KcsjhW
+          nullable: true
+          type: string
+        id:
+          example: bfi_xCUXNVyG
+          type: string
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: sBN000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Strain
+          nullable: true
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    FieldWithResolution:
+      allOf:
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+            nullable: true
+        type: object
+    CustomEntitiesBulkUpsertRequest:
+      additionalProperties: false
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkUpsertRequest'
+          maxItems: 2500
+          type: array
+      required:
+      - customEntities
+      type: object
+    CustomEntitiesBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkUpdate'
+          maxItems: 2500
+          type: array
+      required:
+      - customEntities
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    CustomEntitiesArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of custom entities along with any IDs of batches that were archived (or unarchived).
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        customEntityIds:
+          items:
+            type: string
+          type: array
+      type: object
+    CustomEntitiesPaginatedList:
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntity'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    CustomEntitiesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkCreate'
+          maxItems: 2500
+          type: array
+      required:
+      - customEntities
+    CustomEntityBulkUpdate:
+      additionalProperties: true
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    ArchiveRecordSet:
+      additionalProperties: false
+      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
+      example: null
+      nullable: true
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    CustomEntitiesUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving custom entities.
+
+        '
+      properties:
+        customEntityIds:
+          items:
+            type: string
+          type: array
+      required:
+      - customEntityIds
+      type: object
+    FieldsWithResolution:
+      additionalProperties:
+        $ref: '#/components/schemas/FieldWithResolution'
+      example:
+        Linked Peptide:
+          value: prtn_ObbdtGhC
+        Linked Sequence:
+          value:
+            entityRegistryId: DNA001
+        Linked Strains:
+          value:
+          - entityRegistryId: STRAIN001
+          - entityRegistryId: STRAIN002
+      type: object
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
+          type: string
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
+    CustomEntitiesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving custom entities.
+
+        '
+      properties:
+        customEntityIds:
+          items:
+            type: string
+          type: array
+        reason:
+          $ref: '#/components/schemas/EntityArchiveReason'
+      required:
+      - reason
+      - customEntityIds
+      type: object
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    CustomEntityUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      - $ref: '#/components/schemas/CustomEntityRequestRegistryFields'
+    CustomEntityRequestRegistryFields:
+      properties:
+        entityRegistryId:
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    CustomEntityCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    CustomEntityBulkUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    EntityBulkUpsertBaseRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    CustomEntityUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          nullable: true
+          readOnly: true
+          type: string
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    CustomEntityBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      - required:
+        - name
+        - schemaId
+    EntityUpsertBaseRequest:
+      properties:
+        archiveRecord:
+          $ref: '#/components/schemas/ArchiveRecordSet'
+        fields:
+          $ref: '#/components/schemas/FieldsWithResolution'
+        name:
+          type: string
+        registryId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - registryId
+      - name
+      - schemaId
+      type: object
+    CreateEntityIntoRegistry:
+      properties:
+        entityRegistryId:
+          description: 'Entity registry ID to set for the registered entity. Cannot specify both entityRegistryId and namingStrategy at the same time.
+
+            '
+          type: string
+        folderId:
+          description: ID of the folder containing the entity. Can be left empty when registryId is present.
+          type: string
+        namingStrategy:
+          $ref: '#/components/schemas/NamingStrategy'
+        registryId:
+          description: 'Registry ID into which entity should be registered. this is the ID of the registry which was configured for a particular organization
+
+            To get available registryIds, use the [/registries endpoint](#/Registry/listRegistries)
+
+
+            Required in order for entities to be created directly in the registry.
+
+            '
+          type: string
+      type: object
+    CustomEntitiesList:
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntity'
+          type: array
+      type: object
+    CustomEntityBulkCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityCreate'
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

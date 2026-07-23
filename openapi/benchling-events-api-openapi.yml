@@ -1,0 +1,2572 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Events API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: The Events system allows external services to subscribe to events that are triggered in Benchling (e.g. plasmid registration, request submission, etc).
+  name: Events
+paths:
+  /events:
+    get:
+      description: 'List Events
+
+
+        ## Event Sort Order
+
+
+        Events in Benchling are assigned a stable sort order that reflects when the event was processed (not created). The createdAt time is not the stable sorted order of events. For this reason event createdAt time may appear out of order.
+
+        '
+      operationId: listEvents
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. "2020-05-23".
+
+          '
+        in: query
+        name: createdAt.gte
+        schema:
+          type: string
+      - description: Event ID after which events will be returned.
+        in: query
+        name: startingAfter
+        schema:
+          type: string
+      - description: Comma-separated list of event types to return.
+        in: query
+        name: eventTypes
+        schema:
+          type: string
+      - description: When True, the API will always return a nextToken to enable polling events indefinitely.
+        in: query
+        name: poll
+        schema:
+          type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventsPaginatedList'
+          description: '
+
+            Returns a list of event resources. For additional JSON examples, [click here](https://docs.benchling.com/docs/events-reference#json-examples).
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List Events
+      tags:
+      - Events
+components:
+  schemas:
+    Request:
+      allOf:
+      - $ref: '#/components/schemas/RequestBase'
+      - properties:
+          apiURL:
+            description: The canonical url of the Legacy Request in the API.
+            example: https://benchling.com/api/v2/requests/req_dnn2JtWq
+            format: uri
+            readOnly: true
+            type: string
+          assignees:
+            description: Array of assignees
+            items:
+              oneOf:
+              - $ref: '#/components/schemas/RequestUserAssignee'
+              - $ref: '#/components/schemas/RequestTeamAssignee'
+            readOnly: true
+            type: array
+          createdAt:
+            description: Date and time the Legacy Request was created
+            example: 2017-04-23 01:30:50.970926
+            format: isoformat
+            readOnly: true
+            type: string
+          creator:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - description: UserSummary of the user who created the Legacy Request
+            - readOnly: true
+          displayId:
+            description: User-friendly ID of the Legacy Request
+            example: VP1
+            readOnly: true
+            type: string
+          fields:
+            $ref: '#/components/schemas/Fields'
+          id:
+            description: Unique ID for the Legacy Request
+            example: req_JekfeyVS
+            readOnly: true
+            type: string
+          projectId:
+            description: The ID of the project to which the Legacy Request belongs.
+            example: src_29pt8Ida
+            type: string
+          requestStatus:
+            $ref: '#/components/schemas/RequestStatus'
+          requestor:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - description: UserSummary of the user making the Legacy Request
+            - readOnly: true
+          sampleGroups:
+            items:
+              $ref: '#/components/schemas/RequestSampleGroup'
+            type: array
+          scheduledOn:
+            description: Date the Legacy Request is scheduled to be executed on, in YYYY-MM-DD format.
+            example: 2019-09-12
+            format: date
+            nullable: true
+            type: string
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SchemaSummary'
+            - description: SchemaSummary for the Legacy Request
+              example:
+                id: assaysch_3IF58QOf
+                name: Vector Production
+              readOnly: true
+            title: SchemaProperty
+          tasks:
+            items:
+              $ref: '#/components/schemas/RequestTask'
+            type: array
+          webURL:
+            description: URL of the Legacy Request
+            example: https://benchling.com/requests/req_JekfeyVS
+            format: uri
+            readOnly: true
+            type: string
+    InventoryPlateTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          destinationPlateSchemaId:
+            example: pltsch_LRIuH0yJ
+            nullable: true
+            type: string
+          destinationWellSchemaId:
+            example: consch_JEL0WCBK
+            type: string
+          mode:
+            enum:
+            - create_and_fill
+            - fill
+            - update
+            type: string
+          type:
+            enum:
+            - inventory_plate_table
+            type: string
+        type: object
+    SimpleNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          links:
+            description: 'Array of links referenced in text via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          text:
+            description: The textual contents of the note.
+            type: string
+          type:
+            enum:
+            - text
+            - code
+            - list_bullet
+            - list_number
+            type: string
+        type: object
+      description: 'Simple note parts include the following types: - ''text'': plain text - ''code'': preformatted code block - ''list_bullet'': one "line" of a bulleted list - ''list_number'': one "line" of a numbered list
+
+        '
+    WorkflowTaskGroupCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTaskGroup.created
+            type: string
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroup'
+        type: object
+    StageEntryUpdatedFieldsEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          eventType:
+            enum:
+            - v2-alpha.stageEntry.updated.fields
+            type: string
+          stageEntry:
+            $ref: '#/components/schemas/StageEntry'
+        type: object
+    AutomationOutputProcessorUploadedV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationOutputProcessor:
+            $ref: '#/components/schemas/AutomationFile'
+          eventType:
+            enum:
+            - v2.automationOutputProcessor.uploaded
+            type: string
+        type: object
+    EntryNotePart:
+      description: 'Notes are the main building blocks of entries. Each note corresponds roughly to a paragraph.
+
+        '
+      discriminator:
+        mapping:
+          app_canvas: '#/components/schemas/AppCanvasNotePart'
+          assay_run: '#/components/schemas/AssayRunNotePart'
+          box_creation_table: '#/components/schemas/BoxCreationTableNotePart'
+          code: '#/components/schemas/SimpleNotePart'
+          external_file: '#/components/schemas/ExternalFileNotePart'
+          inventory_container_table: '#/components/schemas/InventoryContainerTableNotePart'
+          inventory_plate_table: '#/components/schemas/InventoryPlateTableNotePart'
+          list_bullet: '#/components/schemas/SimpleNotePart'
+          list_checkbox: '#/components/schemas/CheckboxNotePart'
+          list_number: '#/components/schemas/SimpleNotePart'
+          lookup_table: '#/components/schemas/LookupTableNotePart'
+          mixture_prep_table: '#/components/schemas/MixturePrepTableNotePart'
+          note_linked_chart: '#/components/schemas/ChartNotePart'
+          plate_creation_table: '#/components/schemas/PlateCreationTableNotePart'
+          registration_table: '#/components/schemas/RegistrationTableNotePart'
+          results_table: '#/components/schemas/ResultsTableNotePart'
+          table: '#/components/schemas/TableNotePart'
+          text: '#/components/schemas/SimpleNotePart'
+          text_box: '#/components/schemas/TextBoxNotePart'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/SimpleNotePart'
+      - $ref: '#/components/schemas/TableNotePart'
+      - $ref: '#/components/schemas/TextBoxNotePart'
+      - $ref: '#/components/schemas/CheckboxNotePart'
+      - $ref: '#/components/schemas/ExternalFileNotePart'
+      - $ref: '#/components/schemas/AssayRunNotePart'
+      - $ref: '#/components/schemas/LookupTableNotePart'
+      - $ref: '#/components/schemas/ResultsTableNotePart'
+      - $ref: '#/components/schemas/RegistrationTableNotePart'
+      - $ref: '#/components/schemas/PlateCreationTableNotePart'
+      - $ref: '#/components/schemas/BoxCreationTableNotePart'
+      - $ref: '#/components/schemas/MixturePrepTableNotePart'
+      - $ref: '#/components/schemas/InventoryContainerTableNotePart'
+      - $ref: '#/components/schemas/InventoryPlateTableNotePart'
+      - $ref: '#/components/schemas/ChartNotePart'
+      - $ref: '#/components/schemas/AppCanvasNotePart'
+      type: object
+    AssayRunValidationStatus:
+      description: Must be either VALID or INVALID
+      enum:
+      - VALID
+      - INVALID
+      type: string
+    WorkflowOutput:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputSummary'
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+          createdAt:
+            description: The ISO formatted date and time that the task was created
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          creationOrigin:
+            $ref: '#/components/schemas/CreationOrigin'
+          fields:
+            $ref: '#/components/schemas/Fields'
+          modifiedAt:
+            description: The ISO formatted date and time that the task was last modified
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          nextOutputs:
+            description: The outputs in the flowchart which are generated by this output.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          nextTasks:
+            description: The downstream tasks in the flowchart which are generated by this output.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          sourceOutputs:
+            description: The outputs in the flowchart which were used to generate this output.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          sourceTasks:
+            description: The tasks in the flowchart which were used to generate this output.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          webURL:
+            description: URL of the workflow output
+            format: uri
+            readOnly: true
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTaskSummary'
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+    WorksheetReviewChanges:
+      description: 'Contents include basic worksheet metadata along with its review changes, including any snapshot information if present.
+
+        '
+      properties:
+        apiURL:
+          description: The canonical url of the Worksheet in the API.
+          example: https://benchling.com/api/v2-beta/worksheets/wks_0ma1gawd/review-changes
+          format: uri
+          nullable: true
+          readOnly: true
+          type: string
+        createdAt:
+          description: DateTime the worksheet was created at
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of the user who created the worksheet
+          readOnly: true
+        folderId:
+          description: ID of the folder that contains the worksheet
+          type: string
+        id:
+          description: ID of the worksheet
+          example: wks_0ma1gawd
+          type: string
+        modifiedAt:
+          description: DateTime the worksheet was last modified
+          type: string
+        name:
+          description: Title of the worksheet
+          type: string
+        reviewRecord:
+          description: Review record if set
+          nullable: true
+          properties:
+            comment:
+              description: Reviewer's Comments
+              type: string
+            reviewChanges:
+              description: A list of the Review Changes that have been made to this worksheet
+              items:
+                $ref: '#/components/schemas/ReviewChange'
+              type: array
+            status:
+              description: Review Status of the worksheet
+              enum:
+              - ACCEPTED
+              - NEEDS_REVIEW
+              - REJECTED
+              - RETRACTED
+              - ACCEPTANCE_SNAPSHOT_IN_PROGRESS
+              - REVIEW_SNAPSHOT_IN_PROGRESS
+              - IN_PROGRESS
+              - ACTION_REQUIRED
+              type: string
+          type: object
+        webURL:
+          description: URL of the worksheet
+          type: string
+      type: object
+    EntityRegisteredEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          entity:
+            $ref: '#/components/schemas/GenericEntity'
+          eventType:
+            enum:
+            - v2.entity.registered
+            type: string
+        type: object
+    GenericEntity:
+      additionalProperties: false
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        apiURL:
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          description: 'Array of UserSummary Resources of the authors of the entity. This defaults to the creator but can be manually changed.
+
+            '
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - description: UserSummary of the user who created the Legacy Request
+            readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+          title: SchemaProperty
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    WorkflowTaskUpdatedFieldsEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTask.updated.fields
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTask'
+        type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    AutomationInputGeneratorCompletedV2BetaEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationInputGenerator:
+            $ref: '#/components/schemas/AutomationFile'
+          eventType:
+            enum:
+            - v2-beta.automationInputGenerator.completed
+            type: string
+        type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    Entry:
+      description: 'Entries are notes that users can take. They''re organized by "days" (which are user-configurable) and modeled within each day as a list of "notes." Each note has a type - the simplest is a "text" type, but lists, tables, and external files are also supported.
+
+
+        *Note:* the current Entry resource has a few limitations:
+
+        - Formatting information is not yet supported. Header formatting, bolding, and other stylistic information is not presented.
+
+        - Data in tables is presented as text always - numeric values will need to be parsed into floats or integers, as appropriate.
+
+
+        Note: Data in Results tables are not accessible through this API call. Results table data can be called through the Results API calls.
+
+        '
+      properties:
+        apiURL:
+          description: The canonical url of the Entry in the API.
+          example: https://benchling.com/api/v2/entries/etr_tv7m7B78
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          description: 'ArchiveRecord Resource if the entry is archived. This is null if the entry is not archived.
+
+            '
+          nullable: true
+        assignedReviewers:
+          description: 'Array of users assigned to review the entry, if any.
+
+            '
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        authors:
+          description: 'Array of UserSummary Resources of the authors of the entry. This defaults to the creator but can be manually changed.
+
+            '
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the entry was created at
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of the user who created the entry
+          readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        days:
+          description: 'Array of day objects. Each day object has a date field (string) and notes field (array of notes, expand further for details on note types).
+
+            '
+          items:
+            $ref: '#/components/schemas/EntryDay'
+          type: array
+        displayId:
+          description: User-friendly ID of the entry
+          type: string
+        entryTemplateId:
+          description: ID of the Entry Template this Entry was created from
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the entry
+          type: string
+        id:
+          description: ID of the entry
+          type: string
+        modifiedAt:
+          description: DateTime the entry was last modified
+          type: string
+        name:
+          description: Title of the entry
+          type: string
+        reviewRecord:
+          description: Review record if set
+          nullable: true
+          properties:
+            comment:
+              description: Reviewer's Comments
+              type: string
+            reviewChanges:
+              description: A list of the Review Changes that have been made to this entry
+              items:
+                $ref: '#/components/schemas/ReviewChange'
+              type: array
+            reviewProcesses:
+              description: Review Processes associated with the Entry
+              items:
+                $ref: '#/components/schemas/EntryReviewProcess'
+              nullable: true
+              type: array
+            status:
+              description: Review Status of the entry
+              enum:
+              - ACCEPTED
+              - NEEDS_REVIEW
+              - REJECTED
+              - RETRACTED
+              - ACCEPTANCE_SNAPSHOT_IN_PROGRESS
+              - REVIEW_SNAPSHOT_IN_PROGRESS
+              - IN_PROGRESS
+              - ACTION_REQUIRED
+              type: string
+          type: object
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/EntrySchema'
+          description: Entry schema if set
+          nullable: true
+          title: SchemaProperty
+          type: object
+        webURL:
+          description: URL of the entry
+          type: string
+      type: object
+    WorkflowTaskCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTask.created
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTask'
+        type: object
+    WorksheetUpdatedReviewSnapshotBetaEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/WorksheetReviewChanges'
+          eventType:
+            enum:
+            - v2-beta.worksheet.updated.reviewSnapshot
+            type: string
+        type: object
+    RequestTask:
+      allOf:
+      - $ref: '#/components/schemas/RequestTaskBase'
+      description: 'A request task.
+
+        '
+      properties:
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+          title: SchemaProperty
+      type: object
+    WorkflowOutputNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow output node config details
+          example: wfond_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - OUTPUT
+          type: string
+        outputSchema:
+          $ref: '#/components/schemas/SchemaSummary'
+      type: object
+    EventsPaginatedList:
+      properties:
+        events:
+          items:
+            $ref: '#/components/schemas/Event'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AssayRun:
+      properties:
+        apiURL:
+          description: The canonical url of the Run in the API.
+          example: https://benchling.com/api/v2/assay-runs/21f50003-0389-4b2a-9293-a17967b85961
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        createdAt:
+          example: '2021-05-06T13:43:25.752597+00:00'
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        entryId:
+          example: etr_Hds1XAaq
+          nullable: true
+          type: string
+        equipmentId:
+          example: eqpt_XzU5p4dR
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          example: 77af3205-65af-457f-87f5-75462b85075a
+          type: string
+        isReviewed:
+          type: boolean
+        projectId:
+          example: src_YzU5p4dR
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: assaysch_fFLKmdmG
+            name: Assay Run
+          nullable: true
+          title: SchemaProperty
+        v3Id:
+          description: V3 identifier for the run
+          example: run_21f50003
+          readOnly: true
+          type: string
+        validationComment:
+          example: Reported valid with no caveats
+          nullable: true
+          type: string
+        validationStatus:
+          $ref: '#/components/schemas/AssayRunValidationStatus'
+      type: object
+    WorkflowTaskExecutionOrigin:
+      description: The context into which a task was executed
+      properties:
+        entryId:
+          example: etr_30ad79
+          nullable: true
+          type: string
+        originModalUuid:
+          example: e8805895-0654-4613-ac04-39ee7462202e
+          format: uuid
+          nullable: true
+          type: string
+        type:
+          enum:
+          - API
+          - ENTRY
+          - MODAL
+          type: string
+      type: object
+    WorkflowTask:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskBase'
+      - properties:
+          executionFlowchartId:
+            description: The ID of the flowchart that this task will execute. This will only be defined if the task has exectutionType FLOWCHART
+            example: wffc_6fd512
+            type: string
+          executionType:
+            description: The method by which the task of the workflow is executed
+            enum:
+            - DIRECT
+            - ENTRY
+            - FLOWCHART
+            - PROCEDURE
+            - PROCEDURE_METHOD
+            - PROCEDURE_STEP
+            type: string
+          nextOutputs:
+            description: The outputs in the flowchart which are generated by this task.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          nextTasks:
+            description: The downstream tasks in the flowchart which are generated by this task.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          responsibleParties:
+            description: List of users and teams that are responsible for this task
+            items:
+              $ref: '#/components/schemas/PartySummary'
+            type: array
+          rootTask:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskSummary'
+            description: The task which is at the root of the flowchart. This will be null if the task is not part of a flowchart.
+          sourceOutputs:
+            description: The parent outputs in the flowchart which were used to generate this task.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          sourceTasks:
+            description: The parent tasks in the flowchart which were used to generate this task.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          workflowOutputs:
+            description: The outputs of the workflow task group
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+    UpdateEventMixin:
+      properties:
+        updates:
+          description: 'These properties have been updated, causing this message
+
+            '
+          example:
+          - fields.Cost Center
+          items:
+            type: string
+          type: array
+      type: object
+    CheckboxNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          checked:
+            description: 'Indicates whether the checkbox is checked or not.
+
+              '
+            type: boolean
+          links:
+            description: 'Array of links referenced in text via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          text:
+            description: The textual contents of the note.
+            type: string
+          type:
+            enum:
+            - list_checkbox
+            type: string
+        type: object
+      description: One "line" of a checklist
+    InventoryContainerTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          destinationContainerSchemaId:
+            example: consch_JEL0WCBK
+            type: string
+          mode:
+            enum:
+            - create_and_fill
+            - fill
+            - update
+            type: string
+          type:
+            enum:
+            - inventory_container_table
+            type: string
+        type: object
+    TableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          links:
+            description: 'Array of links referenced in the caption via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          table:
+            allOf:
+            - $ref: '#/components/schemas/EntryTable'
+            type: object
+          text:
+            description: The caption of the table.
+            type: string
+          type:
+            enum:
+            - table
+            type: string
+        type: object
+      description: A table with rows and columns of text
+    WorkflowTaskSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    ReviewSnapshot:
+      additionalProperties: false
+      properties:
+        createdAt:
+          description: DateTime the Review Snapshot was created at
+          format: date-time
+          type: string
+        downloadURL:
+          description: A short-lived URL that can be used to download the original file.
+          type: string
+        expiresAt:
+          description: DateTime the downloadURL expires.
+          format: date-time
+          type: string
+        size:
+          description: Size, in bytes, of the snapshot file
+          type: integer
+        status:
+          description: the current status of the Snapshot process
+          enum:
+          - PENDING
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+          type: string
+      type: object
+    AutomationTransformStatusSucceededEventV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationFileTransform:
+            $ref: '#/components/schemas/LabAutomationTransform'
+          eventType:
+            enum:
+            - v2.automationFileTransform.updated.status.succeeded
+            type: string
+        type: object
+    WorkflowTaskGroupMappingCompletedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTaskGroup.mappingCompleted
+            type: string
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroup'
+        type: object
+    AutomationTransformStatusPendingEventV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationFileTransform:
+            $ref: '#/components/schemas/LabAutomationTransform'
+          eventType:
+            enum:
+            - v2.automationFileTransform.updated.status.pending
+            type: string
+        type: object
+    TeamSummary:
+      allOf:
+      - type: object
+      - properties:
+          id:
+            type: string
+          name:
+            type: string
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
+    AssayRunUpdatedFieldsEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          assayRun:
+            $ref: '#/components/schemas/AssayRun'
+          eventType:
+            enum:
+            - v2.assayRun.updated.fields
+            type: string
+        type: object
+    MixturePrepTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          mixtureSchemaId:
+            example: ts_eGNPfqCX
+            type: string
+          type:
+            enum:
+            - mixture_prep_table
+            type: string
+        type: object
+    Blob:
+      properties:
+        id:
+          description: The universally unique identifier (UUID) for the blob.
+          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+          format: uuid
+          type: string
+        mimeType:
+          description: eg. application/jpeg
+          example: text/csv
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          example: MyInstrumentInputFile.csv
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - COMPLETE
+          - ABORTED
+          type: string
+      type: object
+    RequestSampleGroup:
+      properties:
+        id:
+          example: sgrp_YJKtcWV
+          type: string
+        samples:
+          $ref: '#/components/schemas/RequestSampleGroupSamples'
+      type: object
+    EntryTableCell:
+      properties:
+        link:
+          allOf:
+          - $ref: '#/components/schemas/EntryLink'
+          description: 'A Link Resource if this cell contained a hyperlink. Otherwise, link will be omitted from the cell object. (Note: inventory and user types are not yet supported.)
+
+            '
+        text:
+          description: 'The textual content of the cell. If the cell was originally a formula, this will be the evaluated version of the formula.
+
+            '
+          type: string
+      type: object
+    Folder:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+          readOnly: true
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parentFolderId:
+          description: ID of the parent folder, if it exists
+          nullable: true
+          type: string
+        projectId:
+          description: ID of the containing project
+          readOnly: true
+          type: string
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    StageEntryUpdatedReviewRecordEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/StageEntry'
+          eventType:
+            enum:
+            - v2-alpha.stageEntry.updated.reviewRecord
+            type: string
+        type: object
+    RequestCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.request.created
+            type: string
+          request:
+            $ref: '#/components/schemas/Request'
+        type: object
+    TextBoxNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          links:
+            description: 'Array of links referenced via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          name:
+            type: string
+          text:
+            type: string
+          type:
+            enum:
+            - text_box
+            type: string
+        type: object
+    AssayRunCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          assayRun:
+            $ref: '#/components/schemas/AssayRun'
+          eventType:
+            enum:
+            - v2.assayRun.created
+            type: string
+        type: object
+    WorkflowTaskGroupUpdatedWatchersEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTaskGroup.updated.watchers
+            type: string
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroup'
+        type: object
+    WorkflowTaskGroupBase:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+            readOnly: true
+          createdAt:
+            description: The ISO formatted date and time that the task group was created
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          creationOrigin:
+            $ref: '#/components/schemas/CreationOrigin'
+          creator:
+            $ref: '#/components/schemas/UserSummary'
+          folder:
+            $ref: '#/components/schemas/Folder'
+          modifiedAt:
+            description: The ISO formatted date and time that the task group was last modified
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          outputs:
+            description: The outputs of the workflow task group
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          responsibleTeam:
+            allOf:
+            - $ref: '#/components/schemas/TeamSummary'
+            nullable: true
+          watchers:
+            description: The users watching the workflow task group
+            items:
+              $ref: '#/components/schemas/UserSummary'
+            type: array
+          webURL:
+            description: URL of the workflow task group
+            format: uri
+            readOnly: true
+            type: string
+          workflowTaskSchema:
+            $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+          workflowTasks:
+            description: The input tasks to the workflow task group
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+    AutomationTransformStatusRunningEventV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationFileTransform:
+            $ref: '#/components/schemas/LabAutomationTransform'
+          eventType:
+            enum:
+            - v2.automationFileTransform.updated.status.running
+            type: string
+        type: object
+    ExternalFileNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          externalFileId:
+            description: 'The ID of the external file. Use the ''Get an external file'' endpoint to retrieve metadata about it.
+
+              '
+            type: string
+          links:
+            description: 'Array of links referenced in the caption via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          text:
+            description: The caption of the file attachment.
+            type: string
+          type:
+            enum:
+            - external_file
+            type: string
+        type: object
+      description: An attached user-uploaded file
+    RequestTaskBase:
+      allOf:
+      - $ref: '#/components/schemas/RequestTaskBaseFields'
+      description: 'A request task.
+
+        '
+      properties:
+        id:
+          description: ID of the Legacy Request Task
+          example: reqtsk_PFHQ8rmb
+          type: string
+      required:
+      - id
+      type: object
+    WorkflowOutputSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    WorkflowTaskNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow task node config details
+          example: wftnd_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - TASK
+          type: string
+        taskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+      type: object
+    WorkflowTaskUpdatedStatusEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTask.updated.status
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTask'
+        type: object
+    WorkflowFlowchartNodeConfig:
+      properties:
+        id:
+          description: The ID of the workflow flowchart node config
+          readOnly: true
+          type: string
+        nodeDetails:
+          discriminator:
+            mapping:
+              END: '#/components/schemas/WorkflowEndNodeDetails'
+              OUTPUT: '#/components/schemas/WorkflowOutputNodeDetails'
+              ROOT: '#/components/schemas/WorkflowRootNodeDetails'
+              ROUTER: '#/components/schemas/WorkflowRouterNodeDetails'
+              TASK: '#/components/schemas/WorkflowTaskNodeDetails'
+            propertyName: nodeType
+          oneOf:
+          - $ref: '#/components/schemas/WorkflowRootNodeDetails'
+          - $ref: '#/components/schemas/WorkflowOutputNodeDetails'
+          - $ref: '#/components/schemas/WorkflowTaskNodeDetails'
+          - $ref: '#/components/schemas/WorkflowRouterNodeDetails'
+          - $ref: '#/components/schemas/WorkflowEndNodeDetails'
+        nodeType:
+          description: The type associated with the node config
+          enum:
+          - ROOT
+          - OUTPUT
+          - TASK
+          - ROUTER
+          - END
+          type: string
+      type: object
+    AutomationOutputProcessorCompletedV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationOutputProcessor:
+            $ref: '#/components/schemas/AutomationFile'
+          eventType:
+            enum:
+            - v2.automationOutputProcessor.completed
+            type: string
+        type: object
+    WorkflowNodeTaskGroupSummary:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+      - properties:
+          nodeConfigId:
+            description: The node in a Flowchart that this task group is associated with. This will be null if the task group is not part of a flowchart.
+            example: wffcnc_giVNQcTL
+            type: string
+    WorkflowRootNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow root node config details
+          example: wfrnd_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - ROOT
+          type: string
+        rootTaskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+      type: object
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+    RequestSampleGroupSamples:
+      additionalProperties:
+        oneOf:
+        - $ref: '#/components/schemas/RequestSampleWithEntity'
+        - $ref: '#/components/schemas/RequestSampleWithBatch'
+      description: 'The key for each (Legacy) RequestSample should match one of the samplesSchema[n].name property in the request schema json.
+
+        '
+      example:
+        Batch Example:
+          batchId: bat_XK0UnLyk
+        Entity Example:
+          containerId: ctn_urUAEBq
+          entityId: seq_nDtxYEs
+      type: object
+    RequestSampleWithEntity:
+      properties:
+        containerId:
+          example: ctn_urUAEBq
+          type: string
+        entityId:
+          example: seq_nDtxYEs
+          type: string
+      required:
+      - entityId
+      type: object
+    AppCanvasNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          appId:
+            description: The API identifier for the Benchling App.
+            type: string
+          canvasId:
+            description: The API identifier for this Analysis Chart.
+            type: string
+          featureId:
+            description: The developer ID assigned to the feature of this App Canvas.
+            type: string
+          type:
+            enum:
+            - app_canvas
+            type: string
+    StageEntryCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+    AutomationOutputProcessorCompletedV2BetaEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationOutputProcessor:
+            $ref: '#/components/schemas/AutomationFile'
+          eventType:
+            enum:
+            - v2-beta.automationOutputProcessor.completed
+            type: string
+        type: object
+    StageEntryUpdatedAssignedReviewersEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/StageEntry'
+          eventType:
+            enum:
+            - v2-alpha.stageEntry.updated.assignedReviewers
+            type: string
+        type: object
+    EntryTable:
+      description: 'Actual tabular data with rows and columns of text on the note.
+
+        '
+      properties:
+        columnLabels:
+          description: 'Array of strings, with one item per column. Defaults to null, if the user is using the default, but is set if the user has given a custom name to the column.
+
+            '
+          items:
+            nullable: true
+            type: string
+          type: array
+        name:
+          description: 'Name of the table - defaults to e.g. Table1 but can be renamed.
+
+            '
+          type: string
+        rows:
+          description: Array of row objects.
+          items:
+            $ref: '#/components/schemas/EntryTableRow'
+          type: array
+      type: object
+    EntryUpdatedReviewSnapshotBetaEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/Entry'
+          eventType:
+            enum:
+            - v2-beta.entry.updated.reviewSnapshot
+            type: string
+        type: object
+    AssayRunNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          assayRunId:
+            example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+            nullable: true
+            type: string
+          assayRunSchemaId:
+            example: assaysch_msh1Ly6g
+            type: string
+          type:
+            enum:
+            - assay_run
+            type: string
+        type: object
+    EntryUpdatedAssignedReviewersEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/Entry'
+          eventType:
+            enum:
+            - v2.entry.updated.assignedReviewers
+            type: string
+        type: object
+    StructuredTableColumnInfo:
+      properties:
+        columnId:
+          type: string
+        isReadOnly:
+          type: boolean
+        name:
+          type: string
+      type: object
+    EntryTableRow:
+      description: Each has property 'cells' that is an array of cell objects
+      properties:
+        cells:
+          items:
+            $ref: '#/components/schemas/EntryTableCell'
+          type: array
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    LookupTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          type:
+            enum:
+            - lookup_table
+            type: string
+        type: object
+    RequestBase:
+      description: A Legacy Request is an ask to perform a service, e.g. produce a sample or perform assays on a sample. Requests are usually placed to another team or individual who specializes in performing the service.
+      type: object
+    EntryCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/Entry'
+          eventType:
+            enum:
+            - v2.entry.created
+            type: string
+        type: object
+    WorkflowTaskBase:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskSummary'
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+            readOnly: true
+          assignee:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            nullable: true
+          clonedFrom:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskSummary'
+            nullable: true
+          createdAt:
+            description: The ISO formatted date and time that the task was created
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          creationOrigin:
+            $ref: '#/components/schemas/CreationOrigin'
+          creator:
+            $ref: '#/components/schemas/UserSummary'
+          executionOrigin:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskExecutionOrigin'
+            nullable: true
+          fields:
+            $ref: '#/components/schemas/Fields'
+          modifiedAt:
+            description: The ISO formatted date and time that the task was last modified
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          outputs:
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          scheduledOn:
+            description: The date on which the task is scheduled to be executed
+            example: '2020-08-01'
+            format: date
+            nullable: true
+            type: string
+          schema:
+            $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+          status:
+            $ref: '#/components/schemas/WorkflowTaskStatus'
+          webURL:
+            description: URL of the workflow task
+            format: uri
+            readOnly: true
+            type: string
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+    ReviewChange:
+      additionalProperties: false
+      properties:
+        action:
+          description: The action which was performed with this change
+          enum:
+          - SEND_FOR_REVIEW
+          - ACCEPT
+          - REJECT
+          - COMMENT
+          - RETRACT
+          type: string
+        comment:
+          description: The comment which was left when the Review Change was submitted
+          nullable: true
+          type: string
+        createdAt:
+          description: DateTime the Review Change was created at
+          format: date-time
+          type: string
+        esigned:
+          description: Was the action verified through an e-signature compliant step
+          type: boolean
+        id:
+          type: string
+        reviewSnapshot:
+          allOf:
+          - $ref: '#/components/schemas/ReviewSnapshot'
+          description: Review Snapshot generated from this Review Change
+          nullable: true
+      type: object
+    RequestTaskBaseFields:
+      description: 'Shared fields for Legacy Request Tasks and related endpoints.
+
+        '
+      properties:
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Schema fields to set on the request task.
+
+            Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        sampleGroupIds:
+          description: IDs of all Legacy Request Sample Groups now associated with this task.
+          items:
+            type: string
+          type: array
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    EntryUpdatedFieldsEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/Entry'
+          eventType:
+            enum:
+            - v2.entry.updated.fields
+            type: string
+        type: object
+    CreationOrigin:
+      properties:
+        application:
+          nullable: true
+          readOnly: true
+          type: string
+        originId:
+          nullable: true
+          readOnly: true
+          type: string
+        originModalUuid:
+          format: uuid
+          nullable: true
+          readOnly: true
+          type: string
+        originType:
+          nullable: true
+          readOnly: true
+          type: string
+      type: object
+    WorkflowEndNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow flowchart end node config details
+          example: wftrnd_aB8Wi12c
+          readOnly: true
+          type: string
+        name:
+          description: The name of the end node
+          example: End 1
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - END
+          type: string
+      type: object
+    Event:
+      discriminator:
+        mapping:
+          v2-alpha.stageEntry.created: '#/components/schemas/StageEntryCreatedEvent'
+          v2-alpha.stageEntry.updated.assignedReviewers: '#/components/schemas/StageEntryUpdatedAssignedReviewersEvent'
+          v2-beta.automationInputGenerator.completed: '#/components/schemas/AutomationInputGeneratorCompletedV2BetaEvent'
+          v2-beta.automationOutputProcessor.completed: '#/components/schemas/AutomationOutputProcessorCompletedV2BetaEvent'
+          v2-beta.automationOutputProcessor.uploaded: '#/components/schemas/AutomationOutputProcessorUploadedV2BetaEvent'
+          v2-beta.entry.updated.reviewSnapshot: '#/components/schemas/EntryUpdatedReviewSnapshotBetaEvent'
+          v2-beta.worksheet.updated.reviewSnapshot: '#/components/schemas/WorksheetUpdatedReviewSnapshotBetaEvent'
+          v2.assayRun.created: '#/components/schemas/AssayRunCreatedEvent'
+          v2.assayRun.updated.fields: '#/components/schemas/AssayRunUpdatedFieldsEvent'
+          v2.automationFileTransform.updated.status.failed: '#/components/schemas/AutomationTransformStatusFailedEventV2Event'
+          v2.automationFileTransform.updated.status.pending: '#/components/schemas/AutomationTransformStatusPendingEventV2Event'
+          v2.automationFileTransform.updated.status.running: '#/components/schemas/AutomationTransformStatusRunningEventV2Event'
+          v2.automationFileTransform.updated.status.succeeded: '#/components/schemas/AutomationTransformStatusSucceededEventV2Event'
+          v2.automationInputGenerator.completed: '#/components/schemas/AutomationInputGeneratorCompletedV2Event'
+          v2.automationOutputProcessor.completed: '#/components/schemas/AutomationOutputProcessorCompletedV2Event'
+          v2.automationOutputProcessor.uploaded: '#/components/schemas/AutomationOutputProcessorUploadedV2Event'
+          v2.entity.registered: '#/components/schemas/EntityRegisteredEvent'
+          v2.entry.created: '#/components/schemas/EntryCreatedEvent'
+          v2.entry.updated.assignedReviewers: '#/components/schemas/EntryUpdatedAssignedReviewersEvent'
+          v2.entry.updated.fields: '#/components/schemas/EntryUpdatedFieldsEvent'
+          v2.entry.updated.reviewRecord: '#/components/schemas/EntryUpdatedReviewRecordEvent'
+          v2.request.created: '#/components/schemas/RequestCreatedEvent'
+          v2.request.updated.fields: '#/components/schemas/RequestUpdatedFieldsEvent'
+          v2.workflowOutput.created: '#/components/schemas/WorkflowOutputCreatedEvent'
+          v2.workflowOutput.updated.fields: '#/components/schemas/WorkflowOutputUpdatedFieldsEvent'
+          v2.workflowTask.created: '#/components/schemas/WorkflowTaskCreatedEvent'
+          v2.workflowTask.updated.assignee: '#/components/schemas/WorkflowTaskUpdatedAssigneeEvent'
+          v2.workflowTask.updated.fields: '#/components/schemas/WorkflowTaskUpdatedFieldsEvent'
+          v2.workflowTask.updated.scheduledOn: '#/components/schemas/WorkflowTaskUpdatedScheduledOnEvent'
+          v2.workflowTask.updated.status: '#/components/schemas/WorkflowTaskUpdatedStatusEvent'
+          v2.workflowTaskGroup.created: '#/components/schemas/WorkflowTaskGroupCreatedEvent'
+          v2.workflowTaskGroup.mappingCompleted: '#/components/schemas/WorkflowTaskGroupMappingCompletedEvent'
+          v2.workflowTaskGroup.updated.watchers: '#/components/schemas/WorkflowTaskGroupUpdatedWatchersEvent'
+        propertyName: eventType
+      oneOf:
+      - $ref: '#/components/schemas/EntityRegisteredEvent'
+      - $ref: '#/components/schemas/EntryCreatedEvent'
+      - $ref: '#/components/schemas/EntryUpdatedFieldsEvent'
+      - $ref: '#/components/schemas/EntryUpdatedReviewRecordEvent'
+      - $ref: '#/components/schemas/EntryUpdatedAssignedReviewersEvent'
+      - $ref: '#/components/schemas/EntryUpdatedReviewSnapshotBetaEvent'
+      - $ref: '#/components/schemas/StageEntryCreatedEvent'
+      - $ref: '#/components/schemas/StageEntryUpdatedFieldsEvent'
+      - $ref: '#/components/schemas/StageEntryUpdatedReviewRecordEvent'
+      - $ref: '#/components/schemas/StageEntryUpdatedAssignedReviewersEvent'
+      - $ref: '#/components/schemas/RequestCreatedEvent'
+      - $ref: '#/components/schemas/RequestUpdatedFieldsEvent'
+      - $ref: '#/components/schemas/AssayRunCreatedEvent'
+      - $ref: '#/components/schemas/AssayRunUpdatedFieldsEvent'
+      - $ref: '#/components/schemas/AutomationInputGeneratorCompletedV2BetaEvent'
+      - $ref: '#/components/schemas/AutomationOutputProcessorCompletedV2BetaEvent'
+      - $ref: '#/components/schemas/AutomationOutputProcessorUploadedV2BetaEvent'
+      - $ref: '#/components/schemas/AutomationInputGeneratorCompletedV2Event'
+      - $ref: '#/components/schemas/AutomationOutputProcessorCompletedV2Event'
+      - $ref: '#/components/schemas/AutomationOutputProcessorUploadedV2Event'
+      - $ref: '#/components/schemas/AutomationTransformStatusPendingEventV2Event'
+      - $ref: '#/components/schemas/AutomationTransformStatusRunningEventV2Event'
+      - $ref: '#/components/schemas/AutomationTransformStatusSucceededEventV2Event'
+      - $ref: '#/components/schemas/AutomationTransformStatusFailedEventV2Event'
+      - $ref: '#/components/schemas/WorkflowTaskGroupCreatedEvent'
+      - $ref: '#/components/schemas/WorkflowTaskGroupMappingCompletedEvent'
+      - $ref: '#/components/schemas/WorkflowTaskCreatedEvent'
+      - $ref: '#/components/schemas/WorkflowTaskUpdatedFieldsEvent'
+      - $ref: '#/components/schemas/WorkflowTaskUpdatedStatusEvent'
+      - $ref: '#/components/schemas/WorkflowTaskUpdatedAssigneeEvent'
+      - $ref: '#/components/schemas/WorkflowTaskUpdatedScheduledOnEvent'
+      - $ref: '#/components/schemas/WorkflowTaskGroupUpdatedWatchersEvent'
+      - $ref: '#/components/schemas/WorkflowOutputCreatedEvent'
+      - $ref: '#/components/schemas/WorkflowOutputUpdatedFieldsEvent'
+      - $ref: '#/components/schemas/WorksheetUpdatedReviewSnapshotBetaEvent'
+    ResultsTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          assayResultSchemaId:
+            example: assaysch_msh1Ly6g
+            type: string
+          type:
+            enum:
+            - results_table
+            type: string
+        type: object
+    RegistrationTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          entitySchemaId:
+            example: ts_hMbJPSA8
+            type: string
+          type:
+            enum:
+            - registration_table
+            type: string
+        type: object
+    EventBase:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        deprecated:
+          example: false
+          type: boolean
+        excludedProperties:
+          description: 'These properties have been dropped from the payload due to size.
+
+            '
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        schema:
+          nullable: true
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+          type: object
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    PlateCreationTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          plateSchemaId:
+            example: pltsch_LRIuH0yJ
+            type: string
+          type:
+            enum:
+            - plate_creation_table
+            type: string
+        type: object
+    WorkflowTaskSchemaSummary:
+      properties:
+        id:
+          description: The ID of the workflow task schema
+          type: string
+        name:
+          description: The name of the workflow task schema
+          type: string
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    EntryLink:
+      description: 'Links are contained within notes to reference resources that live outside of the entry. A link can target an external resource via an http(s):// hyperlink or a Benchling resource via @-mentions and drag-n-drop.
+
+        '
+      properties:
+        id:
+          description: 'For linked Benchling resources, this will be the ID of that resource (e.g., ''seq_RhYGVnHF''). Omitted for "link" types.
+
+            '
+          type: string
+        type:
+          description: 'The type of resource being linked. For hyperlinks: ''link''. For linked Benchling resources, one of: ''user'', ''request'', ''entry'', ''stage_entry'', ''protocol'', ''workflow'', ''custom_entity'', ''aa_sequence'', ''dna_sequence'', ''batch'', ''box'', ''container'', ''location'', ''plate'', ''sql_dashboard''; and (for legacy support) ''insights_dashboard'', ''folder''.
+
+            '
+          enum:
+          - link
+          - user
+          - request
+          - entry
+          - stage_entry
+          - protocol
+          - workflow
+          - custom_entity
+          - aa_sequence
+          - dna_sequence
+          - batch
+          - box
+          - container
+          - location
+          - plate
+          - insights_dashboard
+          - folder
+          - sql_dashboard
+          type: string
+        webURL:
+          description: 'Canonical URL of the linked Benchling resource (if you have at least READ authorization for that resource), or the explicit URL provided as hyperlink for "link" types. Note: locations do not currently have a URL.
+
+            '
+          nullable: true
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    WorkflowTaskUpdatedScheduledOnEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTask.updated.scheduledOn
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTask'
+        type: object
+    AutomationFile:
+      properties:
+        assayRunId:
+          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          type: string
+        automationFileConfig:
+          properties:
+            name:
+              example: MyInstrumentName
+              type: string
+          type: object
+        file:
+          allOf:
+          - $ref: '#/components/schemas/Blob'
+          nullable: true
+        id:
+          type: string
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+          - NOT_STARTED
+          - RUNNING
+          type: string
+      type: object
+    BaseNotePart:
+      properties:
+        indentation:
+          default: 0
+          description: All notes have an indentation level - the default is 0 for no indent. For lists, indentation gives notes hierarchy - a bulleted list with children is modeled as one note part with indentation 1 followed by note parts with indentation 2, for example.
+          minimum: 0
+          type: integer
+        type:
+          description: The type of the note.  Type determines what other fields are present.
+          type: string
+      type: object
+    EntryUpdatedReviewRecordEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          entry:
+            $ref: '#/components/schemas/Entry'
+          eventType:
+            enum:
+            - v2.entry.updated.reviewRecord
+            type: string
+        type: object
+    AutomationInputGeneratorCompletedV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationInputGenerator:
+            $ref: '#/components/schemas/AutomationFile'
+          eventType:
+            enum:
+            - v2.automationInputGenerator.completed
+            type: string
+        type: object
+    LabAutomationTransform:
+      properties:
+        apiURL:
+          description: The canonical url of the transform in the API.
+          format: uri
+          readOnly: true
+          type: string
+        blobId:
+          format: uuid
+          nullable: true
+          type: string
+        customTransformId:
+          format: uuid
+          nullable: true
+          type: string
+        errors:
+          $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
+        id:
+          type: string
+        inputGeneratorId:
+          nullable: true
+          type: string
+        modifiedAt:
+          description: DateTime the transform was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        outputProcessorId:
+          nullable: true
+          type: string
+        status:
+          enum:
+          - NOT_STARTED
+          - RUNNING
+          - FAILED
+          - SUCCEEDED
+          type: string
+      type: object
+    WorkflowTaskGroup:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskGroupBase'
+      - properties:
+          executionType:
+            description: The method by which the workflow is executed
+            enum:
+            - DIRECT
+            - ENTRY
+            - FLOWCHART
+            - PROCEDURE
+            - PROCEDURE_METHOD
+            - PROCEDURE_STEP
+            type: string
+          flowchartConfigVersionId:
+            description: The flowchart configuration that this task group uses. This will be null if the task group does not have executionType FLOWCHART.
+            example: wffccv_giVNQcAF
+            type: string
+          flowchartTaskGroups:
+            description: The task groups that are members of the flowchart that this task group is the root of. This will be null this task group is not the root task group of a flowchart (eg if the task group does not have executionType FLOWCHART).
+            items:
+              $ref: '#/components/schemas/WorkflowNodeTaskGroupSummary'
+            type: array
+          nodeConfig:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowFlowchartNodeConfig'
+            description: The node in a Flowchart that this task group is associated with. This will be null if the task group is not part of a flowchart.
+          rootTaskGroup:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+            description: The task group associated with the root node of the flowchart that this task group is a part of. This will be null if the task group is not part of a flowchart.
+          workflowOutputs:
+            description: The outputs of the workflow task group
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+    StructuredTableApiIdentifiers:
+      properties:
+        apiId:
+          type: string
+        columns:
+          items:
+            $ref: '#/components/schemas/StructuredTableColumnInfo'
+          type: array
+        name:
+          type: string
+      type: object
+    RequestUserAssignee:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserSummary'
+      type: object
+    WorkflowTaskStatus:
+      properties:
+        displayName:
+          description: The status label
+          example: Pending
+          readOnly: true
+          type: string
+        id:
+          description: The ID of the workflow task status
+          example: wfts_wQzUCsW0
+          readOnly: true
+          type: string
+        statusType:
+          description: The status type
+          enum:
+          - PENDING
+          - IN_PROGRESS
+          - FAILED
+          - CANCELLED
+          - INVALID
+          - COMPLETED
+          example: PENDING
+          readOnly: true
+          type: string
+      type: object
+    RequestSampleWithBatch:
+      properties:
+        batchId:
+          example: bat_XK0UnLyk
+          type: string
+        containerId:
+          example: ctn_urUAEBq
+          type: string
+      required:
+      - batchId
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    StageEntry:
+      additionalProperties: false
+      description: A notebook entry used for execution of one or more stage runs in a legacy workflow.
+      properties:
+        apiURL:
+          description: The canonical url of the Stage Entry in the API.
+          example: https://benchling.com/api/v2-alpha/stage-entries/stgentr_1HEcejZq
+          format: uri
+          readOnly: true
+          type: string
+        authors:
+          description: 'Array of UserSummary Resources of the authors of the stage entry. This defaults to the creator but can be manually changed.
+
+            '
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the stage entry was created at
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of the user who created the stage entry
+          readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        displayId:
+          description: User-friendly ID of the stage entry
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the stage entry
+          type: string
+        id:
+          description: ID of the stage entry
+          type: string
+        modifiedAt:
+          description: DateTime the stage entry was last modified
+          type: string
+        name:
+          description: Title of the stage entry
+          type: string
+        reviewRecord:
+          description: Review record if set
+          nullable: true
+          type: object
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/EntrySchema'
+          description: Entry schema if set
+          nullable: true
+          title: SchemaProperty
+          type: object
+        webURL:
+          description: URL of the stage entry
+          type: string
+        workflowId:
+          description: ID of the parent workflow
+          example: wfw_7COQmok7
+          type: string
+        workflowStageId:
+          description: ID of the associated workflow stage
+          example: wfwstg_EZuryAiW
+          type: string
+      type: object
+    ChartNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          chart:
+            description: The full configuration for the chart to be displayed in-line in this note part.
+            properties:
+              id:
+                description: The API identifier for this Analysis Chart.
+                type: string
+            type: object
+          type:
+            enum:
+            - note_linked_chart
+            type: string
+        type: object
+    RequestUpdatedFieldsEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - $ref: '#/components/schemas/UpdateEventMixin'
+      - properties:
+          eventType:
+            enum:
+            - v2.request.updated.fields
+            type: string
+          request:
+            $ref: '#/components/schemas/Request'
+        type: object
+    RequestStatus:
+      enum:
+      - REQUESTED
+      - SCHEDULED
+      - IN_PROGRESS
+      - COMPLETED
+      - CANCELLED
+      type: string
+    WorkflowOutputCreatedEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowOutput.created
+            type: string
+          workflowOutput:
+            $ref: '#/components/schemas/WorkflowOutput'
+        type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    WorkflowRouterFunction:
+      additionalProperties: false
+      properties:
+        edgeConfigId:
+          description: The ID of the workflow flowchart edge config associated with this function
+          example: wffcec_giVNQcTL
+          readOnly: true
+          type: string
+        id:
+          description: The function associated with a router node
+          example: wfrf_b2VJBmBj
+          readOnly: true
+          type: string
+        isDefault:
+          readOnly: true
+        name:
+          description: The name of a function associated with a router node
+          example: Rule 1
+          readOnly: true
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    EntryReviewProcess:
+      properties:
+        completionStatus:
+          description: State of the Entry at the end of the Review Process
+          enum:
+          - APPROVED
+          - COMPLETED
+          - ACCEPTED
+          - REVIEWED
+          - WITNESSED
+          - SELF_REVIEWED
+          type: string
+        id:
+          description: ID of the Review Process
+          type: string
+        name:
+          description: Name of the Review Process
+          type: string
+        stages:
+          description: Array of Stages for the Review Process
+          items:
+            properties:
+              actionLabel:
+                description: Action reviewer is doing during the review
+                enum:
+                - APPROVE
+                - COMPLETE
+                - ACCEPT
+                - REVIEW
+                - WITNESS
+                - SELF_REVIEW
+                type: string
+              id:
+                description: ID of the Review Stage
+                type: string
+              name:
+                description: Name of the Review Stage
+                type: string
+              reviewers:
+                description: Reviewers for the Review Stage
+                items:
+                  allOf:
+                  - $ref: '#/components/schemas/PartySummary'
+                  - properties:
+                      status:
+                        description: Status of the Reviewer
+                        enum:
+                        - BLOCKED
+                        - PENDING
+                        - FINISHED
+                        - REJECTED
+                        type: string
+                  type: object
+                type: array
+            type: object
+          type: array
+        type:
+          description: Type of the Review Process
+          enum:
+          - SELF_REVIEW
+          - SEQUENTIAL
+          - PARALLEL
+          type: string
+      type: object
+    RequestTeamAssignee:
+      properties:
+        team:
+          $ref: '#/components/schemas/TeamSummary'
+      type: object
+    EntryDay:
+      properties:
+        date:
+          description: A Date string
+          type: string
+        notes:
+          items:
+            $ref: '#/components/schemas/EntryNotePart'
+          type: array
+        title:
+          description: Optional title of a section if sections are enabled.
+          nullable: true
+          type: string
+      type: object
+    AutomationTransformStatusFailedEventV2Event:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationFileTransform:
+            $ref: '#/components/schemas/LabAutomationTransform'
+          eventType:
+            enum:
+            - v2.automationFileTransform.updated.status.failed
+            type: string
+        type: object
+    LabAutomationBenchlingAppErrors:
+      properties:
+        topLevelErrors:
+          items:
+            properties:
+              errorMessage:
+                type: string
+            type: object
+          type: array
+      type: object
+    WorkflowRouterNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow router node config details
+          example: wfrnd_hbVJBcMC
+          readOnly: true
+          type: string
+        name:
+          description: The name of the router node
+          example: Router 1
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - ROUTER
+          type: string
+        routerFunctions:
+          description: Router functions associated with this router node
+          items:
+            $ref: '#/components/schemas/WorkflowRouterFunction'
+          readOnly: true
+          type: array
+      type: object
+    AutomationOutputProcessorUploadedV2BetaEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          automationOutputProcessor:
+            $ref: '#/components/schemas/AutomationFile'
+          eventType:
+            enum:
+            - v2-beta.automationOutputProcessor.uploaded
+            type: string
+        type: object
+    EntrySchema:
+      description: Entry schema
+      properties:
+        id:
+          description: ID of the entry schema
+          type: string
+        modifiedAt:
+          description: DateTime the Entry Schema was last modified
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          type: string
+        name:
+          description: Name of the entry schema
+          type: string
+      type: object
+    WorkflowTaskUpdatedAssigneeEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowTask.updated.assignee
+            type: string
+          workflowTask:
+            $ref: '#/components/schemas/WorkflowTask'
+        type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          nullable: true
+          readOnly: true
+          type: string
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    BoxCreationTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          boxSchemaId:
+            example: boxsch_MAbGlEtf
+            type: string
+          type:
+            enum:
+            - box_creation_table
+            type: string
+        type: object
+    WorkflowOutputUpdatedFieldsEvent:
+      allOf:
+      - $ref: '#/components/schemas/EventBase'
+      - properties:
+          eventType:
+            enum:
+            - v2.workflowOutput.updated.fields
+            type: string
+          workflowOutput:
+            $ref: '#/components/schemas/WorkflowOutput'
+        type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

@@ -1,0 +1,2830 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Apps API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Create and manage Benchling apps on your tenant
+  name: Apps
+paths:
+  /app-canvases:
+    post:
+      description: 'Create an App Canvas that a Benchling App can write to and read user interaction from.
+
+        '
+      operationId: createAppCanvas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppCanvasCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppCanvas'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+      summary: Create an App Canvas
+      tags:
+      - Apps
+  /app-canvases/{canvas_id}:
+    get:
+      description: Get the current state of the App Canvas, including user input elements.
+      operationId: getAppCanvas
+      parameters:
+      - example: cnvs_Q4mPJ34a
+        in: path
+        name: canvas_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppCanvas'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get App Canvas
+      tags:
+      - Apps
+    patch:
+      description: Update App Canvas
+      operationId: updateAppCanvas
+      parameters:
+      - example: cnvs_Q4mPJ34a
+        in: path
+        name: canvas_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppCanvasUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppCanvas'
+          description: OK
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update App Canvas
+      tags:
+      - Apps
+  /app-canvases:archive:
+    post:
+      description: Archive app canvases
+      operationId: archiveAppCanvases
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppCanvasesArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppCanvasesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive app canvases
+      tags:
+      - Apps
+  /app-canvases:unarchive:
+    post:
+      description: Unarchive app canvases
+      operationId: unarchiveAppCanvases
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppCanvasesUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppCanvasesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive app canvases
+      tags:
+      - Apps
+  /app-configuration-items:
+    get:
+      description: Get app configuration items
+      operationId: listAppConfigurationItems
+      parameters:
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: Number of results to return. Defaults to 50, maximum of 100.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: App id to which the configuration belongs.
+        example: app_e59sjL23Pqn30xHg
+        in: query
+        name: appId
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: aci_VfVOART1,aci_RFhDGaaC
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Method by which to order search results. Valid sorts are modifiedAt (modified time, most recent first) and createdAt (created time, most recent first). Optionally add :asc or :desc to specify ascending or descending order.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          nullable: false
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfigurationPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of requests remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get app configuration items
+      tags:
+      - Apps
+    post:
+      description: Create app configuration item
+      operationId: createAppConfigurationItem
+      requestBody:
+        content:
+          application/json:
+            example: "{\n  \"appId\": \"app_J39na03L1nsLS34o\",\n  \"path\": [\n    \"My Schema 1\",\n    \"My Field 1\"\n  ],\n  \"type\": \"field\",\n  \"value\": \"tsf_HXUnClU9\"\n}\n"
+            schema:
+              $ref: '#/components/schemas/AppConfigItemCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              example: "{\n  \"apiURL\": \"string\",\n  \"app\": {\n    \"id\": \"string\"\n  },\n  \"createdAt\": \"2024-03-14T21:52:32.929Z\",\n  \"id\": \"string\",\n  \"type\": \"field\",\n  \"modifiedAt\": \"2024-03-14T21:52:32.929Z\",\n  \"path\": [\n    \"My Schema 1\",\n    \"My Field 1\"\n  ],\n  \"value\": \"tsf_HXUnClU9\"\n}\n"
+              schema:
+                $ref: '#/components/schemas/AppConfigItem'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create app configuration item
+      tags:
+      - Apps
+  /app-configuration-items/{item_id}:
+    get:
+      description: Get app configuration item
+      operationId: getAppConfigurationItemById
+      parameters:
+      - example: aci_e59sjL23Pqn30xHg
+        in: path
+        name: item_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              example: "{\n  \"apiURL\": \"string\",\n  \"app\": {\n    \"id\": \"string\"\n  },\n  \"createdAt\": \"2024-03-14T21:54:20.435Z\",\n  \"id\": \"string\",\n  \"type\": \"field\",\n  \"modifiedAt\": \"2024-03-14T21:54:20.435Z\",\n  \"path\": [\n    \"My Schema 1\",\n    \"My Field 1\"\n  ]\n}\n"
+              schema:
+                $ref: '#/components/schemas/AppConfigItem'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get app configuration item
+      tags:
+      - Apps
+    patch:
+      description: Update app configuration item
+      operationId: updateAppConfigurationItem
+      parameters:
+      - example: aci_e59sjL23Pqn30xHg
+        in: path
+        name: item_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            example: "{\n  \"apiURL\": \"string\",\n  \"app\": {\n    \"id\": \"string\"\n  },\n  \"createdAt\": \"2024-03-14T21:59:01.233Z\",\n  \"id\": \"string\",\n  \"type\": \"field\",\n  \"modifiedAt\": \"2024-03-14T21:59:01.233Z\",\n  \"path\": [\n    \"My Schema 1\",\n    \"My Field 1\"\n  ]\n}\n"
+            schema:
+              $ref: '#/components/schemas/AppConfigItemUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfigItem'
+          description: OK
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update app configuration item
+      tags:
+      - Apps
+  /app-configuration-items:bulk-create:
+    post:
+      description: Bulk Create app configuration items
+      operationId: bulkCreateAppConfigurationItems
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppConfigItemsBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Accepted
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Create app configuration items. Limit of 1000 App Config Items per request.
+      tags:
+      - Apps
+  /app-configuration-items:bulk-update:
+    post:
+      description: Bulk Update app configuration items
+      operationId: bulkUpdateAppConfigurationItems
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppConfigItemsBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Accepted
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Update app configuration items. Limit of 1000 App Config Items per request.
+      tags:
+      - Apps
+  /app-sessions:
+    post:
+      description: 'Create a new app session. Sessions cannot be archived once created.
+
+        '
+      operationId: createAppSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppSessionCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppSession'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+      summary: Create a new app session
+      tags:
+      - Apps
+  /app-sessions/{id}:
+    get:
+      description: Get an app session
+      operationId: getAppSessionById
+      parameters:
+      - example: sesn_J2PGE0Z516Y
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppSession'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get an app session
+      tags:
+      - Apps
+    patch:
+      description: Update app session
+      operationId: updateAppSession
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppSessionUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppSession'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update app session
+      tags:
+      - Apps
+  /apps:
+    get:
+      description: List apps
+      operationId: listBenchlingApps
+      parameters:
+      - description: Number of results to return.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+          '
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - name
+          - modifiedAt:asc
+          - name:asc
+          - modifiedAt:desc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: app_J39na03L1nsLS34o,app_ae92kBv9aNSl593z,app_e59sjL23Pqn30xHg
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of an app. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of an app. Restricts results to those with names that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: 'Comma-separated list of app names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1, MyName2
+          type: string
+      - description: 'Comma-separated list of app names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Comma separated list of users IDs
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: Comma-separated list of organization and/or team API IDs. Restricts results to apps that are members of all given groups.
+        in: query
+        name: memberOf
+        schema:
+          type: string
+      - description: Comma-separated list of organization and/or team API IDs. Restricts results to apps that are admins of all given groups.
+        in: query
+        name: adminOf
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchlingAppsPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+      summary: List apps
+      tags:
+      - Apps
+    post:
+      deprecated: true
+      description: Create an app
+      operationId: createBenchlingApp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BenchlingAppCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchlingApp'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+          description: Conflict
+      summary: Create an app
+      tags:
+      - Apps
+  /apps/{app_id}:
+    get:
+      description: Get an app by ID
+      operationId: getBenchlingAppByID
+      parameters:
+      - example: app_J39na03L1nsLS34o
+        in: path
+        name: app_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchlingApp'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get an app by ID
+      tags:
+      - Apps
+    patch:
+      deprecated: true
+      description: Update an app
+      operationId: patchBenchlingApp
+      parameters:
+      - example: app_e59sjL23Pqn30xHg
+        in: path
+        name: app_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BenchlingAppUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchlingApp'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update an app
+      tags:
+      - Apps
+  /apps:archive:
+    post:
+      deprecated: true
+      description: Archive apps
+      operationId: archiveBenchlingApps
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BenchlingAppsArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchlingAppsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive apps
+      tags:
+      - Apps
+  /apps:unarchive:
+    post:
+      deprecated: true
+      description: Unarchive apps
+      operationId: unarchiveBenchlingApps
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BenchlingAppsUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BenchlingAppsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive apps
+      tags:
+      - Apps
+components:
+  schemas:
+    SelectorInputMultiValueUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/SelectorInputMultiValueUiBlock'
+      type: object
+    FileUploadUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputMultiValueUiBlock'
+      - properties:
+          fileTypes:
+            items:
+              type: string
+            type: array
+          maxFiles:
+            default: 10
+            maximum: 10
+            type: integer
+          type:
+            enum:
+            - FILE_UPLOAD
+            type: string
+        required:
+        - type
+      type: object
+    MarkdownUiBlock:
+      additionalProperties: false
+      properties:
+        id:
+          example: user_generated_id
+          type: string
+        type:
+          enum:
+          - MARKDOWN
+          type: string
+        value:
+          example: '# This is a markdown block
+
+            1. with **bold text**.'
+          type: string
+      required:
+      - type
+      - value
+      type: object
+    AppCanvasUpdateBase:
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasUpdateUiBlockList'
+      - $ref: '#/components/schemas/AppCanvasWriteBase'
+      type: object
+    TextInputUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/TextInputUiBlock'
+      type: object
+    ArrayElementAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemApiMixin'
+    AppConfigItemJsonCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - json
+            example: json
+            type: string
+          value:
+            description: The value of a json create object should be json parseable.
+            nullable: true
+            type: string
+      - required:
+        - value
+        - type
+      type: object
+    AppConfigItemJsonBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemJsonUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    SectionUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasLeafNodeUiBlockList'
+      - properties:
+          id:
+            example: user_generated_id
+            type: string
+          type:
+            enum:
+            - SECTION
+            type: string
+      type: object
+    AppSessionUpdateStatus:
+      description: Values that can be specified when updating the status of a Session
+      enum:
+      - COMPLETED_WITH_WARNINGS
+      - FAILED
+      - SUCCEEDED
+      type: string
+    AppConfigItemDateCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - date
+            type: string
+          value:
+            example: '2022-05-03'
+            format: date
+            nullable: true
+            type: string
+      - required:
+        - value
+        - type
+      type: object
+    AppConfigItem:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          array_element: '#/components/schemas/ArrayElementAppConfigItem'
+          boolean: '#/components/schemas/BooleanAppConfigItem'
+          box: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          box_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          container: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          container_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          custom_entity: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          date: '#/components/schemas/DateAppConfigItem'
+          datetime: '#/components/schemas/DatetimeAppConfigItem'
+          dna_oligo: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          dna_sequence: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          dropdown: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          dropdown_option: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          entity_schema: '#/components/schemas/EntitySchemaAppConfigItem'
+          entry: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          entry_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          field: '#/components/schemas/FieldAppConfigItem'
+          float: '#/components/schemas/FloatAppConfigItem'
+          folder: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          integer: '#/components/schemas/IntegerAppConfigItem'
+          json: '#/components/schemas/JsonAppConfigItem'
+          legacy_request_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          location: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          location_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          mixture: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          molecule: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          plate: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          plate_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          project: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          registry: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          result_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          rna_oligo: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          rna_sequence: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          run_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          secure_text: '#/components/schemas/SecureTextAppConfigItem'
+          text: '#/components/schemas/TextAppConfigItem'
+          workflow_task_schema: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          workflow_task_status: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+          worklist: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/ArrayElementAppConfigItem'
+      - $ref: '#/components/schemas/DateAppConfigItem'
+      - $ref: '#/components/schemas/DatetimeAppConfigItem'
+      - $ref: '#/components/schemas/JsonAppConfigItem'
+      - $ref: '#/components/schemas/EntitySchemaAppConfigItem'
+      - $ref: '#/components/schemas/FieldAppConfigItem'
+      - $ref: '#/components/schemas/BooleanAppConfigItem'
+      - $ref: '#/components/schemas/IntegerAppConfigItem'
+      - $ref: '#/components/schemas/FloatAppConfigItem'
+      - $ref: '#/components/schemas/TextAppConfigItem'
+      - $ref: '#/components/schemas/GenericApiIdentifiedAppConfigItem'
+      - $ref: '#/components/schemas/SecureTextAppConfigItem'
+      type: object
+    SelectorInputMultiValueUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputMultiValueUiBlock'
+      - $ref: '#/components/schemas/BaseSelectorInputUIBlock'
+      - properties:
+          type:
+            enum:
+            - SELECTOR_INPUT_MULTIVALUE
+            type: string
+        required:
+        - type
+      type: object
+    DropdownUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputUiBlock'
+      - $ref: '#/components/schemas/BaseDropdownUIBlock'
+      - properties:
+          type:
+            enum:
+            - DROPDOWN
+            type: string
+        required:
+        - type
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    AppConfigItemsBulkUpdateRequest:
+      properties:
+        appConfigurationItems:
+          items:
+            $ref: '#/components/schemas/AppConfigItemBulkUpdate'
+          maxItems: 1000
+          type: array
+      required:
+      - appConfigurationItems
+      type: object
+    SearchInputUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/SearchInputUiBlock'
+      type: object
+    MarkdownUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/MarkdownUiBlock'
+      type: object
+    AppConfigItemGenericCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - container_schema
+            - entity_schema
+            - plate_schema
+            - location_schema
+            - box_schema
+            - run_schema
+            - result_schema
+            - legacy_request_schema
+            - entry_schema
+            - workflow_task_schema
+            - dropdown
+            - dropdown_option
+            - field
+            - text
+            - date
+            - datetime
+            - secure_text
+            - json
+            - registry
+            - folder
+            - entry
+            - worklist
+            - project
+            - workflow_task_status
+            - dna_sequence
+            - dna_oligo
+            - aa_sequence
+            - custom_entity
+            - mixture
+            - molecule
+            - rna_oligo
+            - rna_sequence
+            - box
+            - container
+            - location
+            - plate
+            type: string
+          value:
+            nullable: true
+            type: string
+      - required:
+        - value
+        - type
+      type: object
+    AppCanvasUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasUpdateBase'
+      type: object
+    AppCanvasLeafNodeUiBlockList:
+      properties:
+        children:
+          items:
+            discriminator:
+              mapping:
+                BUTTON: '#/components/schemas/ButtonUiBlock'
+                CHIP: '#/components/schemas/ChipUiBlock'
+                DROPDOWN: '#/components/schemas/DropdownUiBlock'
+                DROPDOWN_MULTIVALUE: '#/components/schemas/DropdownMultiValueUiBlock'
+                FILE_UPLOAD: '#/components/schemas/FileUploadUiBlock'
+                MARKDOWN: '#/components/schemas/MarkdownUiBlock'
+                SEARCH_INPUT: '#/components/schemas/SearchInputUiBlock'
+                SEARCH_INPUT_MULTIVALUE: '#/components/schemas/SearchInputMultiValueUiBlock'
+                SELECTOR_INPUT: '#/components/schemas/SelectorInputUiBlock'
+                SELECTOR_INPUT_MULTIVALUE: '#/components/schemas/SelectorInputMultiValueUiBlock'
+                TEXT_INPUT: '#/components/schemas/TextInputUiBlock'
+              propertyName: type
+            oneOf:
+            - $ref: '#/components/schemas/ButtonUiBlock'
+            - $ref: '#/components/schemas/ChipUiBlock'
+            - $ref: '#/components/schemas/DropdownUiBlock'
+            - $ref: '#/components/schemas/DropdownMultiValueUiBlock'
+            - $ref: '#/components/schemas/FileUploadUiBlock'
+            - $ref: '#/components/schemas/MarkdownUiBlock'
+            - $ref: '#/components/schemas/SearchInputUiBlock'
+            - $ref: '#/components/schemas/SearchInputMultiValueUiBlock'
+            - $ref: '#/components/schemas/SelectorInputUiBlock'
+            - $ref: '#/components/schemas/SelectorInputMultiValueUiBlock'
+            - $ref: '#/components/schemas/TextInputUiBlock'
+          type: array
+      required:
+      - children
+      type: object
+    AppCanvasUpdateUiBlockList:
+      properties:
+        blocks:
+          items:
+            discriminator:
+              mapping:
+                BUTTON: '#/components/schemas/ButtonUiBlockUpdate'
+                CHIP: '#/components/schemas/ChipUiBlockUpdate'
+                DROPDOWN: '#/components/schemas/DropdownUiBlockUpdate'
+                DROPDOWN_MULTIVALUE: '#/components/schemas/DropdownMultiValueUiBlockUpdate'
+                FILE_UPLOAD: '#/components/schemas/FileUploadUiBlockUpdate'
+                MARKDOWN: '#/components/schemas/MarkdownUiBlockUpdate'
+                SEARCH_INPUT: '#/components/schemas/SearchInputUiBlockUpdate'
+                SEARCH_INPUT_MULTIVALUE: '#/components/schemas/SearchInputMultiValueUiBlockUpdate'
+                SECTION: '#/components/schemas/SectionUiBlockUpdate'
+                SELECTOR_INPUT: '#/components/schemas/SelectorInputUiBlockUpdate'
+                SELECTOR_INPUT_MULTIVALUE: '#/components/schemas/SelectorInputMultiValueUiBlockUpdate'
+                TABLE: '#/components/schemas/TableUiBlockUpdate'
+                TEXT_INPUT: '#/components/schemas/TextInputUiBlockUpdate'
+              propertyName: type
+            oneOf:
+            - $ref: '#/components/schemas/ButtonUiBlockUpdate'
+            - $ref: '#/components/schemas/ChipUiBlockUpdate'
+            - $ref: '#/components/schemas/DropdownUiBlockUpdate'
+            - $ref: '#/components/schemas/DropdownMultiValueUiBlockUpdate'
+            - $ref: '#/components/schemas/FileUploadUiBlockUpdate'
+            - $ref: '#/components/schemas/MarkdownUiBlockUpdate'
+            - $ref: '#/components/schemas/SearchInputUiBlockUpdate'
+            - $ref: '#/components/schemas/SearchInputMultiValueUiBlockUpdate'
+            - $ref: '#/components/schemas/SectionUiBlockUpdate'
+            - $ref: '#/components/schemas/SelectorInputUiBlockUpdate'
+            - $ref: '#/components/schemas/SelectorInputMultiValueUiBlockUpdate'
+            - $ref: '#/components/schemas/TextInputUiBlockUpdate'
+            - $ref: '#/components/schemas/TableUiBlockUpdate'
+          type: array
+      type: object
+    AppCanvasesArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived. This includes the IDs of canvases that were archived / unarchived.
+
+        '
+      properties:
+        canvasIds:
+          example:
+          - cnvs_Q4mPJ34a
+          - cnvs_aNz2kJNv
+          items:
+            type: string
+          type: array
+      type: object
+    DatetimeAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - datetime
+            type: string
+          value:
+            example: 2022-03-18 05:14:35 PM
+            nullable: true
+            type: string
+    AppConfigItemsBulkCreateRequest:
+      properties:
+        appConfigurationItems:
+          items:
+            $ref: '#/components/schemas/AppConfigItemCreate'
+          maxItems: 1000
+          type: array
+      required:
+      - appConfigurationItems
+      type: object
+    TableUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/TableUiBlock'
+      type: object
+    UserInputUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/InteractiveUiBlock'
+      - properties:
+          label:
+            example: My Input
+            maxLength: 50
+            nullable: true
+            type: string
+          required:
+            description: 'When true, the user must provide a value before the app can proceed. Block must specify a label if required is set to true.
+
+              '
+            nullable: true
+            type: boolean
+          value:
+            nullable: true
+            type: string
+        required:
+        - value
+      type: object
+    DropdownMultiValueUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/DropdownMultiValueUiBlock'
+      type: object
+    BenchlingAppCreate:
+      additionalProperties: false
+      properties:
+        description:
+          example: This is my first App!
+          maxLength: 8192
+          type: string
+        name:
+          example: My First App
+          maxLength: 255
+          minLength: 3
+          type: string
+      required:
+      - name
+    AppCanvas:
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasBase'
+      - properties:
+          app:
+            allOf:
+            - $ref: '#/components/schemas/AppSummary'
+            - nullable: false
+          id:
+            example: cnvs_Q4mPJ34a
+            type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    DropdownMultiValueUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputMultiValueUiBlock'
+      - $ref: '#/components/schemas/BaseDropdownUIBlock'
+      - properties:
+          type:
+            enum:
+            - DROPDOWN_MULTIVALUE
+            type: string
+        required:
+        - type
+      type: object
+    ChipUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/ChipUiBlock'
+      type: object
+    BenchlingAppsArchive:
+      additionalProperties: false
+      properties:
+        appIds:
+          description: Array of app IDs
+          example:
+          - app_J39na03L1nsLS34o
+          - app_ae92kBv9aNSl593z
+          - app_e59sjL23Pqn30xHg
+          items:
+            type: string
+          type: array
+        reason:
+          description: Reason that apps are being archived. Actual reason enum varies by tenant.
+          enum:
+          - Made in error
+          - Retired
+          - Other
+          type: string
+      required:
+      - reason
+      - appIds
+      type: object
+    DropdownUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/DropdownUiBlock'
+      type: object
+    SchemaDependencySubtypes:
+      enum:
+      - aa_sequence
+      - dna_sequence
+      - custom_entity
+      - mixture
+      - molecule
+      - dna_oligo
+      - rna_oligo
+      - rna_sequence
+      type: string
+    AppSessionMessageCreate:
+      additionalProperties: false
+      properties:
+        content:
+          description: 'A message string, to be rendered as plain text with Benchling chips. References to Benchling items (up to 10 per msg) will be rendered as chips in the Benchling UX. A valid reference is a Benchling API id, prefixed with "id:" and contained by braces. For example: "{id:ent_a0SApq3}."'
+          example: 'Transferred 4ml of {id:ent_a0SApq3z} to {id:con_ae92kBv9} with \{priority: p3\}.'
+          maxLength: 200
+          minLength: 3
+          nullable: false
+          type: string
+        style:
+          $ref: '#/components/schemas/AppSessionMessageStyle'
+      required:
+      - content
+      type: object
+    AppCanvasCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasCreateBase'
+      - properties:
+          appId:
+            description: 'Identifier of the app owning this canvas. For backwards compatibility, this property will be temporarily optional until the requisite time window for breaking changes in beta endpoints has passed.
+
+              '
+            nullable: false
+            type: string
+        type: object
+      - required:
+        - blocks
+        - featureId
+        - resourceId
+        - appId
+      type: object
+    ButtonUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/InteractiveUiBlock'
+      - properties:
+          text:
+            example: Click me to submit
+            type: string
+          type:
+            enum:
+            - BUTTON
+            type: string
+        required:
+        - type
+        - text
+      type: object
+    AppConfigItemIntegerCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - integer
+            example: integer
+            type: string
+          value:
+            nullable: true
+            type: integer
+      - required:
+        - value
+        - type
+      type: object
+    ConflictError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              conflicts:
+                items:
+                  type: object
+                type: array
+      type: object
+    SearchInputUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputUiBlock'
+      - $ref: '#/components/schemas/BaseSearchInputUIBlock'
+      - properties:
+          type:
+            enum:
+            - SEARCH_INPUT
+            type: string
+        required:
+        - type
+      type: object
+    ButtonUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/ButtonUiBlock'
+      type: object
+    BenchlingAppsPaginatedList:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          apps:
+            items:
+              $ref: '#/components/schemas/BenchlingApp'
+            type: array
+    GenericApiIdentifiedAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - $ref: '#/components/schemas/LinkedAppConfigResourceMixin'
+      - properties:
+          type:
+            enum:
+            - container_schema
+            - plate_schema
+            - location_schema
+            - box_schema
+            - run_schema
+            - result_schema
+            - legacy_request_schema
+            - entry_schema
+            - workflow_task_schema
+            - dropdown
+            - dropdown_option
+            - registry
+            - folder
+            - entry
+            - worklist
+            - project
+            - workflow_task_status
+            - dna_sequence
+            - dna_oligo
+            - aa_sequence
+            - custom_entity
+            - mixture
+            - molecule
+            - rna_oligo
+            - rna_sequence
+            - box
+            - container
+            - location
+            - plate
+            type: string
+          value:
+            nullable: true
+            type: string
+      type: object
+    AppConfigItemFloatBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemFloatUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    JsonAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - json
+            example: json
+            type: string
+          value:
+            example: '{"abc": "123"}'
+            nullable: true
+            type: string
+    AppConfigItemDateBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemDateUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    AppConfigItemGenericUpdate:
+      properties:
+        type:
+          enum:
+          - container_schema
+          - entity_schema
+          - plate_schema
+          - location_schema
+          - box_schema
+          - run_schema
+          - result_schema
+          - legacy_request_schema
+          - entry_schema
+          - workflow_task_schema
+          - dropdown
+          - dropdown_option
+          - field
+          - text
+          - date
+          - datetime
+          - secure_text
+          - json
+          - registry
+          - folder
+          - entry
+          - worklist
+          - project
+          - workflow_task_status
+          - dna_sequence
+          - dna_oligo
+          - aa_sequence
+          - custom_entity
+          - mixture
+          - molecule
+          - rna_oligo
+          - rna_sequence
+          - box
+          - container
+          - location
+          - plate
+          type: string
+        value:
+          nullable: true
+          type: string
+      required:
+      - value
+      - type
+      type: object
+    AppConfigItemBooleanCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - boolean
+            example: boolean
+            type: string
+          value:
+            nullable: true
+            type: boolean
+      - required:
+        - value
+        - type
+      type: object
+    FloatAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - float
+            example: float
+            type: string
+          value:
+            example: 1.0
+            format: float
+            nullable: true
+            type: number
+      type: object
+    AppSession:
+      additionalProperties: false
+      properties:
+        app:
+          allOf:
+          - $ref: '#/components/schemas/AppSummary'
+          - nullable: false
+        createdAt:
+          format: date-time
+          nullable: false
+          type: string
+        id:
+          nullable: false
+          type: string
+        messages:
+          description: 'An array of `SessionMessage` describing the current session state.
+
+            '
+          items:
+            $ref: '#/components/schemas/AppSessionMessage'
+          nullable: true
+          type: array
+        modifiedAt:
+          format: date-time
+          nullable: false
+          type: string
+        name:
+          description: A brief description of the app's actions for users. Length must be between 3-100 chars. It becomes immutable once a value is set.
+          maxLength: 100
+          minLength: 3
+          nullable: false
+          type: string
+        status:
+          $ref: '#/components/schemas/AppSessionStatus'
+        timeoutSeconds:
+          description: 'Timeout in seconds, a value between 1 second and 30 days. Once set, it can only be increased, not decreased.
+
+            '
+          maximum: 2592000
+          minimum: 1
+          nullable: false
+          type: integer
+      type: object
+    AppConfigItemIntegerBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemIntegerUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    SearchInputMultiValueUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/SearchInputMultiValueUiBlock'
+      type: object
+    BenchlingApp:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/BenchlingAppUpdate'
+      - additionalProperties: false
+        properties:
+          apiURL:
+            example: https://benchling.com/api/v2/apps/app_e59sjL23Pqn30xHg
+            format: uri
+            readOnly: true
+            type: string
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+            readOnly: true
+          createdAt:
+            description: DateTime at which the the app was created
+            format: date-time
+            readOnly: true
+            type: string
+          creator:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            readOnly: true
+          id:
+            example: app_e59sjL23Pqn30xHg
+            readOnly: true
+            type: string
+          modifiedAt:
+            description: DateTime at which the the app was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          webURL:
+            example: https://benchling.com/developer/apps/app_e59sjL23Pqn30xHg
+            format: uri
+            readOnly: true
+            type: string
+        type: object
+    AppConfigItemApiMixin:
+      properties:
+        apiURL:
+          format: uri
+          readOnly: true
+          type: string
+        app:
+          properties:
+            id:
+              description: The id of the Benchling app to which this configuration item belongs
+              nullable: false
+              type: string
+          type: object
+        createdAt:
+          description: DateTime the app config item was created
+          format: date-time
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: string
+        modifiedAt:
+          description: DateTime the app config item was last modified
+          format: date-time
+          readOnly: true
+          type: string
+        path:
+          description: Array-based representation of config item's location in the tree in order from top to bottom.
+          example:
+          - My Schema 1
+          - My Field 1
+          items:
+            type: string
+          type: array
+        type:
+          description: Type of the app config item
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    UserInputMultiValueUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/InteractiveUiBlock'
+      - properties:
+          label:
+            example: My Input
+            maxLength: 50
+            nullable: true
+            type: string
+          required:
+            description: 'When true, the user must provide a value before the app can proceed. Block must specify a label if required is set to true.
+
+              '
+            nullable: true
+            type: boolean
+          value:
+            items:
+              type: string
+            nullable: true
+            type: array
+        required:
+        - value
+      type: object
+    FileUploadUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/FileUploadUiBlock'
+      type: object
+    BaseAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemApiMixin'
+      - properties:
+          description:
+            type: string
+          requiredConfig:
+            type: boolean
+      type: object
+    AppSessionUpdate:
+      additionalProperties: false
+      description: Update a session's messages or increase timeoutSeconds.
+      properties:
+        messages:
+          description: 'An array of `SessionMessage` describing the current session state.
+
+            '
+          items:
+            $ref: '#/components/schemas/AppSessionMessageCreate'
+          maxItems: 10
+          nullable: false
+          type: array
+        status:
+          $ref: '#/components/schemas/AppSessionUpdateStatus'
+        timeoutSeconds:
+          description: 'Timeout in seconds, a value between 1 second and 30 days. Once set, it can only be increased, not decreased.
+
+            '
+          maximum: 2592000
+          minimum: 1
+          type: integer
+      type: object
+    BaseSelectorInputUIBlock:
+      allOf:
+      - properties:
+          options:
+            items:
+              type: string
+            type: array
+          placeholder:
+            nullable: true
+            type: string
+        required:
+        - options
+      type: object
+    AppConfigItemFloatUpdate:
+      properties:
+        type:
+          enum:
+          - float
+          example: float
+          type: string
+        value:
+          format: float
+          nullable: true
+          type: number
+      required:
+      - value
+      - type
+      type: object
+    AppConfigItemBooleanBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemBooleanUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    InteractiveUiBlock:
+      properties:
+        enabled:
+          nullable: true
+          type: boolean
+        id:
+          example: user_defined_id
+          type: string
+      required:
+      - id
+      type: object
+    AppConfigItemGenericBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemGenericUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    SearchInputUiBlockItemType:
+      enum:
+      - dna_sequence
+      - dna_oligo
+      - aa_sequence
+      - custom_entity
+      - mixture
+      - box
+      - container
+      - location
+      - plate
+      - worklist
+      type: string
+    AppConfigItemBulkUpdateMixin:
+      properties:
+        id:
+          example: aci_ae92kBv9aNSl593z
+          type: string
+      required:
+      - id
+      type: object
+    SelectorInputUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputUiBlock'
+      - $ref: '#/components/schemas/BaseSelectorInputUIBlock'
+      - properties:
+          type:
+            enum:
+            - SELECTOR_INPUT
+            type: string
+        required:
+        - type
+      type: object
+    AppConfigItemCreateMixin:
+      properties:
+        appId:
+          description: App id to which this config item belongs.
+          example: app_J39na03L1nsLS34o
+          type: string
+        path:
+          description: Array-based representation of config item's location in the tree in order from top to bottom.
+          example:
+          - My Schema 1
+          - My Field 1
+          items:
+            type: string
+          type: array
+      required:
+      - path
+      - appId
+      type: object
+    DropdownUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/DropdownUiBlock'
+      type: object
+    AppSessionMessage:
+      allOf:
+      - $ref: '#/components/schemas/AppSessionMessageCreate'
+      type: object
+    SearchInputMultiValueUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputMultiValueUiBlock'
+      - $ref: '#/components/schemas/BaseSearchInputUIBlock'
+      - properties:
+          type:
+            enum:
+            - SEARCH_INPUT_MULTIVALUE
+            type: string
+        required:
+        - type
+      type: object
+    AppConfigItemUpdate:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/AppConfigItemGenericUpdate'
+          boolean: '#/components/schemas/AppConfigItemBooleanUpdate'
+          box: '#/components/schemas/AppConfigItemGenericUpdate'
+          box_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          container: '#/components/schemas/AppConfigItemGenericUpdate'
+          container_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          custom_entity: '#/components/schemas/AppConfigItemGenericUpdate'
+          date: '#/components/schemas/AppConfigItemDateUpdate'
+          datetime: '#/components/schemas/AppConfigItemDatetimeUpdate'
+          dna_oligo: '#/components/schemas/AppConfigItemGenericUpdate'
+          dna_sequence: '#/components/schemas/AppConfigItemGenericUpdate'
+          dropdown: '#/components/schemas/AppConfigItemGenericUpdate'
+          dropdown_option: '#/components/schemas/AppConfigItemGenericUpdate'
+          entity_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          entry: '#/components/schemas/AppConfigItemGenericUpdate'
+          entry_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          field: '#/components/schemas/AppConfigItemGenericUpdate'
+          float: '#/components/schemas/AppConfigItemFloatUpdate'
+          folder: '#/components/schemas/AppConfigItemGenericUpdate'
+          integer: '#/components/schemas/AppConfigItemIntegerUpdate'
+          json: '#/components/schemas/AppConfigItemJsonUpdate'
+          legacy_request_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          location: '#/components/schemas/AppConfigItemGenericUpdate'
+          location_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          mixture: '#/components/schemas/AppConfigItemGenericUpdate'
+          molecule: '#/components/schemas/AppConfigItemGenericUpdate'
+          plate: '#/components/schemas/AppConfigItemGenericUpdate'
+          plate_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          project: '#/components/schemas/AppConfigItemGenericUpdate'
+          registry: '#/components/schemas/AppConfigItemGenericUpdate'
+          result_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          rna_oligo: '#/components/schemas/AppConfigItemGenericUpdate'
+          rna_sequence: '#/components/schemas/AppConfigItemGenericUpdate'
+          run_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          secure_text: '#/components/schemas/AppConfigItemGenericUpdate'
+          text: '#/components/schemas/AppConfigItemGenericUpdate'
+          workflow_task_schema: '#/components/schemas/AppConfigItemGenericUpdate'
+          workflow_task_status: '#/components/schemas/AppConfigItemGenericUpdate'
+          worklist: '#/components/schemas/AppConfigItemGenericUpdate'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/AppConfigItemGenericUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBooleanUpdate'
+      - $ref: '#/components/schemas/AppConfigItemIntegerUpdate'
+      - $ref: '#/components/schemas/AppConfigItemFloatUpdate'
+      - $ref: '#/components/schemas/AppConfigItemDateUpdate'
+      - $ref: '#/components/schemas/AppConfigItemDatetimeUpdate'
+      - $ref: '#/components/schemas/AppConfigItemJsonUpdate'
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    DateAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - date
+            type: string
+          value:
+            example: '2022-01-01'
+            nullable: true
+            type: string
+    SectionUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/SectionUiBlock'
+      type: object
+    ChipUiBlock:
+      allOf:
+      - properties:
+          id:
+            example: user_generated_id
+            type: string
+          type:
+            enum:
+            - CHIP
+            type: string
+          value:
+            type: string
+        required:
+        - type
+        - value
+      type: object
+    AppConfigItemDatetimeBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemDatetimeUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBulkUpdateMixin'
+      type: object
+    AppCanvasBase:
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasUiBlockList'
+      - properties:
+          archiveRecord:
+            nullable: true
+            properties:
+              reason:
+                $ref: '#/components/schemas/AppCanvasesArchiveReason'
+            type: object
+          data:
+            description: 'Additional data to associate with the canvas. Can be useful for persisting data associated with the canvas but won''t be rendered to the user. If specified, it must be valid JSON in string format less than 5kb in total.
+
+              '
+            example: '{"key": "value"}'
+            nullable: true
+            type: string
+          enabled:
+            description: 'Overall control for whether the canvas is interactable or not. If `false`, every block is disabled and will override the individual block''s `enabled` property. If `true` or absent, the interactivity status will defer to the block''s `enabled` property.
+
+              '
+            type: boolean
+          featureId:
+            description: Identifier of the feature defined in Benchling App Manifest this canvas corresponds to.
+            nullable: false
+            type: string
+          resourceId:
+            description: Identifier of the resource object to attach canvas to.
+            nullable: false
+            type: string
+          sessionId:
+            description: 'Identifier of a session. If specified, app status messages from the session will be reported in the canvas.
+
+              '
+            example: sesn_SwKtkgB5
+            nullable: true
+            type: string
+      type: object
+    TextInputUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/TextInputUiBlock'
+      type: object
+    AppConfigItemDatetimeUpdate:
+      properties:
+        type:
+          enum:
+          - datetime
+          type: string
+        value:
+          example: 2022-03-18 05:14:35 PM
+          nullable: true
+          type: string
+      required:
+      - value
+      - type
+      type: object
+    MarkdownUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/MarkdownUiBlock'
+      type: object
+    AppConfigItemBooleanUpdate:
+      properties:
+        type:
+          enum:
+          - boolean
+          example: boolean
+          type: string
+        value:
+          nullable: true
+          type: boolean
+      required:
+      - value
+      - type
+      type: object
+    AppSessionStatus:
+      description: 'All possible values of a Session''s status, including system-updated and user-updated values.
+
+        '
+      enum:
+      - COMPLETED_WITH_WARNINGS
+      - FAILED
+      - RUNNING
+      - SUCCEEDED
+      - TIMEOUT
+      type: string
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AppCanvasUiBlockList:
+      properties:
+        blocks:
+          items:
+            discriminator:
+              mapping:
+                BUTTON: '#/components/schemas/ButtonUiBlock'
+                CHIP: '#/components/schemas/ChipUiBlock'
+                DROPDOWN: '#/components/schemas/DropdownUiBlock'
+                DROPDOWN_MULTIVALUE: '#/components/schemas/DropdownMultiValueUiBlock'
+                FILE_UPLOAD: '#/components/schemas/FileUploadUiBlock'
+                MARKDOWN: '#/components/schemas/MarkdownUiBlock'
+                SEARCH_INPUT: '#/components/schemas/SearchInputUiBlock'
+                SEARCH_INPUT_MULTIVALUE: '#/components/schemas/SearchInputMultiValueUiBlock'
+                SECTION: '#/components/schemas/SectionUiBlock'
+                SELECTOR_INPUT: '#/components/schemas/SelectorInputUiBlock'
+                SELECTOR_INPUT_MULTIVALUE: '#/components/schemas/SelectorInputMultiValueUiBlock'
+                TABLE: '#/components/schemas/TableUiBlock'
+                TEXT_INPUT: '#/components/schemas/TextInputUiBlock'
+              propertyName: type
+            oneOf:
+            - $ref: '#/components/schemas/ButtonUiBlock'
+            - $ref: '#/components/schemas/ChipUiBlock'
+            - $ref: '#/components/schemas/DropdownUiBlock'
+            - $ref: '#/components/schemas/DropdownMultiValueUiBlock'
+            - $ref: '#/components/schemas/FileUploadUiBlock'
+            - $ref: '#/components/schemas/MarkdownUiBlock'
+            - $ref: '#/components/schemas/SearchInputUiBlock'
+            - $ref: '#/components/schemas/SearchInputMultiValueUiBlock'
+            - $ref: '#/components/schemas/SectionUiBlock'
+            - $ref: '#/components/schemas/SelectorInputUiBlock'
+            - $ref: '#/components/schemas/SelectorInputMultiValueUiBlock'
+            - $ref: '#/components/schemas/TextInputUiBlock'
+            - $ref: '#/components/schemas/TableUiBlock'
+          type: array
+      type: object
+    TableUiBlockDatasetSource:
+      deprecated: true
+      properties:
+        datasetId:
+          description: '`datasetId` of an uploaded dataset (see [Create Data Frame endpoint](https://benchling.com/api/v2-beta/reference#/Data%20Frames)). Note: Canvas tables currently support only text-type columns. Datasets are currently undergoing re-work. datasetId will refer to a DataFrame until Dataset APIs are stable. Prefer `TableUiBlockDataFrameSource` meanwhile.
+
+            '
+          example: dset_mfz1f3ai2e8y
+          nullable: true
+          type: string
+        type:
+          enum:
+          - DATASET
+          type: string
+      required:
+      - type
+      - datasetId
+      type: object
+    BenchlingAppsUnarchive:
+      additionalProperties: false
+      properties:
+        appIds:
+          description: Array of app IDs
+          example:
+          - app_J39na03L1nsLS34o
+          - app_ae92kBv9aNSl593z
+          - app_e59sjL23Pqn30xHg
+          items:
+            type: string
+          type: array
+      required:
+      - appIds
+      type: object
+    AppSessionCreate:
+      additionalProperties: false
+      properties:
+        appId:
+          nullable: false
+          type: string
+        messages:
+          default: []
+          description: 'An array of `SessionMessage` describing the current session state.
+
+            '
+          items:
+            $ref: '#/components/schemas/AppSessionMessageCreate'
+          nullable: false
+          type: array
+        name:
+          description: The name of the session. Length must be between 3-100 chars. Value is required and immutable once set.
+          maxLength: 100
+          minLength: 3
+          nullable: false
+          type: string
+        timeoutSeconds:
+          description: 'Timeout in seconds, a value between 1 second and 30 days. Once set, it can only be increased, not decreased.
+
+            '
+          maximum: 2592000
+          minimum: 1
+          nullable: false
+          type: integer
+      required:
+      - appId
+      - name
+      - timeoutSeconds
+      type: object
+    BaseDropdownUIBlock:
+      allOf:
+      - properties:
+          dropdownId:
+            type: string
+          placeholder:
+            nullable: true
+            type: string
+        required:
+        - dropdownId
+      type: object
+    InaccessibleResource:
+      additionalProperties: false
+      properties:
+        inaccessibleId:
+          type: string
+        resourceType:
+          enum:
+          - inaccessible_resource
+          type: string
+        type:
+          description: 'The type of this inaccessible item. Example values: "custom_entity", "container", "plate", "dna_sequence"
+
+            '
+          example: custom_entity
+          type: string
+      type: object
+    LinkedAppConfigResourceSummary:
+      additionalProperties: false
+      properties:
+        id:
+          description: The API ID of the linked resource
+          example: tsf_e59a3b23
+          type: string
+        name:
+          description: The name of the resource in Benchling
+          example: Parent Sample
+          type: string
+      type: object
+    AppSummary:
+      properties:
+        id:
+          description: The id of the Benchling app.
+          nullable: false
+          type: string
+      type: object
+    AppConfigurationPaginatedList:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          appConfigurationItems:
+            items:
+              $ref: '#/components/schemas/AppConfigItem'
+            type: array
+      type: object
+    SectionUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/SectionUiBlock'
+      type: object
+    AppCanvasCreateUiBlockList:
+      properties:
+        blocks:
+          items:
+            discriminator:
+              mapping:
+                BUTTON: '#/components/schemas/ButtonUiBlockCreate'
+                CHIP: '#/components/schemas/ChipUiBlockCreate'
+                DROPDOWN: '#/components/schemas/DropdownUiBlockCreate'
+                DROPDOWN_MULTIVALUE: '#/components/schemas/DropdownMultiValueUiBlockCreate'
+                FILE_UPLOAD: '#/components/schemas/FileUploadUiBlockCreate'
+                MARKDOWN: '#/components/schemas/MarkdownUiBlockCreate'
+                SEARCH_INPUT: '#/components/schemas/SearchInputUiBlockCreate'
+                SEARCH_INPUT_MULTIVALUE: '#/components/schemas/SearchInputMultiValueUiBlockCreate'
+                SECTION: '#/components/schemas/SectionUiBlockCreate'
+                SELECTOR_INPUT: '#/components/schemas/SelectorInputUiBlockCreate'
+                SELECTOR_INPUT_MULTIVALUE: '#/components/schemas/SelectorInputMultiValueUiBlockCreate'
+                TABLE: '#/components/schemas/TableUiBlockCreate'
+                TEXT_INPUT: '#/components/schemas/TextInputUiBlockCreate'
+              propertyName: type
+            oneOf:
+            - $ref: '#/components/schemas/ButtonUiBlockCreate'
+            - $ref: '#/components/schemas/ChipUiBlockCreate'
+            - $ref: '#/components/schemas/DropdownUiBlockCreate'
+            - $ref: '#/components/schemas/DropdownMultiValueUiBlockCreate'
+            - $ref: '#/components/schemas/FileUploadUiBlockCreate'
+            - $ref: '#/components/schemas/MarkdownUiBlockCreate'
+            - $ref: '#/components/schemas/SearchInputUiBlockCreate'
+            - $ref: '#/components/schemas/SearchInputMultiValueUiBlockCreate'
+            - $ref: '#/components/schemas/SectionUiBlockCreate'
+            - $ref: '#/components/schemas/SelectorInputUiBlockCreate'
+            - $ref: '#/components/schemas/SelectorInputMultiValueUiBlockCreate'
+            - $ref: '#/components/schemas/TextInputUiBlockCreate'
+            - $ref: '#/components/schemas/TableUiBlockCreate'
+          type: array
+      type: object
+    AppConfigItemFloatCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - float
+            example: float
+            type: string
+          value:
+            format: float
+            nullable: true
+            type: number
+      - required:
+        - value
+        - type
+      type: object
+    FieldAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - $ref: '#/components/schemas/LinkedAppConfigResourceMixin'
+      - properties:
+          type:
+            enum:
+            - field
+            example: field
+            type: string
+          value:
+            example: tsf_e59a3b23
+            nullable: true
+            type: string
+    AppSessionMessageStyle:
+      default: NONE
+      enum:
+      - ERROR
+      - INFO
+      - NONE
+      - SUCCESS
+      - WARNING
+      nullable: false
+      type: string
+    AppCanvasesArchive:
+      additionalProperties: false
+      properties:
+        canvasIds:
+          description: Array of canvas IDs
+          example:
+          - cnvs_Q4mPJ34a
+          - cnvs_aNz2kJNv
+          items:
+            type: string
+          type: array
+        reason:
+          $ref: '#/components/schemas/AppCanvasesArchiveReason'
+      required:
+      - reason
+      - canvasIds
+      type: object
+    ButtonUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/ButtonUiBlock'
+      type: object
+    AppConfigItemIntegerUpdate:
+      properties:
+        type:
+          enum:
+          - integer
+          example: integer
+          type: string
+        value:
+          nullable: true
+          type: integer
+      required:
+      - value
+      - type
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BenchlingAppUpdate:
+      additionalProperties: false
+      properties:
+        description:
+          example: This is my first App!
+          maxLength: 8192
+          type: string
+        name:
+          example: My First App
+          maxLength: 255
+          minLength: 3
+          type: string
+    FileUploadUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/FileUploadUiBlock'
+      type: object
+    TextInputUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/UserInputUiBlock'
+      - properties:
+          placeholder:
+            nullable: true
+            type: string
+          type:
+            enum:
+            - TEXT_INPUT
+            type: string
+        required:
+        - type
+      type: object
+    SearchInputUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/SearchInputUiBlock'
+      type: object
+    IntegerAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - integer
+            example: integer
+            type: string
+          value:
+            nullable: true
+            type: integer
+      type: object
+    SecureTextAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - secure_text
+            example: secure_text
+            type: string
+          value:
+            example: <encryptedtext/>
+            nullable: true
+            type: string
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    SelectorInputMultiValueUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/SelectorInputMultiValueUiBlock'
+      type: object
+    ChipUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/ChipUiBlock'
+      type: object
+    BenchlingAppsArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of apps that were archived / unarchived.
+
+        '
+      properties:
+        appIds:
+          example:
+          - app_J39na03L1nsLS34o
+          - app_ae92kBv9aNSl593z
+          - app_e59sjL23Pqn30xHg
+          items:
+            type: string
+          type: array
+      type: object
+    TableUiBlockDataFrameSource:
+      properties:
+        dataFrameId:
+          description: '`dataFrameId` of an uploaded data frame (see [Create Data Frame endpoint](https://benchling.com/api/v2-beta/reference#/Data%20Frames)). Note: Canvas tables currently support only text-type columns.
+
+            '
+          example: dset_mfz1f3ai2e8y
+          nullable: true
+          type: string
+        type:
+          enum:
+          - DATA_FRAME
+          type: string
+      required:
+      - type
+      - dataFrameId
+      type: object
+    AppCanvasesUnarchive:
+      additionalProperties: false
+      properties:
+        canvasIds:
+          description: Array of canvas IDs
+          example:
+          - cnvs_Q4mPJ34a
+          - cnvs_aNz2kJNv
+          items:
+            type: string
+          type: array
+      required:
+      - canvasIds
+      type: object
+    TableUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/TableUiBlock'
+      type: object
+    AppConfigItemDateUpdate:
+      properties:
+        type:
+          enum:
+          - date
+          type: string
+        value:
+          example: '2022-03-18'
+          nullable: true
+          type: string
+      required:
+      - value
+      - type
+      type: object
+    BooleanAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - boolean
+            example: boolean
+            type: string
+          value:
+            nullable: true
+            type: boolean
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    AppConfigItemCreate:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/AppConfigItemGenericCreate'
+          boolean: '#/components/schemas/AppConfigItemBooleanCreate'
+          box: '#/components/schemas/AppConfigItemGenericCreate'
+          box_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          container: '#/components/schemas/AppConfigItemGenericCreate'
+          container_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          custom_entity: '#/components/schemas/AppConfigItemGenericCreate'
+          date: '#/components/schemas/AppConfigItemDateCreate'
+          datetime: '#/components/schemas/AppConfigItemDatetimeCreate'
+          dna_oligo: '#/components/schemas/AppConfigItemGenericCreate'
+          dna_sequence: '#/components/schemas/AppConfigItemGenericCreate'
+          dropdown: '#/components/schemas/AppConfigItemGenericCreate'
+          dropdown_option: '#/components/schemas/AppConfigItemGenericCreate'
+          entity_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          entry: '#/components/schemas/AppConfigItemGenericCreate'
+          entry_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          field: '#/components/schemas/AppConfigItemGenericCreate'
+          float: '#/components/schemas/AppConfigItemFloatCreate'
+          folder: '#/components/schemas/AppConfigItemGenericCreate'
+          integer: '#/components/schemas/AppConfigItemIntegerCreate'
+          json: '#/components/schemas/AppConfigItemJsonCreate'
+          legacy_request_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          location: '#/components/schemas/AppConfigItemGenericCreate'
+          location_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          mixture: '#/components/schemas/AppConfigItemGenericCreate'
+          molecule: '#/components/schemas/AppConfigItemGenericCreate'
+          plate: '#/components/schemas/AppConfigItemGenericCreate'
+          plate_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          project: '#/components/schemas/AppConfigItemGenericCreate'
+          registry: '#/components/schemas/AppConfigItemGenericCreate'
+          result_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          rna_oligo: '#/components/schemas/AppConfigItemGenericCreate'
+          rna_sequence: '#/components/schemas/AppConfigItemGenericCreate'
+          run_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          secure_text: '#/components/schemas/AppConfigItemGenericCreate'
+          text: '#/components/schemas/AppConfigItemGenericCreate'
+          workflow_task_schema: '#/components/schemas/AppConfigItemGenericCreate'
+          workflow_task_status: '#/components/schemas/AppConfigItemGenericCreate'
+          worklist: '#/components/schemas/AppConfigItemGenericCreate'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/AppConfigItemGenericCreate'
+      - $ref: '#/components/schemas/AppConfigItemBooleanCreate'
+      - $ref: '#/components/schemas/AppConfigItemIntegerCreate'
+      - $ref: '#/components/schemas/AppConfigItemFloatCreate'
+      - $ref: '#/components/schemas/AppConfigItemDateCreate'
+      - $ref: '#/components/schemas/AppConfigItemDatetimeCreate'
+      - $ref: '#/components/schemas/AppConfigItemJsonCreate'
+      type: object
+    LinkedAppConfigResource:
+      oneOf:
+      - $ref: '#/components/schemas/LinkedAppConfigResourceSummary'
+      - $ref: '#/components/schemas/InaccessibleResource'
+      type: object
+    DropdownMultiValueUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/DropdownMultiValueUiBlock'
+      type: object
+    TextAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - properties:
+          type:
+            enum:
+            - text
+            example: text
+            type: string
+          value:
+            example: user configured text
+            nullable: true
+            type: string
+      type: object
+    AppConfigItemBulkUpdate:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          boolean: '#/components/schemas/AppConfigItemBooleanBulkUpdate'
+          box: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          box_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          container: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          container_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          custom_entity: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          date: '#/components/schemas/AppConfigItemDateBulkUpdate'
+          datetime: '#/components/schemas/AppConfigItemDatetimeBulkUpdate'
+          dna_oligo: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          dna_sequence: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          dropdown: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          dropdown_option: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          entity_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          entry: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          entry_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          field: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          float: '#/components/schemas/AppConfigItemFloatBulkUpdate'
+          folder: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          integer: '#/components/schemas/AppConfigItemIntegerBulkUpdate'
+          json: '#/components/schemas/AppConfigItemJsonBulkUpdate'
+          legacy_request_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          location: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          location_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          mixture: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          molecule: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          plate: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          plate_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          project: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          registry: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          result_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          rna_oligo: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          rna_sequence: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          run_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          secure_text: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          text: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          workflow_task_schema: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          workflow_task_status: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+          worklist: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/AppConfigItemGenericBulkUpdate'
+      - $ref: '#/components/schemas/AppConfigItemBooleanBulkUpdate'
+      - $ref: '#/components/schemas/AppConfigItemIntegerBulkUpdate'
+      - $ref: '#/components/schemas/AppConfigItemFloatBulkUpdate'
+      - $ref: '#/components/schemas/AppConfigItemDateBulkUpdate'
+      - $ref: '#/components/schemas/AppConfigItemDatetimeBulkUpdate'
+      - $ref: '#/components/schemas/AppConfigItemJsonBulkUpdate'
+      type: object
+    TableUiBlock:
+      allOf:
+      - $ref: '#/components/schemas/InteractiveUiBlock'
+      - properties:
+          name:
+            description: Display name for the table block, to be shown in the UI
+            type: string
+          source:
+            $ref: '#/components/schemas/TableUiBlockSource'
+          type:
+            enum:
+            - TABLE
+            type: string
+        required:
+        - type
+        - name
+        - source
+      type: object
+    BaseSearchInputUIBlock:
+      allOf:
+      - properties:
+          itemType:
+            $ref: '#/components/schemas/SearchInputUiBlockItemType'
+          placeholder:
+            nullable: true
+            type: string
+          schemaId:
+            nullable: true
+            type: string
+        required:
+        - itemType
+        - schemaId
+      type: object
+    SelectorInputUiBlockUpdate:
+      allOf:
+      - $ref: '#/components/schemas/SelectorInputUiBlock'
+      type: object
+    AppCanvasesArchiveReason:
+      description: Reason that canvases are being archived. Actual reason enum varies by tenant.
+      enum:
+      - Other
+      example: Other
+      type: string
+    AppCanvasCreateBase:
+      allOf:
+      - $ref: '#/components/schemas/AppCanvasCreateUiBlockList'
+      - $ref: '#/components/schemas/AppCanvasWriteBase'
+      type: object
+    AppConfigItemJsonUpdate:
+      properties:
+        type:
+          enum:
+          - json
+          example: json
+          type: string
+        value:
+          nullable: true
+          type: string
+      required:
+      - value
+      - type
+      type: object
+    LinkedAppConfigResourceMixin:
+      properties:
+        linkedResource:
+          allOf:
+          - $ref: '#/components/schemas/LinkedAppConfigResource'
+          nullable: true
+      type: object
+    AppConfigItemDatetimeCreate:
+      allOf:
+      - $ref: '#/components/schemas/AppConfigItemCreateMixin'
+      - properties:
+          type:
+            enum:
+            - datetime
+            type: string
+          value:
+            example: 2022-03-18 05:14:35 PM
+            format: datetime
+            nullable: true
+            type: string
+      - required:
+        - value
+        - type
+      type: object
+    SelectorInputUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/SelectorInputUiBlock'
+      type: object
+    AppCanvasWriteBase:
+      allOf:
+      - properties:
+          data:
+            description: 'Additional data to associate with the canvas. Can be useful for persisting data associated with the canvas but won''t be rendered to the user. If specified, it must be valid JSON in string format less than 5kb in total.
+
+              '
+            example: '{"key": "value"}'
+            nullable: true
+            type: string
+          enabled:
+            description: 'Overall control for whether the canvas is interactable or not. If `false`, every block is disabled and will override the individual block''s `enabled` property. If `true` or absent, the interactivity status will defer to the block''s `enabled` property.
+
+              '
+            type: boolean
+          featureId:
+            description: Identifier of the feature defined in Benchling App Manifest this canvas corresponds to.
+            nullable: false
+            type: string
+          resourceId:
+            description: Identifier of the resource object to attach canvas to.
+            nullable: false
+            type: string
+          sessionId:
+            description: 'Identifier of a session. If specified, app status messages from the session will be reported in the canvas.
+
+              '
+            example: sesn_SwKtkgB5
+            nullable: true
+            type: string
+      type: object
+    SearchInputMultiValueUiBlockCreate:
+      allOf:
+      - $ref: '#/components/schemas/SearchInputMultiValueUiBlock'
+      type: object
+    TableUiBlockSource:
+      discriminator:
+        mapping:
+          DATASET: '#/components/schemas/TableUiBlockDatasetSource'
+          DATA_FRAME: '#/components/schemas/TableUiBlockDataFrameSource'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/TableUiBlockDatasetSource'
+      - $ref: '#/components/schemas/TableUiBlockDataFrameSource'
+      type: object
+    EntitySchemaAppConfigItem:
+      allOf:
+      - $ref: '#/components/schemas/BaseAppConfigItem'
+      - $ref: '#/components/schemas/LinkedAppConfigResourceMixin'
+      - properties:
+          subtype:
+            $ref: '#/components/schemas/SchemaDependencySubtypes'
+          type:
+            enum:
+            - entity_schema
+            example: entity_schema
+            type: string
+          value:
+            example: ts_e59sjL23
+            nullable: true
+            type: string
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

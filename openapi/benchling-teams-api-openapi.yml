@@ -1,0 +1,646 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Teams API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: View team objects.
+  name: Teams
+paths:
+  /teams:
+    get:
+      description: "Returns all teams that the caller has permission to view. The following roles have view permission:\n  - tenant admins\n  - members of the team's organization\n"
+      operationId: listTeams
+      parameters:
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: team_ZJy8RTbo,team_8GVbVkPj,team_qREJ33rn
+          type: string
+      - description: Name of a team. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of a team. Restricts results to those with names that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: 'Comma-separated list of entry IDs. Restricts results to teams mentioned in those entries.
+
+          '
+        in: query
+        name: mentionedIn
+        schema:
+          example: etr_1X1AlQPD, etr_tv7m7B78
+          type: string
+      - description: Restricts results to those in the organization.
+        in: query
+        name: organizationId
+        schema:
+          type: string
+      - description: Comma-separated list of user or Benchling app IDs. Restricts results to teams that include all the given users/apps as members.
+        in: query
+        name: hasMembers
+        schema:
+          type: string
+      - description: Comma-separated list of user or Benchling app IDs. Restricts results to teams that include all the given users/apps as admins.
+        in: query
+        name: hasAdmins
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Sets the sort-order of the response. Valid sorts are modifiedAt (modified time, most recent first) and name (team name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamsPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List teams
+      tags:
+      - Teams
+    post:
+      description: 'Create a team
+
+        '
+      operationId: createTeam
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+      summary: 'Create team
+
+        '
+      tags:
+      - Teams
+  /teams/{team_id}:
+    get:
+      description: "Returns a team by ID if the caller has permission to view. The following roles have view permission:\n  - tenant admins\n  - members of the team's organization\n"
+      operationId: getTeam
+      parameters:
+      - description: ID of team to get
+        in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a team by ID
+      tags:
+      - Teams
+    patch:
+      description: 'Update team properties
+
+        '
+      operationId: updateTeam
+      parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: 'Update team
+
+        '
+      tags:
+      - Teams
+  /teams/{team_id}/memberships:
+    get:
+      description: 'Returns all team memberships in the given team
+
+        '
+      operationId: listTeamMemberships
+      parameters:
+      - description: Number of results to return.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: role
+        required: false
+        schema:
+          example: ADMIN
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipsPaginatedList'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: 'List team memberships
+
+        '
+      tags:
+      - Teams
+    post:
+      description: 'Create team membership for the given user, role, and team
+
+        '
+      operationId: createTeamMembership
+      parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: 'Create team membership
+
+        '
+      tags:
+      - Teams
+  /teams/{team_id}/memberships/{user_id}:
+    delete:
+      description: 'Delete a single team membership
+
+        '
+      operationId: deleteTeamMembership
+      parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: 'Delete team membership by user ID and team ID
+
+        '
+      tags:
+      - Teams
+    get:
+      description: 'Returns team membership in the given team for the given user
+
+        '
+      operationId: getTeamMembership
+      parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: 'Get team membership
+
+        '
+      tags:
+      - Teams
+    patch:
+      description: 'Update a single team membership
+
+        '
+      operationId: updateTeamMembership
+      parameters:
+      - in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: 'Update team membership by user ID and team ID
+
+        '
+      tags:
+      - Teams
+components:
+  schemas:
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    OrganizationSummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Team:
+      allOf:
+      - $ref: '#/components/schemas/TeamSummary'
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
+          organization: Elion's Org
+      - properties:
+          organization:
+            $ref: '#/components/schemas/OrganizationSummary'
+      type: object
+    TeamSummary:
+      allOf:
+      - type: object
+      - properties:
+          id:
+            type: string
+          name:
+            type: string
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    TeamUpdate:
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    Membership:
+      properties:
+        role:
+          enum:
+          - ADMIN
+          - MEMBER
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    MembershipCreate:
+      properties:
+        role:
+          enum:
+          - ADMIN
+          - MEMBER
+          example: ADMIN
+          type: string
+        userId:
+          example: ent_a0SApq3z
+          type: string
+    TeamCreate:
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        organizationId:
+          type: string
+    MembershipsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          memberships:
+            items:
+              $ref: '#/components/schemas/Membership'
+            type: array
+    TeamsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          teams:
+            items:
+              $ref: '#/components/schemas/Team'
+            type: array
+    MembershipUpdate:
+      properties:
+        role:
+          enum:
+          - ADMIN
+          - MEMBER
+          type: string
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

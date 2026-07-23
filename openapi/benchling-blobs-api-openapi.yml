@@ -1,0 +1,571 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Blobs API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Blobs are opaque files that can be linked to other items in Benchling, like assay runs or results. For example, you can upload a blob, then upload an assay result that links to that blob by ID. The blob will then appear as part of the assay result in the Benchling web UI.
+
+    '
+  name: Blobs
+paths:
+  /blobs:
+    post:
+      description: '
+
+        This endpoint uploads a blob in a single API call.
+
+
+        Blobs larger than 10MB should be uploaded in [multiple parts](#/Blobs/createMultipartBlob). The data64 parameter is the base64-encoded part contents, and the md5 parameter is the hex-encoded MD5 hash of the part contents. For example, given the string hello, data64 is aGVsbG8= and md5 is 5d41402abc4b2a76b9719d911017c592.
+
+        '
+      operationId: createBlob
+      requestBody:
+        content:
+          application/json:
+            examples:
+              raw_file:
+                summary: A file containing the string "hello"
+                value:
+                  data64: aGVsbG8=
+                  md5: 5d41402abc4b2a76b9719d911017c592
+                  mimeType: text/plain
+                  name: hello.txt
+                  type: RAW_FILE
+              visualization_file:
+                summary: A .png image
+                value:
+                  data64: iVBORw0KGgoAAAANSUhEUgAAAB4AAAAUBAMAAABohZD3AAAAG1BMVEUAAAD////f39+/v78fHx9/f39fX1+fn58/Pz+3dh1rAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAT0lEQVQYlWNgoDlQBhGF7AIwvjOIYGJQwMkPSigsAPLZhRrAfCe3sgAzID+dDaLEmcNUUBTIL2NQgfLNAkD6k1wg8oqFooUahepCMP00BQC95QvY1zDquQAAAABJRU5ErkJggg==
+                  md5: 50170053b55179167f1c21350c869bb7
+                  mimeType: image/png
+                  name: hello.png
+                  type: VISUALIZATION
+            schema:
+              $ref: '#/components/schemas/BlobCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blob'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Upload single-part blob
+      tags:
+      - Blobs
+  /blobs/{blob_id}:
+    get:
+      description: Get a Blob
+      operationId: getBlob
+      parameters:
+      - in: path
+        name: blob_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blob'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a Blob
+      tags:
+      - Blobs
+  /blobs/{blob_id}/download:
+    get:
+      description: "Download a blob.\n\nThis endpoint issues a 302 redirect to a pre-signed download link.\nIt does not consume from the standard rate-limit.\n\nExample `wget` usage with a User API Key:\n```bash\nexport BLOB_ID=\"ffe43fd5-b928-4996-9b7f-40222cd33d8e\"\nwget \"https://tenant.benchling.com/api/v2/blobs/$BLOB_ID/download\" \\\n    --user $API_TOKEN \\      # Your API Key\n    --password '' \\          # Leave password empty\n    --content-disposition    # Save file with original filename\n```\n\n**Note: Calling this endpoint from a browser is not supported.**\n"
+      operationId: getBlobFile
+      parameters:
+      - in: path
+        name: blob_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+        '302':
+          description: Redirect to Content Location
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Download a blob
+      tags:
+      - Blobs
+  /blobs/{blob_id}/download-url:
+    get:
+      description: Get a Blob's download url
+      operationId: getBlobUrl
+      parameters:
+      - in: path
+        name: blob_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlobUrl'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a Blob's download url
+      tags:
+      - Blobs
+  /blobs/{blob_id}/parts:
+    post:
+      description: '
+
+        Upload a part of the blob. This part must be at least 5MB, unless it''s the last or only part. It''s recommended to keep the part size around 10MB.
+
+
+        The data64 parameter is the base64-encoded part contents, and the md5 parameter is the hex-encoded MD5 hash of the part contents. For example, given the string hello, data64 is aGVsbG8= and md5 is 5d41402abc4b2a76b9719d911017c592.
+
+
+        ## Multipart Upload
+
+
+        If a blob is larger than 10MB, it should be uploaded in multiple parts using the following endpoints:
+
+        - [Start a multi-part blob upload](#/Blobs/createMultipartBlob)
+
+        - [Upload a blob part](#/Blobs/createBlobPart)
+
+        - [Complete a blob upload](#/Blobs/completeMultipartBlob)
+
+
+        Each part has a *partNumber* and an *eTag*. The part number can be any number between 1 to 10,000, inclusive - this number should be unique and identifies the order of the part in the final blob. The eTag of a part is returned in the API response - this eTag must be specified when completing the upload in order to ensure the server has received all the expected parts.
+
+        '
+      operationId: createBlobPart
+      parameters:
+      - in: path
+        name: blob_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlobPartCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlobPart'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Upload a part of a multi-part blob
+      tags:
+      - Blobs
+  /blobs/{blob_id}:abort-upload:
+    post:
+      description: Abort multi-part blob upload
+      operationId: abortMultipartBlob
+      parameters:
+      - in: path
+        name: blob_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Abort multi-part blob upload
+      tags:
+      - Blobs
+  /blobs/{blob_id}:complete-upload:
+    post:
+      description: '
+
+        Combine blob parts into a single blob.
+
+
+        ## Multipart Upload
+
+
+        If a blob is larger than 10MB, it should be uploaded in multiple parts using the following endpoints:
+
+        - [Start a multi-part blob upload](#/Blobs/createMultipartBlob)
+
+        - [Upload a blob part](#/Blobs/createBlobPart)
+
+        - [Complete a blob upload](#/Blobs/completeMultipartBlob)
+
+
+        Each part must be at least 5MB in size, except for the last part. We recommend keeping each part to under 10MB when uploading.
+
+
+        Each part has a *partNumber* and an *eTag*. The part number can be any number between 1 to 10,000, inclusive - this number should be unique and identifies the order of the part in the final blob. The eTag of a part is returned in the API response - this eTag must be specified when completing the upload in order to ensure the server has received all the expected parts.
+
+        '
+      operationId: completeMultipartBlob
+      parameters:
+      - in: path
+        name: blob_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlobComplete'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blob'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Complete multi-part blob upload
+      tags:
+      - Blobs
+  /blobs:bulk-get:
+    get:
+      description: Bulk get Blobs by UUID
+      operationId: bulkGetBlobs
+      parameters:
+      - description: Comma-separated list of blob IDs.
+        in: query
+        name: blobIds
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: blobs.id,blobs.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlobsBulkGet'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk get Blobs by UUID
+      tags:
+      - Blobs
+  /blobs:start-multipart-upload:
+    post:
+      description: '
+
+        Blobs may be uploaded using multi-part upload. This endpoint initiates the upload process - blob parts can then be uploaded in multiple blob parts.
+
+
+        ## Multipart Upload
+
+
+        If a blob is larger than 10MB, it should be uploaded in multiple parts using the following endpoints:
+
+        - [Start a multi-part blob upload](#/Blobs/createMultipartBlob)
+
+        - [Upload a blob part](#/Blobs/createBlobPart)
+
+        - [Complete a blob upload](#/Blobs/completeMultipartBlob)
+
+
+        Each part must be at least 5MB in size, except for the last part. We recommend keeping each part to under 10MB when uploading.
+
+
+        Each part has a *partNumber* and an *eTag*. The part number can be any number between 1 to 10,000, inclusive - this number should be unique and identifies the order of the part in the final blob. The eTag of a part is returned in the API response - this eTag must be specified when completing the upload in order to ensure the server has received all the expected parts.
+
+        '
+      operationId: createMultipartBlob
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlobMultipartCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Blob'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Initiate multi-part blob upload
+      tags:
+      - Blobs
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    EmptyObject:
+      type: object
+    BlobPart:
+      properties:
+        eTag:
+          example: '"6f5902ac237024bdd0c176cb93063dc4"'
+          type: string
+        partNumber:
+          maximum: 10000
+          minimum: 1
+          type: integer
+      type: object
+    BlobComplete:
+      additionalProperties: false
+      properties:
+        parts:
+          items:
+            $ref: '#/components/schemas/BlobPart'
+          type: array
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BlobPartCreate:
+      additionalProperties: false
+      properties:
+        data64:
+          format: bytes
+          type: string
+        md5:
+          type: string
+        partNumber:
+          description: 'An integer between 1 to 10,000, inclusive. The part number must be unique per part and indicates the ordering of the part inside the final blob. The part numbers do not need to be consecutive.
+
+            '
+          maximum: 10000
+          minimum: 1
+          type: integer
+      required:
+      - partNumber
+      - data64
+      - md5
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    BlobCreate:
+      additionalProperties: false
+      properties:
+        data64:
+          description: base64 encoded file contents
+          format: byte
+          type: string
+        md5:
+          description: 'The MD5 hash of the blob part. Note: this should be the hash of the raw data of the blob part, not the hash of the base64 encoding.
+
+            '
+          type: string
+        mimeType:
+          default: application/octet-stream
+          description: eg. application/jpeg
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+      required:
+      - name
+      - type
+      - data64
+      - md5
+      type: object
+    Blob:
+      properties:
+        id:
+          description: The universally unique identifier (UUID) for the blob.
+          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+          format: uuid
+          type: string
+        mimeType:
+          description: eg. application/jpeg
+          example: text/csv
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          example: MyInstrumentInputFile.csv
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - COMPLETE
+          - ABORTED
+          type: string
+      type: object
+    BlobsBulkGet:
+      properties:
+        blobs:
+          items:
+            $ref: '#/components/schemas/Blob'
+          type: array
+      type: object
+    BlobMultipartCreate:
+      additionalProperties: false
+      properties:
+        mimeType:
+          default: application/octet-stream
+          description: eg. application/jpeg
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+      required:
+      - name
+      - type
+      type: object
+    BlobUrl:
+      properties:
+        downloadURL:
+          description: a pre-signed download url.
+          format: uri
+          type: string
+        expiresAt:
+          description: The unix time that the download URL expires at.
+          type: integer
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

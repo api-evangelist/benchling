@@ -1,0 +1,196 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Enzymes API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Restriction enzymes are curated by Benchling for operations such as Digests and Codon Optimization.
+  name: Enzymes
+paths:
+  /enzymes:
+    get:
+      description: 'List enzymes that can be specified for other Benchling operations.
+
+        '
+      operationId: listEnzymes
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: name:asc
+          description: 'Method by which to order search results. Valid sort is name (entity name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order.
+
+            '
+          enum:
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: Name of an enzyme. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of an enzyme. Restricts results to those with names that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: enz_VfVOART1,enz_RFhDGaaC
+          type: string
+      - description: 'Comma-separated list of names. Restricts results to those that match any of the specified names.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: AarI,BcnI
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnzymesPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of requests remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List enzymes
+      tags:
+      - Enzymes
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    EnzymesPaginatedList:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          enzymes:
+            items:
+              $ref: '#/components/schemas/Enzyme'
+            type: array
+      type: object
+    Enzyme:
+      additionalProperties: false
+      properties:
+        cutsites:
+          items:
+            type: integer
+          maxItems: 2
+          minItems: 1
+          type: array
+        id:
+          example: enz_6ZVdX98t
+          type: string
+        isoschizomers:
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        offsets:
+          items:
+            type: integer
+          maxItems: 2
+          minItems: 1
+          type: array
+        restrictionSite:
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

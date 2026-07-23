@@ -1,0 +1,2963 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Containers API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: '
+
+    Containers are the backbone of sample management in Benchling. They represent physical containers, such as tubes or wells, that hold quantities of biological samples (represented by the entities inside the container). The container itself tracks its total volume, and the concentration of every entity inside of it.
+
+
+    Containers are all associated with schemas, which define the type of the container (e.g. "Tube") along with the fields that are tracked.
+
+
+    Like all inventory, every container has a barcode that is unique across the registry.
+
+    '
+  name: Containers
+paths:
+  /containers:
+    get:
+      description: List containers
+      operationId: listContainers
+      parameters:
+      - description: Number of results to return.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Method by which to order search results. Valid sorts are barcode, name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+          '
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt
+          enum:
+          - createdAt
+          - barcode
+          - modifiedAt
+          - name
+          - barcode:asc
+          - modifiedAt:asc
+          - name:asc
+          - barcode:desc
+          - modifiedAt:desc
+          - name:desc
+          - createdAt:asc
+          - createdAt:desc
+          nullable: false
+          type: string
+      - description: ID of a schema. Restricts results to those of the specified schema.
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models created within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for created models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models created after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: createdAt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of a container. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Name substring of a container. Restricts results to those with names that include the provided substring.
+
+          '
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: ID of a plate, box, or location. Restricts results to those located in the specified inventory.
+        in: query
+        name: ancestorStorageId
+        schema:
+          type: string
+      - description: 'ID of an entity or entity schema. Restricts results to those that contain the specified entities or entities of the specified schema.
+
+          '
+        in: query
+        name: storageContentsId
+        schema:
+          type: string
+      - description: 'Comma-separated list of IDs of entities. Restricts results to those that hold containers with at least one of the specified entities.
+
+          '
+        in: query
+        name: storageContentsIds
+        schema:
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived containers. Use "ANY_ARCHIVED" to filter for archived containers regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Comma-separated list of check-out statuses. Restricts results to those that match one of the specified statuses. Valid statuses are AVAILABLE, RESERVED, and CHECKED_OUT.
+
+          '
+        in: query
+        name: checkoutStatus
+        schema:
+          enum:
+          - AVAILABLE
+          - RESERVED
+          - CHECKED_OUT
+          type: string
+      - description: 'Comma-separated list of user or team IDs. Maximum of 100. Restricts results to those that are reserved or checked out for a user or team who matches any of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: checkoutAssigneeIds.anyOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of restriction statuses. Restricts results to those that match one of the specified statuses. Valid statuses are RESTRICTED, UNRESTRICTED, and NOT_APPLICABLE.
+
+          '
+        in: query
+        name: restrictionStatus
+        schema:
+          $ref: '#/components/schemas/SampleRestrictionStatus'
+      - description: 'Comma-separated list of user or team IDs. Restricts results to those that match all of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: sampleOwnerIds.allOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of user or team IDs. Maximum of 100. Restricts results to those that match any of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: sampleOwnerIds.anyOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of user or team IDs. Restricts results to those that do not match any of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: sampleOwnerIds.noneOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of user, team, or app IDs. Restricts results to those that match all of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: restrictedSamplePartyIds.allOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of user, team, or app IDs. Maximum of 100. Restricts results to those that match any of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: restrictedSamplePartyIds.anyOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of user, team, or app IDs. Restricts results to those that do not match any of the specified IDs or returns a 400 error with a list of invalid IDs.
+
+          '
+        in: query
+        name: restrictedSamplePartyIds.noneOf
+        schema:
+          example: ent_a0SApq3z,team_Il92ydiY
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: con_Q6uhNZvw,con_OwmERWGE,con_nzuDFhNvz
+          type: string
+      - description: 'Comma-separated list of barcodes. Matches all of the provided barcodes, or returns a 400 error that includes a list of which barcodes are invalid.
+
+          '
+        in: query
+        name: barcodes
+        schema:
+          example: W103371,W103343,W103366
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Comma separated list of users IDs
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: containers.id,containers.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainersPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/BadRequestError'
+                properties:
+                  invalidIds:
+                    items:
+                      type: string
+                    type: array
+                type: object
+          description: Bad Request
+      summary: List containers
+      tags:
+      - Containers
+    post:
+      description: Create a new container
+      operationId: createContainer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Container'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create a new container
+      tags:
+      - Containers
+  /containers/{container_id}:
+    get:
+      description: get a container by id
+      operationId: getContainer
+      parameters:
+      - in: path
+        name: container_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Container'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: get a container by id
+      tags:
+      - Containers
+    patch:
+      description: update a container
+      operationId: updateContainer
+      parameters:
+      - in: path
+        name: container_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Container'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: update a container
+      tags:
+      - Containers
+  /containers/{container_id}/contents:
+    get:
+      description: List a container's contents
+      operationId: listContainerContents
+      parameters:
+      - in: path
+        name: container_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerContentsList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: List a container's contents
+      tags:
+      - Containers
+  /containers/{container_id}/contents/{containable_id}:
+    delete:
+      description: Delete a container content
+      operationId: deleteContainerContent
+      parameters:
+      - in: path
+        name: container_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: containable_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Delete a container content
+      tags:
+      - Containers
+    get:
+      description: Get a container content
+      operationId: getContainerContent
+      parameters:
+      - in: path
+        name: container_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: containable_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerContent'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a container content
+      tags:
+      - Containers
+    patch:
+      description: Update a container content
+      operationId: updateContainerContent
+      parameters:
+      - in: path
+        name: container_id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: containable_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerContentUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainerContent'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a container content
+      tags:
+      - Containers
+  /containers/{destination_container_id}:transfer:
+    post:
+      description: 'Transfers a volume of an entity or container into a destination container.
+
+        Transfering a volume is cumulative with the existing destination container''s contents. To transfer an entire container''s contents, the sourceContainerId should be specified. To otherwise transfer multiple entities within a container, you can make multiple calls to this endpoint, specifying a single entity with each call.
+
+        '
+      operationId: transferIntoContainer
+      parameters:
+      - in: path
+        name: destination_container_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainerTransfer'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+      summary: Transfer into container
+      tags:
+      - Containers
+  /containers:archive:
+    post:
+      description: Archive containers
+      operationId: archiveContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainersArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+      summary: Archive containers
+      tags:
+      - Containers
+  /containers:bulk-create:
+    post:
+      description: Bulk create containers
+      operationId: bulkCreateContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of Containers that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk create containers. Limit of 1000 containers per request.
+      tags:
+      - Containers
+  /containers:bulk-get:
+    get:
+      description: Bulk get a set of containers. Provide either containerIds or barcodes, not both.
+      operationId: bulkGetContainers
+      parameters:
+      - description: 'Comma-separated list of container IDs.
+
+          '
+        in: query
+        name: containerIds
+        schema:
+          type: string
+      - description: 'Comma-separated list of barcodes. Matches all of the provided barcodes, or returns a 400 error that includes a list of which barcodes are invalid.
+
+          '
+        in: query
+        name: barcodes
+        schema:
+          example: W102477,W102478
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: containers.id,containers.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainersList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk get a set of containers
+      tags:
+      - Containers
+  /containers:bulk-update:
+    post:
+      description: Bulk update containers
+      operationId: bulkUpdateContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of Containers that were updated.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk update containers
+      tags:
+      - Containers
+  /containers:check-in:
+    post:
+      description: Check in containers to signify that they are available for use.
+      operationId: checkinContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersCheckin'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+      summary: Check in containers
+      tags:
+      - Containers
+  /containers:check-out:
+    post:
+      description: Check out containers to signify that they are in use.
+      operationId: checkoutContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersCheckout'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+      summary: Check out containers
+      tags:
+      - Containers
+  /containers:print-labels:
+    post:
+      description: Print labels. Supported print methods are "REMOTE_PRINT_SERVER", "LEGACY_HTTP", and "LEGACY_TCP".
+      operationId: printLabels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrintLabels'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Print labels
+      tags:
+      - Containers
+  /containers:reserve:
+    post:
+      description: Reserve containers to signify that someone plans to use the containers.
+      operationId: reserveContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersCheckout'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+      summary: Reserve containers
+      tags:
+      - Containers
+  /containers:unarchive:
+    post:
+      description: Unarchive containers
+      operationId: unarchiveContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContainersUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContainersArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive containers
+      tags:
+      - Containers
+  /transfers:
+    post:
+      description: 'Transfers a volume of an entity or container into a destination container. Limit of 5000 transfers per request. Concentration of all contents in the destination container will be automatically updated based on the previous volume & concentrations of the contents in that container, the concentration of the contents being transferred in, the volume of the contents being transferred in, and the final volume of the container. If no concentration is specified, the concentration will not be tracked.
+
+        '
+      operationId: transferIntoContainers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MultipleContainersTransfersList'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of destination [containers](#/Containers/getContainer).
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Transfers into containers
+      tags:
+      - Containers
+components:
+  schemas:
+    Primer:
+      properties:
+        bases:
+          readOnly: true
+          type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
+      type: object
+    DeprecatedContainerVolumeForResponse:
+      allOf:
+      - $ref: '#/components/schemas/ContainerQuantity'
+      - description: 'The deprecated "volume" type key in API responses can also contain non-volume quantities for back-compatibility purposes. Use the "quantity" type key instead.
+
+          '
+    ExperimentalWellRole:
+      properties:
+        group:
+          type: integer
+        primaryRole:
+          enum:
+          - SAMPLE
+          - CONTROL
+          - STANDARD
+          - BLANK
+          type: string
+        subrole:
+          nullable: true
+          type: string
+      type: object
+    ContainerBulkUpdateItem:
+      allOf:
+      - $ref: '#/components/schemas/ContainerWriteBase'
+      - properties:
+          concentration:
+            allOf:
+            - $ref: '#/components/schemas/Measurement'
+            description: 'Concentration for the container. Only valid for single content containers. Null values will be ignored.
+
+              '
+            example:
+              units: g/mL
+              value: 10
+          containerId:
+            type: string
+          quantity:
+            $ref: '#/components/schemas/ContainerQuantity'
+          role:
+            allOf:
+            - $ref: '#/components/schemas/ExperimentalWellRole'
+            description: Role of a well in a well plate.
+            nullable: true
+          volume:
+            $ref: '#/components/schemas/DeprecatedContainerVolumeForInput'
+        required:
+        - containerId
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    MixtureWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/Mixture'
+      - properties:
+          entityType:
+            enum:
+            - mixture
+            type: string
+        type: object
+      type: object
+    PrintLabels:
+      additionalProperties: false
+      properties:
+        containerIds:
+          description: 'List of IDs of containers that will have labels printed (one label will be printed per container).
+
+            '
+          items:
+            type: string
+          type: array
+        labelTemplateId:
+          description: 'ID of label template to use (same template will be used for all labels printed).
+
+            '
+          example: lbltmp_lCpY5Qvh
+          type: string
+        printerId:
+          description: 'ID of printer to use (same printer will be used for all labels printed).
+
+            '
+          example: print_YJQkilOJ
+          type: string
+      required:
+      - containerIds
+      - labelTemplateId
+      - printerId
+      type: object
+    ContainerLabels:
+      properties:
+        barcode:
+          example: VIAL001
+          type: string
+        id:
+          example: cnt_12345
+          type: string
+        name:
+          example: My Container
+          type: string
+      type: object
+    AaSequenceSummary:
+      properties:
+        entityType:
+          enum:
+          - aa_sequence
+          type: string
+        id:
+          example: prtn_ObbdtGhC
+          type: string
+        type:
+          deprecated: true
+          type: string
+      type: object
+    DnaSequenceTranscription:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          description: Linked RNA sequence ID.
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          maximum: 1
+          minimum: -1
+          type: integer
+      type: object
+    Batch:
+      additionalProperties: false
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        createdAt:
+          description: DateTime at which the the result was created
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          readOnly: true
+        defaultConcentration:
+          $ref: '#/components/schemas/Measurement'
+        entity:
+          discriminator:
+            mapping:
+              aa_sequence: '#/components/schemas/AaSequenceSummary'
+              custom_entity: '#/components/schemas/CustomEntitySummary'
+              dna_sequence: '#/components/schemas/DnaSequenceSummary'
+            propertyName: entityType
+          oneOf:
+          - $ref: '#/components/schemas/DnaSequenceSummary'
+          - $ref: '#/components/schemas/AaSequenceSummary'
+          - $ref: '#/components/schemas/CustomEntitySummary'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          example: bat_UOIr8IjL
+          readOnly: true
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+          readOnly: true
+          title: SchemaProperty
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    RnaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/RnaSequence'
+      - properties:
+          entityType:
+            enum:
+            - rna_sequence
+            type: string
+        type: object
+      type: object
+    ContainersArchive:
+      additionalProperties: false
+      properties:
+        containerIds:
+          description: Array of container IDs
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'Reason that containers are being archived.
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Expended
+          - Shipped
+          - Contaminated
+          - Expired
+          - Missing
+          - Other
+          type: string
+        shouldRemoveBarcodes:
+          description: 'Remove barcodes. Removing barcodes from archived inventory that contain items will also remove barcodes from the contained items.
+
+            '
+          type: boolean
+      required:
+      - containerIds
+      - reason
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    MixtureMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - g
+      - kg
+      - mg
+      - ug
+      - Units
+      example: L
+      nullable: true
+      type: string
+    Container:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+          readOnly: true
+        barcode:
+          nullable: true
+          type: string
+        checkoutRecord:
+          allOf:
+          - $ref: '#/components/schemas/CheckoutRecord'
+          readOnly: true
+        contents:
+          items:
+            $ref: '#/components/schemas/ContainerContent'
+          readOnly: true
+          type: array
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          readOnly: true
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          example: con_ZBL9QQWD
+          readOnly: true
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parentStorageId:
+          nullable: true
+          type: string
+        parentStorageSchema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+          readOnly: true
+        projectId:
+          nullable: true
+          type: string
+        quantity:
+          $ref: '#/components/schemas/ContainerQuantity'
+        restrictedSampleParties:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - $ref: '#/components/schemas/TeamSummary'
+          type: array
+        restrictionStatus:
+          allOf:
+          - $ref: '#/components/schemas/SampleRestrictionStatus'
+        role:
+          allOf:
+          - $ref: '#/components/schemas/ExperimentalWellRole'
+          nullable: true
+        sampleOwners:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - $ref: '#/components/schemas/TeamSummary'
+          type: array
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+          readOnly: true
+        volume:
+          $ref: '#/components/schemas/DeprecatedContainerVolumeForResponse'
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    AaSequence:
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        aminoAcids:
+          description: Amino acids of the AA sequence.
+          example: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
+          type: string
+        annotations:
+          description: Array of annotation objects on the AA sequence.
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the AA Sequence in the API.
+          example: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the AA sequence was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the AA sequence.
+        entityRegistryId:
+          description: Registry ID of the AA sequence if registered.
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the AA sequence.
+          nullable: true
+          type: string
+        id:
+          description: ID of the AA sequence.
+          example: prtn_ObbdtGhC
+          type: string
+        length:
+          description: Number of amino acids in the AA sequence.
+          type: integer
+        modifiedAt:
+          description: DateTime the AA sequence was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the AA sequence.
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          description: Registry the AA sequence is registered in.
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          description: URL of the AA sequence.
+          example: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    CustomEntity:
+      properties:
+        aliases:
+          items:
+            example: sBN000
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Custom Entity in the API.
+          example: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: sBN000
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          example: lib_R8KcsjhW
+          nullable: true
+          type: string
+        id:
+          example: bfi_xCUXNVyG
+          type: string
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: sBN000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Strain
+          nullable: true
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    RnaOligoWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/RnaOligo'
+      - properties:
+          entityType:
+            enum:
+            - rna_oligo
+            type: string
+        type: object
+      type: object
+    TeamSummary:
+      allOf:
+      - type: object
+      - properties:
+          id:
+            type: string
+          name:
+            type: string
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
+    AaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/AaSequence'
+      - properties:
+          entityType:
+            enum:
+            - aa_sequence
+            type: string
+        type: object
+      type: object
+    RnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 1
+            type: integer
+        type: object
+    ContainerTransferDestinationContentsItem:
+      properties:
+        concentration:
+          $ref: '#/components/schemas/Measurement'
+        entityId:
+          type: string
+      required:
+      - entityId
+      type: object
+    ContainerTransferBase:
+      properties:
+        restrictedSamplePartyIds:
+          description: 'IDs of users or teams to be set as restricted sample parties for the destination container. If not specified, restricted sample parties from the source container, if present, will be added to those of the destination container. This only applies to stand-alone containers.
+
+            '
+          items:
+            type: string
+          type: array
+        restrictionStatus:
+          allOf:
+          - $ref: '#/components/schemas/SampleRestrictionStatus'
+          description: 'Restriction status of the destination container, either RESTRICTED or UNRESTRICTED. If not specified, the restriction status of the destination container will be the more restrictive of the source container, if present, and destination container restriction statuses. This only applies to stand-alone containers (Plate wells are always set to NOT_APPLICABLE).
+
+            '
+        sampleOwnerIds:
+          description: 'IDs of users or teams to be set as sample owners for the destination container. If not specified, restricted sample parties from the source container, if present, will be added to those of the destination container. This only applies to stand-alone containers.
+
+            '
+          items:
+            type: string
+          type: array
+        sourceBatchId:
+          description: 'ID of the batch that will be transferred in. Must specify one of sourceEntityId, sourceBatchId, or sourceContainerId.
+
+            '
+          type: string
+        sourceContainerId:
+          description: 'ID of the container that will be transferred in. Must specify one of sourceEntityId, sourceBatchId, or sourceContainerId.
+
+            '
+          type: string
+        sourceEntityId:
+          description: 'ID of the entity that will be transferred in. Must specify one of sourceEntityId, sourceBatchId, or sourceContainerId.
+
+            '
+          type: string
+        transferQuantity:
+          allOf:
+          - $ref: '#/components/schemas/ContainerQuantity'
+          description: 'This represents the quantity of the source to be transferred into the destination container. Supports mass, volume, and other quantities. Required in place of transferVolume.
+
+            '
+        transferVolume:
+          allOf:
+          - $ref: '#/components/schemas/DeprecatedContainerVolumeForInput'
+          description: 'Deprecated - use transferQuantity instead.
+
+            '
+      type: object
+    CustomEntityWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/CustomEntity'
+      - properties:
+          entityType:
+            enum:
+            - custom_entity
+            type: string
+        type: object
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    EmptyObject:
+      type: object
+    EntityOrInaccessibleResource:
+      oneOf:
+      - $ref: '#/components/schemas/Entity'
+      - $ref: '#/components/schemas/InaccessibleResource'
+      type: object
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+      properties:
+        name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
+      type: object
+    Entity:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/AaSequenceWithEntityType'
+          custom_entity: '#/components/schemas/CustomEntityWithEntityType'
+          dna_oligo: '#/components/schemas/DnaOligoWithEntityType'
+          dna_sequence: '#/components/schemas/DnaSequenceWithEntityType'
+          mixture: '#/components/schemas/MixtureWithEntityType'
+          molecule: '#/components/schemas/MoleculeWithEntityType'
+          rna_oligo: '#/components/schemas/RnaOligoWithEntityType'
+          rna_sequence: '#/components/schemas/RnaSequenceWithEntityType'
+        propertyName: entityType
+      oneOf:
+      - $ref: '#/components/schemas/DnaSequenceWithEntityType'
+      - $ref: '#/components/schemas/RnaSequenceWithEntityType'
+      - $ref: '#/components/schemas/AaSequenceWithEntityType'
+      - $ref: '#/components/schemas/MixtureWithEntityType'
+      - $ref: '#/components/schemas/DnaOligoWithEntityType'
+      - $ref: '#/components/schemas/RnaOligoWithEntityType'
+      - $ref: '#/components/schemas/MoleculeWithEntityType'
+      - $ref: '#/components/schemas/CustomEntityWithEntityType'
+      type: object
+    SampleRestrictionStatus:
+      enum:
+      - RESTRICTED
+      - UNRESTRICTED
+      - NOT_APPLICABLE
+      type: string
+    AaAnnotation:
+      properties:
+        color:
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the AA sequence is always represented as 0.
+          type: integer
+        id:
+          example: prtnann_o7zMPG0P
+          type: string
+        name:
+          maxLength: 255
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        type:
+          example: Site
+          maxLength: 255
+          type: string
+      type: object
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    MultipleContainersTransfersList:
+      additionalProperties: false
+      properties:
+        transfers:
+          items:
+            $ref: '#/components/schemas/MultipleContainersTransfer'
+          maxItems: 5000
+          type: array
+      required:
+      - transfers
+      type: object
+    IngredientMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - mg
+      - g
+      - kg
+      - ug
+      - Units
+      - Cells
+      - mol
+      - mmol
+      - umol
+      example: mL
+      nullable: true
+      type: string
+    CustomEntitySummary:
+      properties:
+        entityType:
+          enum:
+          - custom_entity
+          type: string
+        id:
+          example: bfi_xCUXNVyG
+          type: string
+        type:
+          deprecated: true
+          type: string
+      type: object
+    ContainerUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/ContainerWriteBase'
+      - properties:
+          projectId:
+            nullable: true
+            type: string
+          quantity:
+            $ref: '#/components/schemas/ContainerQuantity'
+          role:
+            allOf:
+            - $ref: '#/components/schemas/ExperimentalWellRole'
+            description: Role of a well in a well plate.
+            nullable: true
+          volume:
+            $ref: '#/components/schemas/DeprecatedContainerVolumeForInput'
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    RnaSequence:
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        alignmentIds:
+          description: API IDs of Nucleotide Alignments involving the RNA sequence
+          items:
+            type: string
+          type: array
+        annotations:
+          items:
+            $ref: '#/components/schemas/RnaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the RNA Sequence in the API.
+          example: https://benchling.com/api/v2/rna-sequences/seq_asZya4lk
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          type: string
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        customNotation:
+          description: Representation of the RNA Sequence in the custom notation specified in the request. Null if no notation was specified.
+          nullable: true
+          type: string
+        customNotationName:
+          description: Name of the custom notation specified in the request. Null if no notation was specified.
+          nullable: true
+          type: string
+        entityRegistryId:
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          nullable: true
+          type: string
+        helm:
+          description: Representation of the RNA Sequence in HELM syntax, including any chemical modifications.
+          example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
+          nullable: true
+          type: string
+        id:
+          type: string
+        isCircular:
+          example: false
+          type: boolean
+        length:
+          type: integer
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/RnaSequencePart'
+          type: array
+        primers:
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        translations:
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    DeprecatedContainerVolumeForInput:
+      description: 'Desired volume for a container, well, or transfer. "volume" type keys are deprecated in API requests; use the more permissive "quantity" type key instead.
+
+        '
+      properties:
+        units:
+          enum:
+          - pL
+          - nL
+          - uL
+          - mL
+          - L
+          - null
+          example: mL
+          nullable: true
+          type: string
+        value:
+          example: 10
+          nullable: true
+          type: number
+      type: object
+    RnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 0
+            type: integer
+          type:
+            type: string
+        type: object
+    ContainerContent:
+      properties:
+        batch:
+          allOf:
+          - $ref: '#/components/schemas/BatchOrInaccessibleResource'
+          nullable: true
+        concentration:
+          $ref: '#/components/schemas/Measurement'
+        entity:
+          allOf:
+          - $ref: '#/components/schemas/EntityOrInaccessibleResource'
+          nullable: true
+      type: object
+    DnaSequence:
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        annotations:
+          items:
+            $ref: '#/components/schemas/DnaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the DNA Sequence in the API.
+          example: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          type: string
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        dnaAlignmentIds:
+          description: API IDs of Nucleotide Alignments involving the RNA sequence
+          items:
+            type: string
+          type: array
+        entityRegistryId:
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          nullable: true
+          type: string
+        id:
+          type: string
+        isCircular:
+          type: boolean
+        length:
+          type: integer
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/DnaSequencePart'
+          type: array
+        primers:
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        transcriptions:
+          items:
+            $ref: '#/components/schemas/DnaSequenceTranscription'
+          type: array
+        translations:
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    ContainerCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/ContainerWriteBase'
+      - properties:
+          barcode:
+            type: string
+          projectId:
+            nullable: true
+            type: string
+          schemaId:
+            type: string
+            writeOnly: true
+        required:
+        - schemaId
+        type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    Molecule:
+      additionalProperties: false
+      properties:
+        aliases:
+          description: Array of aliases.
+          items:
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Molecule in the API.
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        canonicalizedSmiles:
+          description: The canonicalized chemical structure in SMILES format.
+          example: Nc1nc(=O)n([H])cc1C1CC1
+          type: string
+        createdAt:
+          description: DateTime the Molecule was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Molecule.
+        entityRegistryId:
+          description: Registry ID of the Molecule if registered.
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Molecule.
+          nullable: true
+          type: string
+        id:
+          description: ID of the Molecule.
+          example: mol_bhuDUw9D
+          type: string
+        modifiedAt:
+          description: DateTime the Molecule was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the Molecule.
+          type: string
+        originalSmiles:
+          description: The original chemical structure supplied by the user in SMILES format. Null if the user did not originally supply SMILES.
+          example: Nc1nc(=O)n([H])cc1C1CC1
+          nullable: true
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          description: Registry the Molecule is registered in.
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        webURL:
+          description: URL of the Molecule.
+          example: https://benchling.com/benchling/f/lib_R8KcsjhW-molecules/mol_xCUXNVyG-molecule1/edit
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    DnaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/DnaSequence'
+      - properties:
+          entityType:
+            enum:
+            - dna_sequence
+            type: string
+        type: object
+      type: object
+    ContainerQuantity:
+      description: Quantity of a container, well, or transfer. Supports mass, volume, and other quantities.
+      properties:
+        units:
+          enum:
+          - L
+          - mL
+          - uL
+          - nL
+          - pL
+          - gal (US)
+          - qt (US)
+          - pt (US)
+          - kg
+          - g
+          - mg
+          - ug
+          - ng
+          - pg
+          - lb
+          - oz
+          - mol
+          - mmol
+          - umol
+          - nmol
+          - pmol
+          - cells
+          - (x10^3) cells
+          - (x10^4) cells
+          - (x10^5) cells
+          - (x10^6) cells
+          - (x10^7) cells
+          - (x10^8) cells
+          - (x10^9) cells
+          - items
+          - units
+          - null
+          example: mL
+          nullable: true
+          type: string
+        value:
+          example: 10
+          nullable: true
+          type: number
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    ContainersBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        containers:
+          items:
+            $ref: '#/components/schemas/ContainerCreate'
+          maxItems: 1000
+          type: array
+      required:
+      - containers
+      type: object
+    Measurement:
+      properties:
+        units:
+          description: Can only be null if value is also null
+          nullable: true
+          type: string
+        value:
+          description: Can only be null if units is also null
+          nullable: true
+          type: number
+      required:
+      - value
+      - units
+      type: object
+    ContainersList:
+      properties:
+        containers:
+          items:
+            $ref: '#/components/schemas/Container'
+          type: array
+      type: object
+    NucleotideSequencePart:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+      type: object
+    DnaOligoWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/DnaOligo'
+      - properties:
+          entityType:
+            enum:
+            - dna_oligo
+            type: string
+        type: object
+      type: object
+    ContainersBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        containers:
+          items:
+            $ref: '#/components/schemas/ContainerBulkUpdateItem'
+          type: array
+      required:
+      - containers
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    RnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/Oligo'
+      - properties:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/RnaAnnotation'
+            type: array
+          apiURL:
+            example: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9D
+            type: string
+          bases:
+            example: ACUUUUU
+            type: string
+          customNotation:
+            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
+            nullable: true
+            type: string
+          customNotationName:
+            description: Name of the custom notation specified in the request. Null if no notation was specified.
+            nullable: true
+            type: string
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
+            type: string
+          nucleotideType:
+            example: RNA
+            type: string
+    MoleculeWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/Molecule'
+      - properties:
+          entityType:
+            enum:
+            - molecule
+            type: string
+        type: object
+      type: object
+    ContainersArchivalChange:
+      description: 'IDs of all items that were unarchived, grouped by resource type. This includes the IDs of containers that were unarchived.
+
+        '
+      properties:
+        containerIds:
+          items:
+            type: string
+          type: array
+      type: object
+    ContainersCheckin:
+      additionalProperties: false
+      properties:
+        comments:
+          type: string
+        containerIds:
+          description: Array of container IDs.
+          items:
+            type: string
+          type: array
+      required:
+      - containerIds
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    ContainerContentsList:
+      properties:
+        contents:
+          items:
+            $ref: '#/components/schemas/ContainerContent'
+          readOnly: true
+          type: array
+      type: object
+    DnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: -1
+            type: integer
+        type: object
+    CheckoutRecord:
+      description: '
+
+        *assignee field* is set if status is "RESERVED" or "CHECKED_OUT", or null if status is "AVAILABLE".
+
+
+        *comment field* is set when container was last reserved, checked out, or checked into.
+
+
+        *modifiedAt field* is the date and time when container was last checked out, checked in, or reserved
+
+        '
+      properties:
+        assignee:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - $ref: '#/components/schemas/TeamSummary'
+        comment:
+          type: string
+        modifiedAt:
+          format: date-time
+          type: string
+        status:
+          enum:
+          - AVAILABLE
+          - RESERVED
+          - CHECKED_OUT
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    ContainerWriteBase:
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          description: ID of containing parent inventory, can also specify a coordinate for plates and boxes (e.g. plt_2bAks9dx:a2).
+          type: string
+        restrictedSamplePartyIds:
+          description: 'IDs of users or teams who have access to use a restricted container. Well plate wells and unrestricted containers do not have restricted sample parties.
+
+            '
+          items:
+            type: string
+          type: array
+        restrictionStatus:
+          allOf:
+          - $ref: '#/components/schemas/SampleRestrictionStatus'
+          description: 'Either RESTRICTED or UNRESTRICTED. This only applies to stand-alone containers (Plate wells are always set to NOT_APPLICABLE).
+
+            '
+        sampleOwnerIds:
+          description: 'IDs of users or teams who are sample owners for the container. Well plate wells do not have sample owners.
+
+            '
+          items:
+            type: string
+          type: array
+    ContainersUnarchive:
+      additionalProperties: false
+      properties:
+        containerIds:
+          description: Array of container IDs
+          items:
+            type: string
+          type: array
+      required:
+      - containerIds
+      type: object
+    ContainersPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/ContainersList'
+      - $ref: '#/components/schemas/Pagination'
+    InaccessibleResource:
+      additionalProperties: false
+      properties:
+        inaccessibleId:
+          type: string
+        resourceType:
+          enum:
+          - inaccessible_resource
+          type: string
+        type:
+          description: 'The type of this inaccessible item. Example values: "custom_entity", "container", "plate", "dna_sequence"
+
+            '
+          example: custom_entity
+          type: string
+      type: object
+    ContainerTransfer:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/ContainerTransferBase'
+      - properties:
+          destinationContents:
+            description: 'This represents what the contents of the destination container should look like post-transfer.
+
+              '
+            items:
+              $ref: '#/components/schemas/ContainerTransferDestinationContentsItem'
+            type: array
+          destinationQuantity:
+            allOf:
+            - $ref: '#/components/schemas/ContainerQuantity'
+            description: 'This represents the desired final quantity of the destination container, post-dilution. If you don''t want to dilute the destination container, you can omit this parameter. Supports mass, volume, and other quantities.
+
+              '
+          destinationVolume:
+            allOf:
+            - $ref: '#/components/schemas/DeprecatedContainerVolumeForInput'
+            description: 'Deprecated - use destinationQuantity instead.
+
+              '
+        required:
+        - destinationContents
+        type: object
+      type: object
+    ForbiddenRestrictedSampleError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidIds:
+                items:
+                  type: string
+                type: array
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+          - example:
+              invalidIds:
+              - Q6uhNZvw
+              - con_OwmERWGE
+              - con_zuDFhNvz
+              message: You're not a restricted sample user for some items.
+              type: invalid_request_error
+              userMessage: You're not a restricted sample user for some items.
+      type: object
+    EntityLabels:
+      properties:
+        entityRegistryId:
+          example: REAG000
+          nullable: true
+          type: string
+        id:
+          example: bfi_12345
+          type: string
+        name:
+          example: Deionized Water
+          type: string
+      type: object
+    ContainersCheckout:
+      additionalProperties: false
+      properties:
+        assigneeId:
+          description: User or Team API ID.
+          type: string
+        comment:
+          type: string
+        containerIds:
+          description: Array of container IDs.
+          items:
+            type: string
+          type: array
+      required:
+      - containerIds
+      - assigneeId
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    DnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            maximum: 1
+            minimum: -1
+            type: integer
+          type:
+            type: string
+        type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    DnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/Oligo'
+      - properties:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/DnaAnnotation'
+            type: array
+          apiURL:
+            example: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
+            type: string
+          bases:
+            example: ACTTTTT
+            type: string
+          customNotation:
+            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
+            nullable: true
+            type: string
+          customNotationName:
+            description: Name of the custom notation specified in the request. Null if no notation was specified.
+            nullable: true
+            type: string
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
+            type: string
+    ContainerContentUpdate:
+      additionalProperties: false
+      properties:
+        concentration:
+          $ref: '#/components/schemas/Measurement'
+      required:
+      - concentration
+      type: object
+    MultipleContainersTransfer:
+      allOf:
+      - $ref: '#/components/schemas/ContainerTransferBase'
+      - properties:
+          destinationContainerId:
+            description: ID of container that will be transferred into.
+            type: string
+          finalQuantity:
+            $ref: '#/components/schemas/ContainerQuantity'
+          finalVolume:
+            $ref: '#/components/schemas/DeprecatedContainerVolumeForInput'
+          sourceConcentration:
+            allOf:
+            - $ref: '#/components/schemas/Measurement'
+            description: 'Concentration at which to transfer entities. Not applicable for container-to-container transfers (the concentration of the source container’s contents will be used).
+
+              '
+            example:
+              units: g/mL
+              value: 10
+        required:
+        - destinationContainerId
+        type: object
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    Mixture:
+      properties:
+        aliases:
+          items:
+            example: FRM000
+            type: string
+          type: array
+        allowMeasuredIngredients:
+          description: Derived from the mixture's schema.
+          readOnly: true
+          type: boolean
+        amount:
+          description: The positive numerical amount value of this mixture in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4).
+          example: '123'
+          type: string
+        apiURL:
+          description: The canonical url of the Mixture in the API.
+          example: https://benchling.com/api/v2/mixtures/mxt_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: FRM000
+          nullable: true
+          type: string
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: Mixtures can have up to one parent mixture field.
+        folderId:
+          example: lib_R8KcsjhW
+          nullable: true
+          type: string
+        id:
+          example: mxt_xCUXNVyG
+          type: string
+        ingredients:
+          description: List of ingredients on this mixture.
+          items:
+            $ref: '#/components/schemas/Ingredient'
+          type: array
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: FRM000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Prep
+        units:
+          $ref: '#/components/schemas/MixtureMeasurementUnits'
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/mxt-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    DnaSequenceSummary:
+      properties:
+        entityType:
+          enum:
+          - dna_sequence
+          type: string
+        id:
+          example: seq_ObbdtGhC
+          type: string
+        type:
+          deprecated: true
+          type: string
+      type: object
+    Translation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          aminoAcids:
+            readOnly: true
+            type: string
+          coerceStartCodonToMethionine:
+            default: false
+            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
+            type: boolean
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          geneticCode:
+            default: STANDARD
+            description: The genetic code to use when translating the nucleotide sequence into amino acids.
+            enum:
+            - STANDARD
+            - VERTEBRATE_MITOCHONDRIAL
+            - YEAST_MITOCHONDRIAL
+            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
+            - INVERTEBRATE_MITOCHONDRIAL
+            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
+            - ECHINODERM_FLATWORM_MITOCHONDRIAL
+            - EUPLOTID_NUCLEAR
+            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
+            - ALTERNATIVE_YEAST_NUCLEAR
+            - ASCIDIAN_MITOCHONDRIAL
+            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
+            - CHLOROPHYCEAN_MITOCHONDRIAL
+            - TREMATODE_MITOCHONDRIAL
+            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
+            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
+            - RHABDOPLEURIDAE_MITOCHONDRIAL
+            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
+            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
+            - MESODINIUM_NUCLEAR
+            - PERITRICH_NUCLEAR
+            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
+            type: string
+          regions:
+            items:
+              properties:
+                end:
+                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+                  type: integer
+                start:
+                  description: 0-based inclusive start index.
+                  type: integer
+              type: object
+            type: array
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            type: integer
+        type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    BatchOrInaccessibleResource:
+      oneOf:
+      - $ref: '#/components/schemas/Batch'
+      - $ref: '#/components/schemas/InaccessibleResource'
+    Oligo:
+      discriminator:
+        mapping:
+          DNA: DnaOligo
+          RNA: RnaOligo
+        propertyName: nucleotideType
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Oligo in the API.
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          description: Base pairs of the Oligo.
+          example: ACTTTTT
+          type: string
+        createdAt:
+          description: DateTime the Oligo was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Oligo.
+        entityRegistryId:
+          description: Registry ID of the Oligo if registered.
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Oligo.
+          nullable: true
+          type: string
+        id:
+          description: ID of the Oligo.
+          example: seq_bhuDUw9D
+          type: string
+        length:
+          description: Number of bases in the Oligo.
+          type: integer
+        modifiedAt:
+          description: DateTime the Oligo was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the Oligo.
+          type: string
+        nucleotideType:
+          description: Nucleotide type of the Oligo.
+          enum:
+          - DNA
+          - RNA
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          description: Registry the Oligo is registered in.
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        webURL:
+          description: URL of the Oligo.
+          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          nullable: true
+          readOnly: true
+          type: string
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    Ingredient:
+      properties:
+        amount:
+          description: 'The amount value of this ingredient in its mixture, in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4). One ingredient on this mixture can have an amount value of `"QS"`.
+
+            '
+          example: '12'
+          nullable: true
+          type: string
+        catalogIdentifier:
+          example: DION_004
+          nullable: true
+          type: string
+        componentEntity:
+          allOf:
+          - $ref: '#/components/schemas/EntityLabels'
+          - description: The entity that uniquely identifies this component.
+        componentLotContainer:
+          allOf:
+          - $ref: '#/components/schemas/ContainerLabels'
+          description: The container representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
+          nullable: true
+        componentLotEntity:
+          allOf:
+          - $ref: '#/components/schemas/EntityLabels'
+          description: The entity representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
+          nullable: true
+        componentLotText:
+          description: Text representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "text" format.
+          example: DION_004-source_001
+          nullable: true
+          type: string
+        hasParent:
+          type: boolean
+        notes:
+          nullable: true
+          type: string
+        targetAmount:
+          description: The target amount for this ingredient such that this ingredient's proportion in its mixture would preserve the equivalent ingredient's proportion in the parent mixture. Pair with `units`.
+          example: '123'
+          nullable: true
+          readOnly: true
+          type: string
+        units:
+          $ref: '#/components/schemas/IngredientMeasurementUnits'
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

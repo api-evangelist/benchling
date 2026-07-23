@@ -1,0 +1,352 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Projects API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Manage project objects.
+  name: Projects
+paths:
+  /projects:
+    get:
+      description: List projects
+      operationId: listProjects
+      parameters:
+      - in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+          '
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - name
+          - modifiedAt:asc
+          - name:asc
+          - modifiedAt:desc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived projects. Use "ANY_ARCHIVED" to filter for archived projects regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: src_ZJy8RTbo,src_8GVbVkPj,src_qREJ33rn
+          type: string
+      - description: Name of a project. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsPaginatedList'
+          description: OK
+      summary: List projects
+      tags:
+      - Projects
+  /projects/{project_id}:
+    get:
+      description: Get a project by ID
+      operationId: getProject
+      parameters:
+      - description: ID of project to get
+        in: path
+        name: project_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a project by ID
+      tags:
+      - Projects
+  /projects:archive:
+    post:
+      description: Archives projects and their contents
+      operationId: archiveProjects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectsArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive projects
+      tags:
+      - Projects
+  /projects:unarchive:
+    post:
+      description: Unarchives projects and the contents that were archived along with them
+      operationId: unarchiveProjects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectsUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectsArchivalChange'
+          description: OK
+      summary: Unarchive projects
+      tags:
+      - Projects
+components:
+  schemas:
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ProjectsArchive:
+      additionalProperties: false
+      properties:
+        projectIds:
+          description: A list of project IDs to archive.
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'The reason for archiving the provided projects. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Other
+          type: string
+      required:
+      - reason
+      - projectIds
+      type: object
+    ProjectsPaginatedList:
+      properties:
+        nextToken:
+          type: string
+        projects:
+          items:
+            $ref: '#/components/schemas/Project'
+          type: array
+      type: object
+    Project:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        id:
+          type: string
+        name:
+          type: string
+        owner:
+          anyOf:
+          - $ref: '#/components/schemas/Organization'
+          - $ref: '#/components/schemas/UserSummary'
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Organization:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    ProjectsArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of projects along with any IDs of project contents that were unarchived.
+
+        '
+      properties:
+        aaSequenceIds:
+          items:
+            type: string
+          type: array
+        customEntityIds:
+          items:
+            type: string
+          type: array
+        dnaSequenceIds:
+          items:
+            type: string
+          type: array
+        entryIds:
+          items:
+            type: string
+          type: array
+        folderIds:
+          items:
+            type: string
+          type: array
+        mixtureIds:
+          items:
+            type: string
+          type: array
+        oligoIds:
+          items:
+            type: string
+          type: array
+        projectIds:
+          items:
+            type: string
+          type: array
+        protocolIds:
+          items:
+            type: string
+          type: array
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    ProjectsUnarchive:
+      additionalProperties: false
+      properties:
+        projectIds:
+          description: A list of project IDs to unarchive.
+          items:
+            type: string
+          type: array
+      required:
+      - projectIds
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

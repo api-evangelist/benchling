@@ -1,0 +1,1001 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Workflow Tasks API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Workflow tasks encapsulate a single unit of work
+  name: Workflow Tasks
+paths:
+  /workflow-tasks:
+    get:
+      description: List workflow tasks
+      operationId: listWorkflowTasks
+      parameters:
+      - description: Comma separated list of workflow task IDs
+        in: query
+        name: ids
+        schema:
+          example: wftask_OnnsW08k,wftask_4ejSW7en
+          type: string
+      - description: Comma separated list of workflow IDs
+        in: query
+        name: workflowTaskGroupIds
+        schema:
+          example: prs_giVNQcTL,prs_t6m99v1
+          minLength: 1
+          type: string
+      - description: The ID of the workflow task schema of the workflow task
+        in: query
+        name: schemaId
+        schema:
+          example: prstsch_KnR9iVum
+          type: string
+      - description: Comma separated list of workflow task status ids
+        in: query
+        name: statusIds
+        schema:
+          example: wfts_wQzUCsW0,wfts_VFvwv7JV
+          minLength: 1
+          type: string
+      - description: Comma separated list of user ids or "null"
+        in: query
+        name: assigneeIds
+        schema:
+          example: ent_a0SApq3z,null
+          minLength: 1
+          type: string
+      - description: Comma separated list of user IDs or "null"
+        in: query
+        name: watcherIds
+        schema:
+          example: ent_a0SApq3z,ent_asdf72354,null
+          minLength: 1
+          type: string
+      - description: Comma separated list of team IDs or "null"
+        in: query
+        name: responsibleTeamIds
+        schema:
+          example: team_Thepp2c7,team_QqHMbfqK,null
+          minLength: 1
+          type: string
+      - description: Comma separated list of entry IDs
+        in: query
+        name: executionOriginIds
+        schema:
+          example: etr_d00c97,etr_30ad79
+          minLength: 1
+          type: string
+      - description: 'Comma separated list of workflow execution types. Acceptable execution types are "DIRECT" and "ENTRY"
+
+          '
+        in: query
+        name: executionTypes
+        schema:
+          example: ENTRY,DIRECT
+          minLength: 1
+          type: string
+      - description: 'Comma separated list of bioentity or storable IDs. Maximum of 100. Returns workflow tasks where the task''s schema fields reference at least one of the provided items.
+
+          '
+        in: query
+        name: linkedItemIds.anyOf
+        schema:
+          example: bfi_ed1ef7,con_1c76c9
+          type: string
+      - description: 'Comma separated list of bioentity or storable IDs. Returns workflow tasks where the task''s schema fields reference all of the provided items.
+
+          '
+        in: query
+        name: linkedItemIds.allOf
+        schema:
+          example: bfi_ed1ef7,con_1c76c9
+          type: string
+      - description: 'Comma separated list of bioentity or storable IDs. Returns workflow tasks where the task''s schema fields do not reference any of the provided items.
+
+          '
+        in: query
+        name: linkedItemIds.noneOf
+        schema:
+          example: bfi_ed1ef7,con_1c76c9
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: The name of the workflow task
+        in: query
+        name: name
+        schema:
+          example: PR-1
+          type: string
+      - description: Part of the name of the workflow task
+        in: query
+        name: nameIncludes
+        schema:
+          example: PR
+          type: string
+      - description: Comma separated list of user IDs.
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: 'The date on which the task was scheduled to be executed. Returns tasks which are scheduled on the provided date. If "null" is provided returns tasks which are unshceduled.
+
+          '
+        in: query
+        name: scheduledOn
+        schema:
+          anyOf:
+          - enum:
+            - 'null'
+            type: string
+          - example: '2020-01-01'
+            format: date
+            type: string
+      - description: 'The date on which the task was scheduled to be executed. Returns tasks which are scheduled before the provided date.
+
+          '
+        in: query
+        name: scheduledOn.lt
+        schema:
+          example: '2020-01-01'
+          format: date
+          type: string
+      - description: 'The date on which the task was scheduled to be executed. Returns tasks which are scheduled before or on the provided date.
+
+          '
+        in: query
+        name: scheduledOn.lte
+        schema:
+          example: '2020-01-01'
+          format: date
+          type: string
+      - description: 'The date on which the task was scheduled to be executed. Returns tasks which are scheduled on or after the provided date.
+
+          '
+        in: query
+        name: scheduledOn.gte
+        schema:
+          example: '2020-01-01'
+          format: date
+          type: string
+      - description: 'The date on which the task was scheduled to be executed. Returns tasks which are scheduled after the provided date.
+
+          '
+        in: query
+        name: scheduledOn.gt
+        schema:
+          example: '2020-01-01'
+          format: date
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - example: Im5ldyB0ZXN0Ig==
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Comma-separated list of Workflow Task Display IDs.
+        in: query
+        name: displayIds
+        schema:
+          example: ANG1-T1,ANG1-T2
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived workflow tasks. Use "ANY_ARCHIVED" to filter for archived workflow tasks regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTasksPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: List workflow tasks
+      tags:
+      - Workflow Tasks
+    post:
+      description: Create a new workflow task
+      operationId: createWorkflowTask
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTaskCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTask'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Create a new workflow task
+      tags:
+      - Workflow Tasks
+  /workflow-tasks/{workflow_task_id}:
+    get:
+      description: Get a workflow task
+      operationId: getWorkflowTask
+      parameters:
+      - description: The ID of the workflow task
+        in: path
+        name: workflow_task_id
+        required: true
+        schema:
+          example: wftask_OnnsW08k
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTask'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: Get a workflow task
+      tags:
+      - Workflow Tasks
+    patch:
+      description: Update a workflow task
+      operationId: updateWorkflowTask
+      parameters:
+      - description: The ID of the workflow task
+        in: path
+        name: workflow_task_id
+        required: true
+        schema:
+          example: wftask_OnnsW08k
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTaskUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTask'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: Update a workflow task
+      tags:
+      - Workflow Tasks
+  /workflow-tasks/{workflow_task_id}:copy:
+    post:
+      description: Creates a new workflow task based on the provided task
+      operationId: copyWorkflowTask
+      parameters:
+      - description: The ID of the workflow task
+        in: path
+        name: workflow_task_id
+        required: true
+        schema:
+          example: wftask_OnnsW08k
+          type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTask'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not found
+      summary: 'Creates a new workflow task with the same fields and assignee as the provided task and creates a relationship between the two tasks
+
+        '
+      tags:
+      - Workflow Tasks
+  /workflow-tasks:archive:
+    post:
+      description: Archive one or more workflow tasks
+      operationId: archiveWorkflowTasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTasksArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTasksArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Archive one or more workflow tasks
+      tags:
+      - Workflow Tasks
+  /workflow-tasks:bulk-copy:
+    post:
+      description: Bulk creates new workflow tasks based on the provided tasks
+      operationId: bulkCopyWorkflowTasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTasksBulkCopyRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: 'Bulk creates new workflow tasks where each new task has the same fields and assignee as one of the provided tasks and creates a relationship between the provided task and its copy
+
+        '
+      tags:
+      - Workflow Tasks
+  /workflow-tasks:bulk-create:
+    post:
+      description: Create one or more workflow tasks
+      operationId: bulkCreateWorkflowTasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTasksBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Create one or more workflow tasks
+      tags:
+      - Workflow Tasks
+  /workflow-tasks:bulk-update:
+    post:
+      description: Update one or more workflow tasks
+      operationId: bulkUpdateWorkflowTasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTasksBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Update one or more workflow task
+      tags:
+      - Workflow Tasks
+  /workflow-tasks:unarchive:
+    post:
+      description: Unarchive one or more workflow tasks
+      operationId: unarchiveWorkflowTasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowTasksUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTasksArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad request
+      summary: Unarchive one or more workflow tasks
+      tags:
+      - Workflow Tasks
+components:
+  schemas:
+    WorkflowTaskSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    WorkflowTaskCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskWriteBase'
+      - properties:
+          workflowTaskGroupId:
+            description: The workflow ID
+            example: prs_giVNQcTL
+            type: string
+        required:
+        - workflowTaskGroupId
+    WorkflowTasksArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type
+
+        '
+      properties:
+        workflowTaskIds:
+          items:
+            example: wftask_OnnsW08k
+            type: string
+          type: array
+      type: object
+    WorkflowTaskBase:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskSummary'
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+            readOnly: true
+          assignee:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            nullable: true
+          clonedFrom:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskSummary'
+            nullable: true
+          createdAt:
+            description: The ISO formatted date and time that the task was created
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          creationOrigin:
+            $ref: '#/components/schemas/CreationOrigin'
+          creator:
+            $ref: '#/components/schemas/UserSummary'
+          executionOrigin:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskExecutionOrigin'
+            nullable: true
+          fields:
+            $ref: '#/components/schemas/Fields'
+          modifiedAt:
+            description: The ISO formatted date and time that the task was last modified
+            example: '2020-08-01T00:00:00.000Z'
+            nullable: false
+            type: string
+          outputs:
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          scheduledOn:
+            description: The date on which the task is scheduled to be executed
+            example: '2020-08-01'
+            format: date
+            nullable: true
+            type: string
+          schema:
+            $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+          status:
+            $ref: '#/components/schemas/WorkflowTaskStatus'
+          webURL:
+            description: URL of the workflow task
+            format: uri
+            readOnly: true
+            type: string
+          workflowTaskGroup:
+            $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    CreationOrigin:
+      properties:
+        application:
+          nullable: true
+          readOnly: true
+          type: string
+        originId:
+          nullable: true
+          readOnly: true
+          type: string
+        originModalUuid:
+          format: uuid
+          nullable: true
+          readOnly: true
+          type: string
+        originType:
+          nullable: true
+          readOnly: true
+          type: string
+      type: object
+    WorkflowTaskBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskUpdate'
+      - properties:
+          workflowTaskId:
+            description: The workflow task ID
+            example: wftask_OnnsW08k
+            type: string
+      type: object
+    WorkflowTaskStatus:
+      properties:
+        displayName:
+          description: The status label
+          example: Pending
+          readOnly: true
+          type: string
+        id:
+          description: The ID of the workflow task status
+          example: wfts_wQzUCsW0
+          readOnly: true
+          type: string
+        statusType:
+          description: The status type
+          enum:
+          - PENDING
+          - IN_PROGRESS
+          - FAILED
+          - CANCELLED
+          - INVALID
+          - COMPLETED
+          example: PENDING
+          readOnly: true
+          type: string
+      type: object
+    WorkflowTaskUpdate:
+      allOf:
+      - properties:
+          statusId:
+            example: wfts_VFvwv7JV
+            type: string
+      - $ref: '#/components/schemas/WorkflowTaskWriteBase'
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    WorkflowTaskWriteBase:
+      properties:
+        assigneeId:
+          description: The id of the user assigned to the task
+          example: ent_0YuSQS51
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        scheduledOn:
+          description: The date on which the task is scheduled to be executed
+          example: '2020-08-01'
+          format: date
+          type: string
+    WorkflowTasksPaginatedList:
+      properties:
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+        workflowTasks:
+          items:
+            $ref: '#/components/schemas/WorkflowTask'
+          type: array
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowTasksUnarchive:
+      properties:
+        workflowTaskIds:
+          items:
+            example: wftask_OnnsW08k
+            type: string
+          type: array
+      required:
+      - workflowTaskIds
+      type: object
+    WorkflowTaskArchiveReason:
+      description: 'The reason for archiving the provided workflow tasks. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Other
+      type: string
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    WorkflowTaskSchemaSummary:
+      properties:
+        id:
+          description: The ID of the workflow task schema
+          type: string
+        name:
+          description: The name of the workflow task schema
+          type: string
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    WorkflowOutputSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    WorkflowTasksBulkCreateRequest:
+      properties:
+        workflowTasks:
+          items:
+            $ref: '#/components/schemas/WorkflowTaskBulkCreate'
+          type: array
+      type: object
+    WorkflowTasksBulkUpdateRequest:
+      properties:
+        workflowTasks:
+          items:
+            $ref: '#/components/schemas/WorkflowTaskBulkUpdate'
+          type: array
+      type: object
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+    WorkflowTaskExecutionOrigin:
+      description: The context into which a task was executed
+      properties:
+        entryId:
+          example: etr_30ad79
+          nullable: true
+          type: string
+        originModalUuid:
+          example: e8805895-0654-4613-ac04-39ee7462202e
+          format: uuid
+          nullable: true
+          type: string
+        type:
+          enum:
+          - API
+          - ENTRY
+          - MODAL
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    WorkflowTask:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskBase'
+      - properties:
+          executionFlowchartId:
+            description: The ID of the flowchart that this task will execute. This will only be defined if the task has exectutionType FLOWCHART
+            example: wffc_6fd512
+            type: string
+          executionType:
+            description: The method by which the task of the workflow is executed
+            enum:
+            - DIRECT
+            - ENTRY
+            - FLOWCHART
+            - PROCEDURE
+            - PROCEDURE_METHOD
+            - PROCEDURE_STEP
+            type: string
+          nextOutputs:
+            description: The outputs in the flowchart which are generated by this task.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          nextTasks:
+            description: The downstream tasks in the flowchart which are generated by this task.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          responsibleParties:
+            description: List of users and teams that are responsible for this task
+            items:
+              $ref: '#/components/schemas/PartySummary'
+            type: array
+          rootTask:
+            allOf:
+            - $ref: '#/components/schemas/WorkflowTaskSummary'
+            description: The task which is at the root of the flowchart. This will be null if the task is not part of a flowchart.
+          sourceOutputs:
+            description: The parent outputs in the flowchart which were used to generate this task.
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+          sourceTasks:
+            description: The parent tasks in the flowchart which were used to generate this task.
+            items:
+              $ref: '#/components/schemas/WorkflowTaskSummary'
+            type: array
+          workflowOutputs:
+            description: The outputs of the workflow task group
+            items:
+              $ref: '#/components/schemas/WorkflowOutputSummary'
+            type: array
+    WorkflowTaskBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskCreate'
+    WorkflowTasksBulkCopyRequest:
+      properties:
+        workflowTaskIds:
+          items:
+            example: wftask_OnnsW08k
+            maxItems: 100
+            type: string
+          type: array
+      type: object
+    WorkflowTasksArchive:
+      properties:
+        reason:
+          $ref: '#/components/schemas/WorkflowTaskArchiveReason'
+        workflowTaskIds:
+          items:
+            example: wftask_OnnsW08k
+            type: string
+          type: array
+      required:
+      - workflowTaskIds
+      - reason
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

@@ -1,0 +1,1769 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Entries API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Entries are rich text documents that allow you to capture all of your experimental data in one place.
+  name: Entries
+paths:
+  /entries:
+    get:
+      description: List notebook entries
+      operationId: listEntries
+      parameters:
+      - description: Number of results to return. Defaults to 50, maximum of 100.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Method by which to order search results. Valid sorts are modifiedAt (modified time, most recent first) and name (entity name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order.
+
+          '
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of an Entry. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: ID of a project. Restricts results to those in the project.
+        in: query
+        name: projectId
+        schema:
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived entries. Use "ANY_ARCHIVED" to filter for archived entries regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Restrict results to those with the given review status. Supported statuses: IN_PROGRESS, ACCEPTED, REJECTED, NEEDS_REVIEW, RETRACTED
+
+          '
+        in: query
+        name: reviewStatus
+        schema:
+          enum:
+          - IN_PROGRESS
+          - ACCEPTED
+          - REJECTED
+          - NEEDS_REVIEW
+          - RETRACTED
+          type: string
+      - description: 'Comma-separated list of entry IDs. Restricts results to those mentioned within the entries in this list.
+
+          '
+        in: query
+        name: mentionedIn
+        schema:
+          type: string
+      - description: 'Comma-separated list of resource IDs. Restricts results to entries that mention the given items.
+
+          '
+        in: query
+        name: mentions
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          type: string
+      - description: 'ID of a schema. Restricts results to those of the specified schema.
+
+          '
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Comma-separated list of ids. Restricts results to entries that have assignees of any of the specified ids.
+        in: query
+        name: assignedReviewerIds.anyOf
+        schema:
+          example: ent_a0SApq3z,ent_SdUvia1v
+          type: string
+      - description: Comma separated list of users IDs.
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: Comma separated list of user or app IDs. Maximum of 100.
+        in: query
+        name: authorIds.anyOf
+        schema:
+          example: ent_a0SApq3z,ent_b4AApz9b
+          type: string
+      - description: Comma-separated list of Entry Display IDs.
+        in: query
+        name: displayIds
+        schema:
+          example: VPR001,VPR002
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "entries.days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "entries.days.notes.text" will return the same model as "entries.days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: entries.id, entries.name, entries.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntriesPaginatedList'
+          description: 'Returns a list of entries. Entries are notes that users can take. They''re organized by "days" (which are user-configurable) and modeled within each day as a list of "notes." Each note has a type - the simplest is a "text" type, but lists, tables, and external files are also supported.
+
+
+            *Note:* the current Entry resource has a few limitations:
+
+            - Formatting information is not yet supported. Header formatting, bolding, and other stylistic information is not presented.
+
+            - Data in tables is presented as text always - numeric values will need to be parsed into floats or integers, as appropriate.
+
+
+            Note: Data in Results tables are not accessible through this API call. Results table data can be called through the Results API calls.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List entries
+      tags:
+      - Entries
+    post:
+      description: Create a notebook entry
+      operationId: createEntry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntryCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create a notebook entry
+      tags:
+      - Entries
+  /entries/{entry_id}:
+    get:
+      description: Get a notebook entry by ID
+      operationId: getEntry
+      parameters:
+      - description: ID of the entry
+        in: path
+        name: entry_id
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "days.notes.text" will return the same model as "days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: id, name, modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryById'
+          description: 'Returns a single entry. Entries are notes that users can take. They''re organized by "days" (which are user-configurable) and modeled within each day as a list of "notes." Each note has a type - the simplest is a "text" type, but lists, tables, and external files are also supported.
+
+
+            *Note:* the current Entry resource has a few limitations:
+
+            - Formatting information is not yet supported. Header formatting, bolding, and other stylistic information is not presented.
+
+            - Data in tables is presented as text always - numeric values will need to be parsed into floats or integers, as appropriate.
+
+
+            Note: Data in Results tables are not accessible through this API call. Results table data can be called through the Results API calls.
+
+            '
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a notebook entry by ID
+      tags:
+      - Entries
+    patch:
+      description: Update a notebook entry's metadata
+      operationId: updateEntry
+      parameters:
+      - description: ID of the entry
+        in: path
+        name: entry_id
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "days.notes.text" will return the same model as "days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: id, name, modifiedAt
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntryUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+          description: OK
+      summary: Update a notebook entry's metadata
+      tags:
+      - Entries
+  /entries/{entry_id}/external-files/{external_file_id}:
+    get:
+      description: 'Retrieves the metadata for an external file. Use the ''downloadURL'' to download the actual file. (Expand the schema view for details)
+
+        '
+      operationId: getExternalFileMetadata
+      parameters:
+      - description: ID of the entry the file was uploaded to
+        in: path
+        name: entry_id
+        required: true
+        schema:
+          type: string
+      - description: ID of the external file
+        in: path
+        name: external_file_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryExternalFileById'
+          description: OK
+      summary: 'Retrieves the metadata for an external file. Use the ''downloadURL'' to download the actual file.
+
+        '
+      tags:
+      - Entries
+  /entries:archive:
+    post:
+      description: Archive notebook entries
+      operationId: archiveEntries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntriesArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntriesArchivalChange'
+          description: OK
+      summary: Archive notebook entries
+      tags:
+      - Entries
+  /entries:bulk-get:
+    get:
+      description: Get notebook entries using entry IDs or display IDs
+      operationId: bulkGetEntries
+      parameters:
+      - description: Comma-separated list of Entry IDs.
+        in: query
+        name: entryIds
+        schema:
+          type: string
+      - description: Comma-separated list of Entry Display IDs.
+        in: query
+        name: displayIds
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "entries.days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "entries.days.notes.text" will return the same model as "entries.days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: entries.id, entries.name, entries.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entries'
+          description: 'Returns a list of entries. Entries are notes that users can take. They''re organized by "days" (which are user-configurable) and modeled within each day as a list of "notes." Each note has a type - the simplest is a "text" type, but lists, tables, and external files are also supported.
+
+
+            *Note:* the current Entry resource has a few limitations:
+
+            - Formatting information is not yet supported. Header formatting, bolding, and other stylistic information is not presented.
+
+            - Data in tables is presented as text always - numeric values will need to be parsed into floats or integers, as appropriate.
+
+
+            Note: Data in Results tables are not accessible through this API call. Results table data can be called through the Results API calls.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get notebook entries using entry IDs or display IDs
+      tags:
+      - Entries
+  /entries:unarchive:
+    post:
+      description: Unarchive notebook entries
+      operationId: unarchiveEntries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntriesUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntriesArchivalChange'
+          description: OK
+      summary: Unarchive notebook entries
+      tags:
+      - Entries
+  /entry-templates:
+    get:
+      description: List entry templates
+      operationId: listEntryTemplates
+      parameters:
+      - description: Number of results to return. Defaults to 50, maximum of 100.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of an Entry Template. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'ID of a template collection. Resticts results to those in the template collection.
+
+          '
+        in: query
+        name: templateCollectionId
+        schema:
+          example: tmplcol_jC7rOniv
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          type: string
+      - description: 'ID of a schema. Restricts results to those of the specified schema.
+
+          '
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "entryTemplates.days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "entryTemplates.days.notes.text" will return the same model as "entryTemplates.days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: entryTemplates.id,entryTemplates.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryTemplatesPaginatedList'
+          description: 'Returns a list of entry templates. Entry templates are templates that users can base new notebook entries off of.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List entry templates
+      tags:
+      - Entries
+  /entry-templates/{entry_template_id}:
+    get:
+      description: Get a notebook template entry by ID
+      operationId: getEntryTemplate
+      parameters:
+      - description: ID of the entry template
+        in: path
+        name: entry_template_id
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "days.notes.text" will return the same model as "days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryTemplate'
+          description: 'Returns a single entry template. Entry templates are templates that users can base new notebook entries off of.
+
+            '
+      summary: Get a notebook template entry by ID
+      tags:
+      - Entries
+    patch:
+      description: Update a notebook template entry's metadata
+      operationId: updateEntryTemplate
+      parameters:
+      - description: ID of the template entry
+        in: path
+        name: entry_template_id
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return.  Modifies the output shape.  To return all keys at a given level, enumerate them or use the wildcard, ''*''.  For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note:** "days.notes" cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g., "days.notes.text" will return the same model as "days.notes".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: id, name, modifiedAt
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntryTemplateUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryTemplate'
+          description: OK
+      summary: Update a notebook template entry's metadata
+      tags:
+      - Entries
+components:
+  schemas:
+    ReviewSnapshot:
+      additionalProperties: false
+      properties:
+        createdAt:
+          description: DateTime the Review Snapshot was created at
+          format: date-time
+          type: string
+        downloadURL:
+          description: A short-lived URL that can be used to download the original file.
+          type: string
+        expiresAt:
+          description: DateTime the downloadURL expires.
+          format: date-time
+          type: string
+        size:
+          description: Size, in bytes, of the snapshot file
+          type: integer
+        status:
+          description: the current status of the Snapshot process
+          enum:
+          - PENDING
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+          type: string
+      type: object
+    InventoryPlateTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          destinationPlateSchemaId:
+            example: pltsch_LRIuH0yJ
+            nullable: true
+            type: string
+          destinationWellSchemaId:
+            example: consch_JEL0WCBK
+            type: string
+          mode:
+            enum:
+            - create_and_fill
+            - fill
+            - update
+            type: string
+          type:
+            enum:
+            - inventory_plate_table
+            type: string
+        type: object
+    SimpleNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          links:
+            description: 'Array of links referenced in text via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          text:
+            description: The textual contents of the note.
+            type: string
+          type:
+            enum:
+            - text
+            - code
+            - list_bullet
+            - list_number
+            type: string
+        type: object
+      description: 'Simple note parts include the following types: - ''text'': plain text - ''code'': preformatted code block - ''list_bullet'': one "line" of a bulleted list - ''list_number'': one "line" of a numbered list
+
+        '
+    EntriesArchive:
+      additionalProperties: false
+      properties:
+        entryIds:
+          description: Array of entry IDs
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'Reason that entries are being archived. One of ["Made in error", "Retired", "Other"].
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Other
+          type: string
+      required:
+      - entryIds
+      - reason
+      type: object
+    ReviewChange:
+      additionalProperties: false
+      properties:
+        action:
+          description: The action which was performed with this change
+          enum:
+          - SEND_FOR_REVIEW
+          - ACCEPT
+          - REJECT
+          - COMMENT
+          - RETRACT
+          type: string
+        comment:
+          description: The comment which was left when the Review Change was submitted
+          nullable: true
+          type: string
+        createdAt:
+          description: DateTime the Review Change was created at
+          format: date-time
+          type: string
+        esigned:
+          description: Was the action verified through an e-signature compliant step
+          type: boolean
+        id:
+          type: string
+        reviewSnapshot:
+          allOf:
+          - $ref: '#/components/schemas/ReviewSnapshot'
+          description: Review Snapshot generated from this Review Change
+          nullable: true
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    MixturePrepTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          mixtureSchemaId:
+            example: ts_eGNPfqCX
+            type: string
+          type:
+            enum:
+            - mixture_prep_table
+            type: string
+        type: object
+    StructuredTableApiIdentifiers:
+      properties:
+        apiId:
+          type: string
+        columns:
+          items:
+            $ref: '#/components/schemas/StructuredTableColumnInfo'
+          type: array
+        name:
+          type: string
+      type: object
+    EntryTableCell:
+      properties:
+        link:
+          allOf:
+          - $ref: '#/components/schemas/EntryLink'
+          description: 'A Link Resource if this cell contained a hyperlink. Otherwise, link will be omitted from the cell object. (Note: inventory and user types are not yet supported.)
+
+            '
+        text:
+          description: 'The textual content of the cell. If the cell was originally a formula, this will be the evaluated version of the formula.
+
+            '
+          type: string
+      type: object
+    EntryTemplateUpdate:
+      additionalProperties: false
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+        modifiedAt:
+          description: DateTime the template was last modified
+          type: string
+        name:
+          description: Title of the template
+          type: string
+        schemaId:
+          description: ID of the schema for the entry
+          type: string
+        templateCollectionId:
+          description: ID of the collection that contains the template
+          type: string
+      type: object
+    EntryNotePart:
+      description: 'Notes are the main building blocks of entries. Each note corresponds roughly to a paragraph.
+
+        '
+      discriminator:
+        mapping:
+          app_canvas: '#/components/schemas/AppCanvasNotePart'
+          assay_run: '#/components/schemas/AssayRunNotePart'
+          box_creation_table: '#/components/schemas/BoxCreationTableNotePart'
+          code: '#/components/schemas/SimpleNotePart'
+          external_file: '#/components/schemas/ExternalFileNotePart'
+          inventory_container_table: '#/components/schemas/InventoryContainerTableNotePart'
+          inventory_plate_table: '#/components/schemas/InventoryPlateTableNotePart'
+          list_bullet: '#/components/schemas/SimpleNotePart'
+          list_checkbox: '#/components/schemas/CheckboxNotePart'
+          list_number: '#/components/schemas/SimpleNotePart'
+          lookup_table: '#/components/schemas/LookupTableNotePart'
+          mixture_prep_table: '#/components/schemas/MixturePrepTableNotePart'
+          note_linked_chart: '#/components/schemas/ChartNotePart'
+          plate_creation_table: '#/components/schemas/PlateCreationTableNotePart'
+          registration_table: '#/components/schemas/RegistrationTableNotePart'
+          results_table: '#/components/schemas/ResultsTableNotePart'
+          table: '#/components/schemas/TableNotePart'
+          text: '#/components/schemas/SimpleNotePart'
+          text_box: '#/components/schemas/TextBoxNotePart'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/SimpleNotePart'
+      - $ref: '#/components/schemas/TableNotePart'
+      - $ref: '#/components/schemas/TextBoxNotePart'
+      - $ref: '#/components/schemas/CheckboxNotePart'
+      - $ref: '#/components/schemas/ExternalFileNotePart'
+      - $ref: '#/components/schemas/AssayRunNotePart'
+      - $ref: '#/components/schemas/LookupTableNotePart'
+      - $ref: '#/components/schemas/ResultsTableNotePart'
+      - $ref: '#/components/schemas/RegistrationTableNotePart'
+      - $ref: '#/components/schemas/PlateCreationTableNotePart'
+      - $ref: '#/components/schemas/BoxCreationTableNotePart'
+      - $ref: '#/components/schemas/MixturePrepTableNotePart'
+      - $ref: '#/components/schemas/InventoryContainerTableNotePart'
+      - $ref: '#/components/schemas/InventoryPlateTableNotePart'
+      - $ref: '#/components/schemas/ChartNotePart'
+      - $ref: '#/components/schemas/AppCanvasNotePart'
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    ResultsTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          assayResultSchemaId:
+            example: assaysch_msh1Ly6g
+            type: string
+          type:
+            enum:
+            - results_table
+            type: string
+        type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    TextBoxNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          links:
+            description: 'Array of links referenced via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          name:
+            type: string
+          text:
+            type: string
+          type:
+            enum:
+            - text_box
+            type: string
+        type: object
+    ChartNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          chart:
+            description: The full configuration for the chart to be displayed in-line in this note part.
+            properties:
+              id:
+                description: The API identifier for this Analysis Chart.
+                type: string
+            type: object
+          type:
+            enum:
+            - note_linked_chart
+            type: string
+        type: object
+    RegistrationTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          entitySchemaId:
+            example: ts_hMbJPSA8
+            type: string
+          type:
+            enum:
+            - registration_table
+            type: string
+        type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    PlateCreationTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          plateSchemaId:
+            example: pltsch_LRIuH0yJ
+            type: string
+          type:
+            enum:
+            - plate_creation_table
+            type: string
+        type: object
+    EntriesArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of entries that changed..
+
+        '
+      properties:
+        entryIds:
+          items:
+            type: string
+          type: array
+      type: object
+    EntryById:
+      properties:
+        entry:
+          $ref: '#/components/schemas/Entry'
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    Entry:
+      description: 'Entries are notes that users can take. They''re organized by "days" (which are user-configurable) and modeled within each day as a list of "notes." Each note has a type - the simplest is a "text" type, but lists, tables, and external files are also supported.
+
+
+        *Note:* the current Entry resource has a few limitations:
+
+        - Formatting information is not yet supported. Header formatting, bolding, and other stylistic information is not presented.
+
+        - Data in tables is presented as text always - numeric values will need to be parsed into floats or integers, as appropriate.
+
+
+        Note: Data in Results tables are not accessible through this API call. Results table data can be called through the Results API calls.
+
+        '
+      properties:
+        apiURL:
+          description: The canonical url of the Entry in the API.
+          example: https://benchling.com/api/v2/entries/etr_tv7m7B78
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          description: 'ArchiveRecord Resource if the entry is archived. This is null if the entry is not archived.
+
+            '
+          nullable: true
+        assignedReviewers:
+          description: 'Array of users assigned to review the entry, if any.
+
+            '
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        authors:
+          description: 'Array of UserSummary Resources of the authors of the entry. This defaults to the creator but can be manually changed.
+
+            '
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the entry was created at
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of the user who created the entry
+          readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        days:
+          description: 'Array of day objects. Each day object has a date field (string) and notes field (array of notes, expand further for details on note types).
+
+            '
+          items:
+            $ref: '#/components/schemas/EntryDay'
+          type: array
+        displayId:
+          description: User-friendly ID of the entry
+          type: string
+        entryTemplateId:
+          description: ID of the Entry Template this Entry was created from
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the entry
+          type: string
+        id:
+          description: ID of the entry
+          type: string
+        modifiedAt:
+          description: DateTime the entry was last modified
+          type: string
+        name:
+          description: Title of the entry
+          type: string
+        reviewRecord:
+          description: Review record if set
+          nullable: true
+          properties:
+            comment:
+              description: Reviewer's Comments
+              type: string
+            reviewChanges:
+              description: A list of the Review Changes that have been made to this entry
+              items:
+                $ref: '#/components/schemas/ReviewChange'
+              type: array
+            reviewProcesses:
+              description: Review Processes associated with the Entry
+              items:
+                $ref: '#/components/schemas/EntryReviewProcess'
+              nullable: true
+              type: array
+            status:
+              description: Review Status of the entry
+              enum:
+              - ACCEPTED
+              - NEEDS_REVIEW
+              - REJECTED
+              - RETRACTED
+              - ACCEPTANCE_SNAPSHOT_IN_PROGRESS
+              - REVIEW_SNAPSHOT_IN_PROGRESS
+              - IN_PROGRESS
+              - ACTION_REQUIRED
+              type: string
+          type: object
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/EntrySchema'
+          description: Entry schema if set
+          nullable: true
+          title: SchemaProperty
+          type: object
+        webURL:
+          description: URL of the entry
+          type: string
+      type: object
+    EntryTemplateDay:
+      properties:
+        day:
+          description: 1 indexed day signifier. If 0 is returned, that means the EntryTemplateDay is a section with a title but no specified Day.
+          minimum: 0
+          type: integer
+        notes:
+          items:
+            $ref: '#/components/schemas/EntryNotePart'
+          type: array
+        title:
+          description: Optional title of a section if sections are enabled.
+          nullable: true
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    ExternalFileNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          externalFileId:
+            description: 'The ID of the external file. Use the ''Get an external file'' endpoint to retrieve metadata about it.
+
+              '
+            type: string
+          links:
+            description: 'Array of links referenced in the caption via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          text:
+            description: The caption of the file attachment.
+            type: string
+          type:
+            enum:
+            - external_file
+            type: string
+        type: object
+      description: An attached user-uploaded file
+    EntryTableRow:
+      description: Each has property 'cells' that is an array of cell objects
+      properties:
+        cells:
+          items:
+            $ref: '#/components/schemas/EntryTableCell'
+          type: array
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    EntryReviewProcess:
+      properties:
+        completionStatus:
+          description: State of the Entry at the end of the Review Process
+          enum:
+          - APPROVED
+          - COMPLETED
+          - ACCEPTED
+          - REVIEWED
+          - WITNESSED
+          - SELF_REVIEWED
+          type: string
+        id:
+          description: ID of the Review Process
+          type: string
+        name:
+          description: Name of the Review Process
+          type: string
+        stages:
+          description: Array of Stages for the Review Process
+          items:
+            properties:
+              actionLabel:
+                description: Action reviewer is doing during the review
+                enum:
+                - APPROVE
+                - COMPLETE
+                - ACCEPT
+                - REVIEW
+                - WITNESS
+                - SELF_REVIEW
+                type: string
+              id:
+                description: ID of the Review Stage
+                type: string
+              name:
+                description: Name of the Review Stage
+                type: string
+              reviewers:
+                description: Reviewers for the Review Stage
+                items:
+                  allOf:
+                  - $ref: '#/components/schemas/PartySummary'
+                  - properties:
+                      status:
+                        description: Status of the Reviewer
+                        enum:
+                        - BLOCKED
+                        - PENDING
+                        - FINISHED
+                        - REJECTED
+                        type: string
+                  type: object
+                type: array
+            type: object
+          type: array
+        type:
+          description: Type of the Review Process
+          enum:
+          - SELF_REVIEW
+          - SEQUENTIAL
+          - PARALLEL
+          type: string
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    EntryLink:
+      description: 'Links are contained within notes to reference resources that live outside of the entry. A link can target an external resource via an http(s):// hyperlink or a Benchling resource via @-mentions and drag-n-drop.
+
+        '
+      properties:
+        id:
+          description: 'For linked Benchling resources, this will be the ID of that resource (e.g., ''seq_RhYGVnHF''). Omitted for "link" types.
+
+            '
+          type: string
+        type:
+          description: 'The type of resource being linked. For hyperlinks: ''link''. For linked Benchling resources, one of: ''user'', ''request'', ''entry'', ''stage_entry'', ''protocol'', ''workflow'', ''custom_entity'', ''aa_sequence'', ''dna_sequence'', ''batch'', ''box'', ''container'', ''location'', ''plate'', ''sql_dashboard''; and (for legacy support) ''insights_dashboard'', ''folder''.
+
+            '
+          enum:
+          - link
+          - user
+          - request
+          - entry
+          - stage_entry
+          - protocol
+          - workflow
+          - custom_entity
+          - aa_sequence
+          - dna_sequence
+          - batch
+          - box
+          - container
+          - location
+          - plate
+          - insights_dashboard
+          - folder
+          - sql_dashboard
+          type: string
+        webURL:
+          description: 'Canonical URL of the linked Benchling resource (if you have at least READ authorization for that resource), or the explicit URL provided as hyperlink for "link" types. Note: locations do not currently have a URL.
+
+            '
+          nullable: true
+          type: string
+      type: object
+    EntryDay:
+      properties:
+        date:
+          description: A Date string
+          type: string
+        notes:
+          items:
+            $ref: '#/components/schemas/EntryNotePart'
+          type: array
+        title:
+          description: Optional title of a section if sections are enabled.
+          nullable: true
+          type: string
+      type: object
+    EntryTemplatesPaginatedList:
+      additionalProperties: false
+      properties:
+        entryTemplates:
+          items:
+            $ref: '#/components/schemas/EntryTemplate'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    EntryUpdate:
+      additionalProperties: false
+      properties:
+        authorIds:
+          description: IDs of users to set as the entry's authors.
+          type: string
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: Schema fields to set on the entry
+        folderId:
+          description: ID of the folder that will contain the entry
+          type: string
+        name:
+          description: New name of the entry
+          type: string
+        schemaId:
+          description: ID of the schema for the entry
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    AppCanvasNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          appId:
+            description: The API identifier for the Benchling App.
+            type: string
+          canvasId:
+            description: The API identifier for this Analysis Chart.
+            type: string
+          featureId:
+            description: The developer ID assigned to the feature of this App Canvas.
+            type: string
+          type:
+            enum:
+            - app_canvas
+            type: string
+    EntryExternalFile:
+      description: 'The ExternalFile resource stores metadata about the file. The actual original file can be downloaded by using the ''downloadURL'' property.
+
+        '
+      properties:
+        downloadURL:
+          description: 'A short-lived URL that can be used to download the original file.
+
+            '
+          type: string
+        expiresAt:
+          description: UNIX timestamp when downloadURL expires.
+          type: integer
+        id:
+          description: ID of the external file
+          type: string
+        size:
+          description: Size, in bytes, of the external file
+          type: integer
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    EntrySchema:
+      description: Entry schema
+      properties:
+        id:
+          description: ID of the entry schema
+          type: string
+        modifiedAt:
+          description: DateTime the Entry Schema was last modified
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          type: string
+        name:
+          description: Name of the entry schema
+          type: string
+      type: object
+    EntryTable:
+      description: 'Actual tabular data with rows and columns of text on the note.
+
+        '
+      properties:
+        columnLabels:
+          description: 'Array of strings, with one item per column. Defaults to null, if the user is using the default, but is set if the user has given a custom name to the column.
+
+            '
+          items:
+            nullable: true
+            type: string
+          type: array
+        name:
+          description: 'Name of the table - defaults to e.g. Table1 but can be renamed.
+
+            '
+          type: string
+        rows:
+          description: Array of row objects.
+          items:
+            $ref: '#/components/schemas/EntryTableRow'
+          type: array
+      type: object
+    BoxCreationTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          boxSchemaId:
+            example: boxsch_MAbGlEtf
+            type: string
+          type:
+            enum:
+            - box_creation_table
+            type: string
+        type: object
+    BaseNotePart:
+      properties:
+        indentation:
+          default: 0
+          description: All notes have an indentation level - the default is 0 for no indent. For lists, indentation gives notes hierarchy - a bulleted list with children is modeled as one note part with indentation 1 followed by note parts with indentation 2, for example.
+          minimum: 0
+          type: integer
+        type:
+          description: The type of the note.  Type determines what other fields are present.
+          type: string
+      type: object
+    AssayRunNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          assayRunId:
+            example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+            nullable: true
+            type: string
+          assayRunSchemaId:
+            example: assaysch_msh1Ly6g
+            type: string
+          type:
+            enum:
+            - assay_run
+            type: string
+        type: object
+    EntryTemplate:
+      additionalProperties: false
+      description: 'Entry templates are templates that users can base new notebook entries off of.
+
+        '
+      properties:
+        apiURL:
+          description: The canonical url of the Entry Template in the API.
+          example: https://benchling.com/api/v2/entry-templates/tmpl_tv7m7B78
+          format: uri
+          readOnly: true
+          type: string
+        createdAt:
+          description: DateTime the template was created at
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of the user who created the template
+          readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        days:
+          description: 'Array of day objects. Each day object has a day index (integer) and notes field (array of notes, expand further for details on note types).
+
+            '
+          items:
+            $ref: '#/components/schemas/EntryTemplateDay'
+          type: array
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          description: ID of the entry template
+          type: string
+        modifiedAt:
+          description: DateTime the template was last modified
+          type: string
+        name:
+          description: Title of the template
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/EntrySchema'
+          description: Entry schema if set
+          nullable: true
+          title: SchemaProperty
+          type: object
+        templateCollectionId:
+          description: ID of the collection that contains the template
+          type: string
+        webURL:
+          description: URL of the template
+          type: string
+      type: object
+    CheckboxNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          checked:
+            description: 'Indicates whether the checkbox is checked or not.
+
+              '
+            type: boolean
+          links:
+            description: 'Array of links referenced in text via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          text:
+            description: The textual contents of the note.
+            type: string
+          type:
+            enum:
+            - list_checkbox
+            type: string
+        type: object
+      description: One "line" of a checklist
+    InitialTable:
+      additionalProperties: false
+      properties:
+        csvData:
+          description: blobId of an uploaded csv blob. The CSV should be formatted with column headers of `columnId` which can be found in the [EntryTemplate](#/components/schemas/EntryTemplate). For more information on uploading a blob, [click here](https://docs.benchling.com/docs/uploading-a-blob-to-benchling).
+          type: string
+        templateTableID:
+          description: Template table API ID
+          type: string
+      type: object
+    EntryExternalFileById:
+      properties:
+        externalFile:
+          $ref: '#/components/schemas/EntryExternalFile'
+      type: object
+    EntryCreate:
+      additionalProperties: false
+      properties:
+        authorIds:
+          oneOf:
+          - deprecated: true
+            type: string
+          - description: 'IDs of users to set as the entry''s authors. Defaults to the creator.
+
+              '
+            items:
+              type: string
+            type: array
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields to add to the entry
+        entryTemplateId:
+          description: ID of the template to clone the entry from
+          type: string
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Fields to set on the entry. Must correspond with the schema''s field definitions.
+
+            '
+        folderId:
+          description: ID of the folder that will contain the entry
+          type: string
+        initialTables:
+          description: 'An array of table API IDs and blob id pairs to seed tables from the template while creating the entry. The entryTemplateId parameter must be set to use this parameter. The table API IDs should be the API Identifiers of the tables in the given template.
+
+            - If a template table has one row, the values in that row act as default values for cloned entries.
+
+            - If a template table has multiple rows, there is no default value and those rows are added to the cloned entry along with the provided csv data.
+
+            - If a table has default values, they will be populated in any respective undefined columns in the csv data.
+
+            - If a table has no default values, undefined columns from csv data will be empty.
+
+            - If no csv data is provided for a table, the table in the entry will be populated with whatever values are in the respective template table.
+
+            '
+          items:
+            $ref: '#/components/schemas/InitialTable'
+          type: array
+        name:
+          description: Name of the entry
+          type: string
+        schemaId:
+          description: ID of the entry's schema
+          type: string
+      required:
+      - name
+      - folderId
+      type: object
+    EntriesUnarchive:
+      additionalProperties: false
+      properties:
+        entryIds:
+          description: Array of entry IDs
+          items:
+            type: string
+          type: array
+      required:
+      - entryIds
+      type: object
+    EntriesPaginatedList:
+      properties:
+        entries:
+          items:
+            $ref: '#/components/schemas/Entry'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    InventoryContainerTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          destinationContainerSchemaId:
+            example: consch_JEL0WCBK
+            type: string
+          mode:
+            enum:
+            - create_and_fill
+            - fill
+            - update
+            type: string
+          type:
+            enum:
+            - inventory_container_table
+            type: string
+        type: object
+    StructuredTableColumnInfo:
+      properties:
+        columnId:
+          type: string
+        isReadOnly:
+          type: boolean
+        name:
+          type: string
+      type: object
+    TableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/BaseNotePart'
+      - properties:
+          links:
+            description: 'Array of links referenced in the caption via an @-mention, hyperlink, or the drag-n-dropped preview attached to the note.
+
+              '
+            items:
+              $ref: '#/components/schemas/EntryLink'
+            type: array
+          table:
+            allOf:
+            - $ref: '#/components/schemas/EntryTable'
+            type: object
+          text:
+            description: The caption of the table.
+            type: string
+          type:
+            enum:
+            - table
+            type: string
+        type: object
+      description: A table with rows and columns of text
+    Entries:
+      properties:
+        entries:
+          items:
+            $ref: '#/components/schemas/Entry'
+          type: array
+      type: object
+    LookupTableNotePart:
+      allOf:
+      - $ref: '#/components/schemas/StructuredTableApiIdentifiers'
+      - properties:
+          type:
+            enum:
+            - lookup_table
+            type: string
+        type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

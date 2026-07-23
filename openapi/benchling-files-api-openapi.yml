@@ -1,0 +1,697 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Files API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Files are Benchling objects that represent files and their metadata. Compared to Blobs, which are used by most Benchling products for attachments, Files are primarily used in the Analysis and Connect product.
+  name: Files
+paths:
+  /files:
+    get:
+      description: List files
+      operationId: listFiles
+      parameters:
+      - $ref: '#/components/parameters/listingPageSize'
+      - $ref: '#/components/parameters/listingNextToken'
+      - $ref: '#/components/parameters/listingSortNameModifiedCreated'
+      - $ref: '#/components/parameters/archiveReasonFilter'
+      - $ref: '#/components/parameters/createdAtFilter'
+      - $ref: '#/components/parameters/creatorIdsFilter'
+      - $ref: '#/components/parameters/folderIdFilter'
+      - $ref: '#/components/parameters/mentionedInFilter'
+      - $ref: '#/components/parameters/modifiedAtFilter'
+      - $ref: '#/components/parameters/nameFilter'
+      - $ref: '#/components/parameters/nameIncludesFilter'
+      - $ref: '#/components/parameters/namesAnyOfCaseSensitiveFilter'
+      - $ref: '#/components/parameters/namesAnyOfFilter'
+      - $ref: '#/components/parameters/originFilter'
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: file_Q6uhNZvw,file_OwmERWGE,file_nzuDFhNvz
+          type: string
+      - description: 'Comma-separated list of display ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: displayIds
+        schema:
+          example: FILE1,FILE2,FILE3
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: files.id,files.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilesPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingError'
+          description: Bad Request
+      summary: List files
+      tags:
+      - Files
+    post:
+      description: "Create a file of a supported type. Currently, we support these file extensions: .csv; .html;\n.jmp, .jrn, .jrp (JMP); .jpeg, .jpg (JPEG); .png; .pdf; .zip; and .txt.\n\nA successful file upload requires 3 calls in serial:\n1. [Create a file](#/Analyses/createFile), this endpoint, which returns an S3 `PUT` URL for the 2nd\n   call and a file ID for the 3rd call\n2. Upload the file contents to S3. Add `x-amz-server-side-encryption: AES256` to the request headers,\n   because we use server-side encryption. Here is a `curl` example:\n   ```bash\n   curl -H \"x-amz-server-side-encryption: AES256\" -X PUT -T <LOCAL_FILE> -L <S3_PUT_URL>\n   ```\n3. [Update the file](#/Analyses/patchFile), which marks the upload as `SUCCEEDED`\n\nNote: URL is valid for 1 hour after being returned from this endpoint. It should not be stored\npersistently for later use.\n\nFiles up to 30MB are supported.\n"
+      operationId: createFile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              example:
+                errorMessage: null
+                folderId: lib_bf0636
+                id: file_Of5GuBSq
+                name: IC50Chart.png
+                uploadStatus: NOT_UPLOADED
+              schema:
+                $ref: '#/components/schemas/File'
+          description: OK
+          headers:
+            Content-Location:
+              description: The S3 URL to which the file contents can be uploaded
+              schema:
+                example: 'https://benchling-location.s3.amazonaws.com/deploys/location/pipeline_files/.../IC50Chart.png?...
+
+                  '
+                type: string
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+      summary: Create a file
+      tags:
+      - Files
+  /files/{file_id}:
+    get:
+      description: 'Get a file. This endpoint returns an S3 URL, from which you can download the file contents.
+
+
+        Note: URL is valid for 1 hour after being returned from this endpoint. It should not be stored
+
+        persistently for later use.
+
+        '
+      operationId: getFile
+      parameters:
+      - description: The ID of the file
+        in: path
+        name: file_id
+        required: true
+        schema:
+          example: file_Of5GuBSq
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+          description: OK
+          headers:
+            Content-Location:
+              description: The S3 URL from which the file contents can be downloaded
+              schema:
+                example: 'https://benchling-location.s3.amazonaws.com/deploys/location/pipeline_files/.../IC50Chart.png?...
+
+                  '
+                type: string
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a file
+      tags:
+      - Files
+    patch:
+      description: 'Update a file. After you upload the file contents to S3, call this endpoint to mark the upload as `SUCCEEDED`. See [Create a file](#/Analyses/createFile) for documentation of the full upload flow.
+
+        '
+      operationId: patchFile
+      parameters:
+      - description: The ID of the file
+        example: file_Of5GuBSq
+        in: path
+        name: file_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a file
+      tags:
+      - Files
+  /files:archive:
+    post:
+      description: Archive files
+      operationId: archiveFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilesArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive files
+      tags:
+      - Files
+  /files:unarchive:
+    post:
+      description: Unarchive files.
+      operationId: unarchiveFiles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilesUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive files.
+      tags:
+      - Files
+components:
+  parameters:
+    listingPageSize:
+      description: Number of results to return.
+      in: query
+      name: pageSize
+      schema:
+        default: 50
+        maximum: 100
+        minimum: 0
+        nullable: false
+        type: integer
+    folderIdFilter:
+      description: ID of a folder. Restricts results to those in the folder.
+      in: query
+      name: folderId
+      schema:
+        example: lib_a0SApq3z
+        type: string
+    originFilter:
+      description: Comma-separated list of item IDs. Restricts results to those whose origin parent is any of the specified items.
+      in: query
+      name: originIds
+      schema:
+        example: cxn_a0SApq3z,ana_jdf8BV24
+        type: string
+    modifiedAtFilter:
+      description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+        '
+      examples:
+        and-range:
+          summary: Filter for all models modified within a certain range using the AND operator.
+          value: '> 2022-03-01 AND < 2022-04-01'
+        full-rfc-3339-format:
+          summary: Filter for modified models using the full RFC 3339 format
+          value: '> 2020-12-31T21:07:14-05:00'
+        greater-than-example:
+          summary: Filter for all models modified after a certain date
+          value: '> 2022-03-01'
+      in: query
+      name: modifiedAt
+      schema:
+        type: string
+    listingNextToken:
+      example: Im5ldyB0ZXN0Ig==
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    mentionedInFilter:
+      description: 'Comma-separated list of entry IDs. Restricts results to items mentioned in those entries.
+
+        '
+      in: query
+      name: mentionedIn
+      schema:
+        example: etr_1X1AlQPD, etr_tv7m7B78
+        type: string
+    nameFilter:
+      description: Restricts results to those with the specified name.
+      in: query
+      name: name
+      schema:
+        type: string
+    createdAtFilter:
+      description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+        '
+      examples:
+        and-range:
+          summary: Filter for all models created within a certain range using the AND operator.
+          value: '> 2022-03-01 AND < 2022-04-01'
+        full-rfc-3339-format:
+          summary: Filter for created models using the full RFC 3339 format
+          value: '> 2020-12-31T21:07:14-05:00'
+        greater-than-example:
+          summary: Filter for all models created after a certain date
+          value: '> 2022-03-01'
+      in: query
+      name: createdAt
+      schema:
+        type: string
+    creatorIdsFilter:
+      description: Comma separated list of user IDs.
+      in: query
+      name: creatorIds
+      schema:
+        example: ent_a0SApq3z
+        type: string
+    namesAnyOfFilter:
+      description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+        '
+      in: query
+      name: names.anyOf
+      schema:
+        example: MyName1,MyName2
+        type: string
+    namesAnyOfCaseSensitiveFilter:
+      description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+        '
+      in: query
+      name: names.anyOf.caseSensitive
+      schema:
+        example: MyName1,MyName2
+        type: string
+    archiveReasonFilter:
+      description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+        '
+      examples:
+        1_not_archived:
+          summary: Only include unarchived items (default).
+          value: NOT_ARCHIVED
+        2_archived_reason:
+          summary: Includes items archived for a specific reason.
+          value: Retired
+        3_any_archived:
+          summary: Includes items archived for any reason.
+          value: ANY_ARCHIVED
+        4_any_archived_or_not_archived:
+          summary: Includes both archived and unarchived items.
+          value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+      in: query
+      name: archiveReason
+      schema:
+        type: string
+    nameIncludesFilter:
+      description: 'Name substring. Restricts results to those with names that include the provided substring.
+
+        '
+      in: query
+      name: nameIncludes
+      schema:
+        type: string
+    listingSortNameModifiedCreated:
+      description: 'Method by which to order search results. Valid sorts are modifiedAt (modified time, most recent first) createdAt (creation time, most recent first) and name (item name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+        '
+      in: query
+      name: sort
+      schema:
+        default: modifiedAt
+        enum:
+        - modifiedAt
+        - name
+        - createdAt
+        - modifiedAt:asc
+        - name:asc
+        - createdAt:asc
+        - modifiedAt:desc
+        - name:desc
+        - createdAt:desc
+        nullable: false
+        type: string
+  schemas:
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    FilesPaginatedList:
+      properties:
+        files:
+          items:
+            $ref: '#/components/schemas/File'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ListingError:
+      allOf:
+      - $ref: '#/components/schemas/BadRequestError'
+      properties:
+        invalidIds:
+          items:
+            type: string
+          type: array
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    FilesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Files.
+
+        '
+      properties:
+        fileIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Files. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Archived
+          - Other
+          type: string
+      required:
+      - reason
+      - fileIds
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    FileCreate:
+      properties:
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom field values to set on the file
+        filename:
+          description: Filename for the file
+          example: IC50Chart.png
+          nullable: false
+          type: string
+        folderId:
+          description: ID of the folder that contains the file
+          example: lib_bf0636
+          nullable: false
+          type: string
+        name:
+          description: Display name for the file
+          example: IC50 Chart
+          nullable: false
+          type: string
+      type: object
+    File:
+      allOf:
+      - $ref: '#/components/schemas/FileStatus'
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            description: 'ArchiveRecord Resource if the file is archived. This is null if the file is not archived.
+
+              '
+            nullable: true
+          createdAt:
+            description: Date and time the file was created
+            example: 2023-04-23 01:30:50.970926+00:00
+            format: date-time
+            readOnly: true
+            type: string
+          creator:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - description: UserSummary of the user who created the file
+            - readOnly: true
+          customFields:
+            allOf:
+            - $ref: '#/components/schemas/CustomFields'
+            description: Custom field values of the file
+          displayId:
+            description: User-friendly ID of the file
+            readOnly: true
+            type: string
+          filename:
+            example: IC50Chart.png
+            type: string
+          folderId:
+            description: ID of the folder that contains the file
+            example: lib_bf0636
+            nullable: false
+            type: string
+          id:
+            example: file_Of5GuBSq
+            type: string
+          modifiedAt:
+            description: Date and time the file was last modified
+            example: 2023-04-23 01:30:50.970926+00:00
+            format: date-time
+            readOnly: true
+            type: string
+          name:
+            example: IC50 Chart
+            type: string
+        type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    FilesUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving Files.
+
+        '
+      properties:
+        fileIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+      required:
+      - fileIds
+      type: object
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    FileUpdate:
+      properties:
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom field values to add to the file
+        errorMessage:
+          description: Error message for the file upload
+          type: string
+        folderId:
+          description: ID of the folder that the file is moved into
+          example: lib_bf0636
+          type: string
+        uploadStatus:
+          enum:
+          - SUCCEEDED
+          - FAILED_VALIDATION
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    FilesArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
+
+        '
+      properties:
+        fileIds:
+          items:
+            type: string
+          type: array
+      type: object
+    FileStatus:
+      properties:
+        errorMessage:
+          example: null
+          nullable: true
+          type: string
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - SUCCEEDED
+          - FAILED_VALIDATION
+          - NOT_UPLOADED
+          example: SUCCEEDED
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

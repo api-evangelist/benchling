@@ -1,0 +1,490 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Monomers API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Monomers are chemical building blocks with specified structures used to compose modified nucleotides. Note that monomer write endpoints require tenant admin permissions.
+  name: Monomers
+paths:
+  /monomers:
+    get:
+      description: List all available monomers
+      operationId: listMonomers
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: monomers.id,monomers.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonomersPaginatedList'
+          description: OK
+      summary: List Monomers
+      tags:
+      - Monomers
+    post:
+      description: Create a monomer.
+      operationId: createMonomer
+      parameters:
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: monomers.id,monomers.symbol
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonomerCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Monomer'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+      summary: Create a monomer
+      tags:
+      - Monomers
+  /monomers/{monomer_id}:
+    patch:
+      description: Update a Monomer.
+      operationId: updateMonomer
+      parameters:
+      - in: path
+        name: monomer_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id, modifiedAt
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonomerUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Monomer'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a Monomer
+      tags:
+      - Monomers
+  /monomers:archive:
+    post:
+      description: Archive Monomers.
+      operationId: archiveMonomers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonomersArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonomersArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive Monomers
+      tags:
+      - Monomers
+  /monomers:unarchive:
+    post:
+      description: Unarchive Monomers.
+      operationId: unarchiveMonomers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonomersUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonomersArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive Monomers
+      tags:
+      - Monomers
+components:
+  schemas:
+    MonomerType:
+      description: The part of the nucleotide structure that the monomer fits into, i.e. backbone or branch
+      enum:
+      - BACKBONE
+      - BRANCH
+      type: string
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    MonomerBaseRequest:
+      properties:
+        color:
+          description: The hex color code of the monomer visual symbol
+          example: '#7051FC'
+          nullable: true
+          type: string
+        customMolecularWeight:
+          description: Optional molecular weight value that the user can provide to override the calculated molecular weight
+          example: 119.422
+          nullable: true
+          type: number
+        name:
+          description: Name of the monomer
+          example: (Rp)-Phosphorothioate
+          type: string
+        smiles:
+          description: The chemical structure in SMILES format.
+          example: O[P@@](=S)([OH:1])[OH:2]
+          type: string
+        symbol:
+          description: User-defined identifier of the monomer, unique on the monomer type.
+          example: Rsp
+          type: string
+        visualSymbol:
+          allOf:
+          - $ref: '#/components/schemas/MonomerVisualSymbol'
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    MonomersUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving Monomers.
+
+        '
+      properties:
+        monomerIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+      required:
+      - monomerIds
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    MonomersArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        monomerIds:
+          items:
+            type: string
+          type: array
+      type: object
+    MonomersArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Monomers.
+
+        '
+      properties:
+        monomerIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Monomers. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Archived
+          - Other
+          type: string
+      required:
+      - reason
+      - monomerIds
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    MonomersPaginatedList:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          monomers:
+            items:
+              $ref: '#/components/schemas/Monomer'
+            type: array
+          nextToken:
+            type: string
+    Monomer:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        attachmentPoints:
+          description: A list of the capping group present at each location where the monomer can form a bond with other monomers
+          example:
+          - OH
+          - OH
+          items:
+            type: string
+          type: array
+        calculatedMolecularWeight:
+          description: The molecular weight of the monomer as calculated by RDKit based on the monomer chemical structure
+          example: 120.422
+          type: number
+        canonicalSmiles:
+          description: The canonicalized chemical structure in SMILES format.
+          example: O[P@@](=S)([OH:1])[OH:2]
+          type: string
+        createdAt:
+          description: DateTime the monomer was created.
+          format: date-time
+          readOnly: true
+          type: string
+        customMolecularWeight:
+          description: Optional molecular weight value that the user can provide to override the calculated molecular weight
+          example: 119.422
+          nullable: true
+          type: number
+        exactMolecularWeight:
+          description: The exact molecular weight of the monomer as calculated by RDKit based on the monomer chemical structure
+          example: 119.422
+          type: number
+        id:
+          description: ID of the monomer
+          example: mon_bhuDUw9D
+          type: string
+        modifiedAt:
+          description: DateTime the monomer was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        monomerType:
+          allOf:
+          - $ref: '#/components/schemas/MonomerType'
+        name:
+          description: Name of the monomer
+          example: (Rp)-Phosphorothioate
+          type: string
+        naturalAnalog:
+          description: Symbol for the natural equivalent of the monomer. Acceptable natural analog values include IUPAC bases, r, and p.
+          example: T
+          type: string
+        originalSmiles:
+          description: The original chemical structure supplied by the user in SMILES format. Null if the user did not originally supply SMILES.
+          example: O[P@@](=S)([OH:1])[OH:2]
+          nullable: true
+          type: string
+        polymerType:
+          allOf:
+          - $ref: '#/components/schemas/MonomerPolymerType'
+        symbol:
+          description: User-defined identifier of the monomer, unique on the monomer type.
+          example: Rsp
+          type: string
+        visualColor:
+          description: The hex color code of the monomer visual symbol
+          example: '#7051FC'
+          nullable: true
+          type: string
+        visualSymbol:
+          allOf:
+          - $ref: '#/components/schemas/MonomerVisualSymbol'
+          nullable: true
+      type: object
+    MonomerPolymerType:
+      description: The polymer type of the monomer. Currently only RNA monomers are supported.
+      enum:
+      - RNA
+      type: string
+    MonomerVisualSymbol:
+      description: The shape of the monomer visual symbol.
+      enum:
+      - DIAMOND_FILLED
+      - DIAMOND_HOLLOW
+      - DIAMOND_DASHED
+      - STAR_FILLED
+      - STAR_HOLLOW
+      - TRIANGLE_FILLED
+      - TRIANGLE_HOLLOW
+      - DYAD_FILLED
+      - DYAD_HOLLOW
+      - CLOVER_FILLED
+      - CLOVER_HOLLOW
+      - TRIAD_FILLED
+      - TRIAD_HOLLOW
+      - RECTANGLE_FILLED
+      - RECTANGLE_HOLLOW
+      - LETTERS_P
+      - LETTERS_PS
+      type: string
+    MonomerCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MonomerBaseRequest'
+      - properties:
+          naturalAnalog:
+            description: Symbol for the natural equivalent of the monomer. Acceptable natural analog values include IUPAC bases, r, and p.
+            example: T
+            type: string
+      - required:
+        - smiles
+        - name
+        - naturalAnalog
+        - symbol
+    MonomerUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MonomerBaseRequest'
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

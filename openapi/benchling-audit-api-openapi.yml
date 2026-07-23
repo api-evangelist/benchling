@@ -1,0 +1,111 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Audit API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Export audit log data for Benchling objects.
+  name: Audit
+paths:
+  /audit/log/{object_id}:
+    post:
+      description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task. The `ExportAuditLogAsyncTask` response contains a link to download the exported audit log file from Amazon S3. This endpoint is subject to a rate limit of 500 requests per hour, in conjunction with the global request rate limit. Export throughput will additionally be rate limited around the scale of 70,000 total audit events exported in csv format or 30,000 total audit events exported in pdf format per hour.
+
+        '
+      operationId: auditLog
+      parameters:
+      - example: seq_yWs5X7lv
+        in: path
+        name: object_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditLogExport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Accepted
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Export an audit log file for a Benchling object
+      tags:
+      - Audit
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    AuditLogExport:
+      additionalProperties: false
+      properties:
+        format:
+          description: The format of the exported file.
+          enum:
+          - CSV
+          - PDF
+          type: string
+      required:
+      - format
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

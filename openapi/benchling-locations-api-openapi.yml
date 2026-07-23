@@ -1,0 +1,741 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Locations API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: '
+
+    Manage locations objects.
+
+
+    Like all inventory, every Location has a barcode that is unique across the registry.
+
+    '
+  name: Locations
+paths:
+  /locations:
+    get:
+      description: List locations
+      operationId: listLocations
+      parameters:
+      - description: Number of results to return.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Method by which to order search results. Valid sorts are barcode, name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+          '
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt
+          enum:
+          - barcode
+          - modifiedAt
+          - name
+          - barcode:asc
+          - modifiedAt:asc
+          - name:asc
+          - barcode:desc
+          - modifiedAt:desc
+          - name:desc
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          nullable: false
+          type: string
+      - description: ID of a schema. Restricts results to those of the specified schema.
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models created within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for created models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models created after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: createdAt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of a location. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Name substring of a location. Restricts results to those with names that include the provided substring.
+
+          '
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: ID of a plate, box, or location. Restricts results to those located in the specified inventory.
+        in: query
+        name: ancestorStorageId
+        schema:
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived locations. Use "ANY_ARCHIVED" to filter for archived locations regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: loc_9fxPzGDy,loc_fALwBTI7,loc_GyxUeUIi
+          type: string
+      - description: 'Comma-separated list of barcodes. Matches all of the provided barcodes, or returns a 400 error that includes a list of which barcodes are invalid.
+
+          '
+        in: query
+        name: barcodes
+        schema:
+          example: b001, b002, f001
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Comma separated list of users IDs
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List locations
+      tags:
+      - Locations
+    post:
+      description: Create a location
+      operationId: createLocation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create a location
+      tags:
+      - Locations
+  /locations/{location_id}:
+    get:
+      description: Get a location by ID
+      operationId: getLocation
+      parameters:
+      - description: ID of location to get
+        in: path
+        name: location_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+          description: OK
+        '400':
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a location by ID
+      tags:
+      - Locations
+    patch:
+      description: Update a location
+      operationId: updateLocation
+      parameters:
+      - description: ID of the location to update
+        in: path
+        name: location_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a location
+      tags:
+      - Locations
+  /locations:archive:
+    post:
+      description: Archive locations
+      operationId: archiveLocations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationsArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenRestrictedSampleError'
+          description: Forbidden
+      summary: Archive locations
+      tags:
+      - Locations
+  /locations:bulk-get:
+    get:
+      description: BulkGet locations
+      operationId: bulkGetLocations
+      parameters:
+      - description: Comma-separated list of location IDs.
+        in: query
+        name: locationIds
+        schema:
+          type: string
+      - description: Comma-separated list of location barcodes.
+        explode: false
+        in: query
+        name: barcodes
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsBulkGet'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: BulkGet locations
+      tags:
+      - Locations
+  /locations:unarchive:
+    post:
+      description: Unarchive locations
+      operationId: unarchiveLocations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationsUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive locations
+      tags:
+      - Locations
+components:
+  schemas:
+    ForbiddenRestrictedSampleError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidIds:
+                items:
+                  type: string
+                type: array
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+          - example:
+              invalidIds:
+              - Q6uhNZvw
+              - con_OwmERWGE
+              - con_zuDFhNvz
+              message: You're not a restricted sample user for some items.
+              type: invalid_request_error
+              userMessage: You're not a restricted sample user for some items.
+      type: object
+    LocationsBulkGet:
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/Location'
+          type: array
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    LocationsPaginatedList:
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/Location'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    LocationsUnarchive:
+      additionalProperties: false
+      properties:
+        locationIds:
+          description: Array of location IDs
+          items:
+            type: string
+          type: array
+      required:
+      - locationIds
+      type: object
+    Location:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        availableCapacity:
+          description: 'The number of available positions in this location. Null if *totalCapacity* is not set.
+
+            '
+          nullable: true
+          readOnly: true
+          type: integer
+        barcode:
+          type: string
+        createdAt:
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          type: string
+        modifiedAt:
+          type: string
+        name:
+          type: string
+        occupiedCapacity:
+          description: 'The number of plates, boxes, and containers currently in this location. Null if *totalCapacity* is not set.
+
+            '
+          nullable: true
+          readOnly: true
+          type: integer
+        parentStorageId:
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        totalCapacity:
+          description: 'The total capacity of this location (i.e. how many plates, boxes, and containers it can store). If null, capacity is not limited.
+
+            '
+          nullable: true
+          readOnly: true
+          type: integer
+        webURL:
+          type: string
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    LocationsArchive:
+      additionalProperties: false
+      properties:
+        locationIds:
+          description: Array of location IDs
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'Reason that locations are being archived.
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Other
+          type: string
+        shouldRemoveBarcodes:
+          description: 'Remove barcodes. Removing barcodes from archived inventory that contain items will also remove barcodes from the contained items.
+
+            '
+          type: boolean
+      required:
+      - locationIds
+      - reason
+      type: object
+    LocationCreate:
+      additionalProperties: false
+      properties:
+        barcode:
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - name
+      - schemaId
+      type: object
+    LocationUpdate:
+      additionalProperties: false
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    LocationsArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of locations along with any IDs of locations, boxes, plates, containers that were archived.
+
+        '
+      properties:
+        boxIds:
+          items:
+            type: string
+          type: array
+        containerIds:
+          items:
+            type: string
+          type: array
+        locationIds:
+          items:
+            type: string
+          type: array
+        plateIds:
+          items:
+            type: string
+          type: array
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

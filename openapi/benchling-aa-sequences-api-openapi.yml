@@ -1,0 +1,1573 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+  name: AA Sequences
+paths:
+  /aa-sequences:
+    get:
+      description: List AA sequences
+      operationId: listAASequences
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models created within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for created models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models created after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: createdAt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of an AA Sequence. Restricts results to those with the specified name, alias, or entity registry ID.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of an AA sequence. Restricts results to those with names, aliases, or entity registry IDs that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: String of amino acids. Restricts results to AA sequences exactly matching these amino acids (case-insensitive).
+        in: query
+        name: aminoAcids
+        schema:
+          type: string
+      - description: ID of a folder. Restricts results to those in the folder.
+        in: query
+        name: folderId
+        schema:
+          type: string
+      - description: 'Comma-separated list of entry IDs. Restricts results to AA sequences mentioned in those entries.
+
+          '
+        in: query
+        name: mentionedIn
+        schema:
+          type: string
+      - description: ID of a project. Restricts results to those in the project.
+        in: query
+        name: projectId
+        schema:
+          type: string
+      - description: 'ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+
+          '
+        in: query
+        name: registryId
+        schema:
+          nullable: true
+          type: string
+      - description: 'ID of a schema. Restricts results to those of the specified schema.
+
+          '
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived AA sequences. Use "ANY_ARCHIVED" to filter for archived AA sequences regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Comma-separated list of item IDs. Restricts results to those that mention the given items in the description.
+
+          '
+        in: query
+        name: mentions
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: prtn_6gxJGfPh,prtn_u7fOvqWg
+          type: string
+      - description: 'Comma-separated list of entity registry IDs. Maximum of 100. Restricts results to those that match any of the specified registry IDs.
+
+          '
+        in: query
+        name: entityRegistryIds.anyOf
+        schema:
+          example: TP001,TP002
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, aliases, or entity registry IDs, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, aliases, or entity registry IDs, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Comma separated list of users IDs
+        in: query
+        name: creatorIds
+        schema:
+          example: ent_a0SApq3z
+          type: string
+      - description: Comma separated list of user or app IDs. Maximum of 100.
+        in: query
+        name: authorIds.anyOf
+        schema:
+          example: ent_a0SApq3z,ent_b4AApz9b
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note**: Fields annotations, translations, and primers cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g.: "aaSequences.annotations.id" will return the same as "aaSequences.annotations".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: aaSequences.id,aaSequences.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequencesPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of requests remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List AA sequences
+      tags:
+      - AA Sequences
+    post:
+      description: Create an AA sequence
+      operationId: createAASequence
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequenceCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequence'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '503':
+          description: Deprecated, a 429 is returned for too many requests
+      summary: Create an AA sequence
+      tags:
+      - AA Sequences
+  /aa-sequences/{aa_sequence_id}:
+    get:
+      description: Get an AA sequence
+      operationId: getAASequence
+      parameters:
+      - in: path
+        name: aa_sequence_id
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note**: Fields annotations, translations, and primers cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g.: "annotations.id" will return the same as "annotations".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequence'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get an AA sequence
+      tags:
+      - AA Sequences
+    patch:
+      description: Update an AA sequence
+      operationId: updateAASequence
+      parameters:
+      - in: path
+        name: aa_sequence_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequenceUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequence'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Update an AA sequence
+      tags:
+      - AA Sequences
+  /aa-sequences/{entity_registry_id}:upsert:
+    patch:
+      description: 'Create or update a registered AA sequence.
+
+
+        Schema field links can be populated using entity registry IDs or API IDs. In the `value` field of the [Field](#/components/schemas/FieldWithResolution) resource, the object `{"entityRegistryId": ENTITY_REGISTRY_ID}` may be provided instead of the API ID if desired (see example value).
+
+        '
+      operationId: upsertAaSequence
+      parameters:
+      - in: path
+        name: entity_registry_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequenceUpsert'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequence'
+          description: OK
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequence'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create or update a registered AA sequence.
+      tags:
+      - AA Sequences
+  /aa-sequences:archive:
+    post:
+      description: Archive AA sequences
+      operationId: archiveAASequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequencesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive AA sequences
+      tags:
+      - AA Sequences
+  /aa-sequences:auto-annotate:
+    post:
+      description: Auto-annotate AA sequences with matching features from specified Feature Libraries
+      operationId: autoAnnotateAaSequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoAnnotateAaSequences'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task has an empty response.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Auto-annotate AA sequences with matching features from specified Feature Libraries
+      tags:
+      - AA Sequences
+  /aa-sequences:back-translate:
+    post:
+      description: Create back-translated DNA sequences from AA sequences.
+      operationId: backTranslate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackTranslate'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns the resources of the DNA Sequence entities that were back-translated.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create back-translated DNA sequences from AA sequences.
+      tags:
+      - AA Sequences
+  /aa-sequences:bulk-create:
+    post:
+      description: Bulk Create AA sequences. Limit of 1000 AA Sequences per request.
+      operationId: bulkCreateAASequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of AA Sequences that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Create AA sequences
+      tags:
+      - AA Sequences
+  /aa-sequences:bulk-get:
+    get:
+      description: Bulk get AA sequences by ID
+      operationId: bulkGetAASequences
+      parameters:
+      - description: 'Comma-separated list of IDs of AA sequences to get.
+
+          '
+        in: query
+        name: aaSequenceIds
+        required: true
+        schema:
+          type: string
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+
+          **Note**: Fields annotations, translations, and primers cannot be introspected with the returning parameter, and any sub fields will be ignored. E.g.: "aaSequences.annotations.id" will return the same as "aaSequences.annotations".
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: aaSequences.id, aaSequences.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequencesBulkGet'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk get AA sequences by ID
+      tags:
+      - AA Sequences
+  /aa-sequences:bulk-update:
+    post:
+      description: Bulk Update AA sequences
+      operationId: bulkUpdateAASequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns a full list of [AA Sequence](#/AA%20Sequences/bulkGetAASequences) resources
+
+            that were updated.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Update AA sequences
+      tags:
+      - AA Sequences
+  /aa-sequences:bulk-upsert:
+    post:
+      description: 'All entities and their schemas must be within the same registry.
+
+
+        This operation performs the following actions:
+
+        1. Any existing objects are looked up in Benchling by the provided entity registry ID.
+
+        2. Then, all objects are either created or updated accordingly, temporarily skipping any schema field links between objects.
+
+        3. Schema field links can be populated using entity registry IDs or API IDs. In the `value` field of the [Field](#/components/schemas/FieldWithResolution) resource, the object `{"entityRegistryId": ENTITY_REGISTRY_ID}` may be provided instead of the API ID if desired (see example value). You may link to objects being created in the same operation.
+
+        4. Entities are registered, using the provided name and entity registry ID.
+
+
+        If any action fails, the whole operation is canceled and no objects are created or updated.
+
+        '
+      operationId: bulkUpsertAASequences
+      parameters:
+      - description: 'Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, ''*''. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+
+          '
+        in: query
+        name: returning
+        schema:
+          example: aaSequences.id,aaSequences.creator.handle
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesBulkUpsertRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns the resources of the objects that were upserted.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk upsert AA sequences
+      tags:
+      - AA Sequences
+  /aa-sequences:find-matching-regions:
+    post:
+      description: Find matching regions for AA sequences
+      operationId: findMatchingRegionsAaSequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesFindMatchingRegion'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            It is used to search for AA sequences that are either subsequences or exact matches of the provided target sequences.
+
+            Each returned item represents the group of sequences that partially or fully match the target sequence."
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Find matching regions for AA sequences
+      tags:
+      - AA Sequences
+  /aa-sequences:match-amino-acids:
+    post:
+      description: 'Returns AA Sequences that exactly match the provided amino acids.
+
+        '
+      operationId: matchAminoAcidsAaSequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesMatchBases'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequencesPaginatedList'
+          description: A filtered list of AA Sequences
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List entities with matching amino acids
+      tags:
+      - AA Sequences
+  /aa-sequences:search-amino-acids:
+    post:
+      description: 'Returns AA Sequences that contain the provided amino acids. Search indexing is asynchronous, so results my be not be available immediately after creation.
+
+        '
+      operationId: searchAaSequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesSearchBases'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequencesPaginatedList'
+          description: A filtered list of AA Sequences
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Search AA Sequences
+      tags:
+      - AA Sequences
+  /aa-sequences:unarchive:
+    post:
+      description: Unarchive AA sequences
+      operationId: unarchiveAASequences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AaSequencesUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AaSequencesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive AA sequences
+      tags:
+      - AA Sequences
+components:
+  schemas:
+    AaSequenceBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/AaSequenceBaseRequest'
+      - required:
+        - aminoAcids
+        - name
+    AaSequenceBaseRequest:
+      properties:
+        aliases:
+          description: Aliases to add to the AA sequence
+          items:
+            type: string
+          type: array
+        aminoAcids:
+          description: 'Amino acids for the AA sequence.
+
+            '
+          type: string
+        annotations:
+          description: 'Annotations to create on the AA sequence.
+
+            '
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        authorIds:
+          description: IDs of users to set as the AA sequence's authors.
+          items:
+            type: string
+          type: array
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the AA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Fields to set on the AA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: 'ID of the folder containing the AA sequence.
+
+            '
+          type: string
+        name:
+          description: 'Name of the AA sequence.
+
+            '
+          type: string
+        schemaId:
+          description: 'ID of the AA sequence''s schema.
+
+            '
+          type: string
+      type: object
+    AaSequenceCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AaSequenceBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    AaSequencesBulkUpsertRequest:
+      additionalProperties: false
+      maxItems: 1000
+      properties:
+        aaSequences:
+          items:
+            $ref: '#/components/schemas/AaSequenceBulkUpsertRequest'
+          type: array
+      required:
+      - aaSequences
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    FieldWithResolution:
+      allOf:
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+            nullable: true
+        type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    AaSequenceBulkUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/AaSequenceBaseRequestForCreate'
+      - required:
+        - annotations
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    AaSequenceUpsert:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/AaSequenceBaseRequestForCreate'
+      - required:
+        - annotations
+    AaSequencesPaginatedList:
+      properties:
+        aaSequences:
+          items:
+            $ref: '#/components/schemas/AaSequence'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AaAnnotation:
+      properties:
+        color:
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the AA sequence is always represented as 0.
+          type: integer
+        id:
+          example: prtnann_o7zMPG0P
+          type: string
+        name:
+          maxLength: 255
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        type:
+          example: Site
+          maxLength: 255
+          type: string
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    ArchiveRecordSet:
+      additionalProperties: false
+      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
+      example: null
+      nullable: true
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ReducedPattern:
+      additionalProperties: false
+      description: 'DNA patterns to avoid during optimization. Supports two formats: 1) DNA base patterns: strings of ATGC bases (case-insensitive, e.g., "ATGC" or "gat") 2) Repeat patterns: format "nxkmer" specifying n repeats of k-sized sequences (e.g., "3x4mer" matches 3 consecutive 4-base repeats). Maximum total length for repeat patterns is 50 bases (n * k ≤ 50).
+
+        If avoidReverseComplement is true, the pattern''s reverse complement will also be avoided. Note: avoidReverseComplement cannot be true for repeat patterns (nxkmer format).
+
+        '
+      properties:
+        avoidReverseComplement:
+          default: false
+          type: boolean
+        pattern:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    AaSequenceRequestRegistryFields:
+      properties:
+        entityRegistryId:
+          type: string
+      type: object
+    AaSequencesBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        aaSequences:
+          items:
+            $ref: '#/components/schemas/AaSequenceBulkUpdate'
+          type: array
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    FieldsWithResolution:
+      additionalProperties:
+        $ref: '#/components/schemas/FieldWithResolution'
+      example:
+        Linked Peptide:
+          value: prtn_ObbdtGhC
+        Linked Sequence:
+          value:
+            entityRegistryId: DNA001
+        Linked Strains:
+          value:
+          - entityRegistryId: STRAIN001
+          - entityRegistryId: STRAIN002
+      type: object
+    BackTranslate:
+      additionalProperties: false
+      properties:
+        aaSequenceIds:
+          description: IDs of AA sequences to back-translate.
+          items:
+            type: string
+          type: array
+        avoidedCutsiteEnzymeIds:
+          description: 'List of enzyme IDs whose recognition sites will be avoided when creating the back-translated sequence.
+
+            '
+          items:
+            type: string
+          type: array
+        codonUsageTableId:
+          description: ID of the codon usage table representing the target organism.
+          type: string
+        folderId:
+          description: 'ID of the folder in which the back-translated sequences will be saved.
+
+            '
+          type: string
+        gcContent:
+          default: ANY
+          description: 'The amount of GC content in the optimized sequence. LOW is defined as below 0.33, MEDIUM as 0.33-0.66, and HIGH as above 0.66. If neither gcContent nor gcContentRange is specified, the optimization will default to ANY (0-1). Cannot be specified together with gcContentRange.
+
+            '
+          enum:
+          - ANY
+          - LOW
+          - MEDIUM
+          - HIGH
+          type: string
+        gcContentRange:
+          additionalProperties: false
+          description: 'Custom GC content range for the optimized sequence, specified as decimal values between 0 and 1. The maximum must be greater than the minimum. Cannot be specified together with gcContent.
+
+            '
+          properties:
+            max:
+              description: Maximum GC content ratio (e.g., 0.6 for 60%)
+              maximum: 1
+              minimum: 0
+              type: number
+            min:
+              description: Minimum GC content ratio (e.g., 0.4 for 40%)
+              maximum: 1
+              minimum: 0
+              type: number
+          type: object
+        hairpinParameters:
+          additionalProperties: false
+          description: 'These parameters are applied in the AvoidHairpins specification in DNAChisel. If hairpinParameters is not specified, hairpins will not be avoided.
+
+            '
+          properties:
+            stem:
+              default: 20
+              type: integer
+            window:
+              default: 200
+              type: integer
+          type: object
+        method:
+          default: MATCH_CODON_USAGE
+          description: 'The codon optimization algorithm to use. Requires codonUsageTableId to be specified. MATCH_CODON_USAGE selects codons probabilistically based on the organism''s codon usage frequencies. USE_BEST_CODON always selects the most frequently used codon for each amino acid.
+
+            '
+          enum:
+          - MATCH_CODON_USAGE
+          - USE_BEST_CODON
+          type: string
+        reducedPatterns:
+          description: 'List of patterns to avoid when creating the back-translated sequence, on the coding strand only.
+
+            '
+          items:
+            $ref: '#/components/schemas/ReducedPattern'
+          type: array
+        schemaId:
+          description: ID of the resulting DNA sequences' schemas
+          type: string
+        shouldDepleteUridine:
+          default: false
+          description: 'If not specified, the back-translation will default to false, and mRNA uridine depletion will not be performed.
+
+            '
+          type: boolean
+      required:
+      - aaSequenceIds
+      - folderId
+      type: object
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
+          type: string
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    AaSequencesMatchBases:
+      additionalProperties: false
+      properties:
+        aminoAcids:
+          type: string
+        archiveReason:
+          default: NOT_ARCHIVED
+          enum:
+          - NOT_ARCHIVED
+          - Other
+          - Archived
+          type: string
+        nextToken:
+          type: string
+        pageSize:
+          default: 50
+          maximum: 100
+          minimum: 0
+          type: integer
+        registryId:
+          description: 'ID of a registry. Restricts results to those registered in this registry. Specifying `null` returns unregistered items.
+
+            '
+          nullable: true
+          type: string
+        sort:
+          default: modifiedAt:desc
+          enum:
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name:asc
+          - name:desc
+          type: string
+      required:
+      - aminoAcids
+      type: object
+    AaSequenceBulkCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AaSequenceCreate'
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AaSequencesBulkGet:
+      properties:
+        aaSequences:
+          items:
+            $ref: '#/components/schemas/AaSequence'
+          type: array
+      type: object
+    AaSequencesSearchBases:
+      additionalProperties: false
+      properties:
+        aminoAcids:
+          minLength: 3
+          type: string
+        archiveReason:
+          default: NOT_ARCHIVED
+          enum:
+          - NOT_ARCHIVED
+          - Other
+          - Archived
+          type: string
+        nextToken:
+          type: string
+        pageSize:
+          default: 50
+          maximum: 100
+          minimum: 0
+          type: integer
+        registryId:
+          description: 'ID of a registry. Restricts results to those registered in this registry. Specifying `null` returns unregistered items.
+
+            '
+          nullable: true
+          type: string
+        sort:
+          default: modifiedAt:desc
+          enum:
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name:asc
+          - name:desc
+          type: string
+      required:
+      - aminoAcids
+      type: object
+    AaSequencesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        aaSequences:
+          items:
+            $ref: '#/components/schemas/AaSequenceBulkCreate'
+          maxItems: 1000
+          type: array
+      type: object
+    AaSequencesArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of AA sequences along with any IDs of batches that were archived / unarchived.
+
+        '
+      properties:
+        aaSequenceIds:
+          items:
+            type: string
+          type: array
+        batchIds:
+          items:
+            type: string
+          type: array
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    AaSequenceBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/AaSequenceBaseRequest'
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    AaSequenceUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AaSequenceBaseRequest'
+      - $ref: '#/components/schemas/AaSequenceRequestRegistryFields'
+    EntityBulkUpsertBaseRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    AaSequencesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving AA sequences.
+
+        '
+      properties:
+        aaSequenceIds:
+          items:
+            type: string
+          type: array
+        reason:
+          $ref: '#/components/schemas/EntityArchiveReason'
+      required:
+      - reason
+      - aaSequenceIds
+      type: object
+    AaSequencesFindMatchingRegion:
+      additionalProperties: false
+      properties:
+        registryId:
+          description: An optional Registry ID to restrict the region search to
+          example: src_ae40j3TZ
+          type: string
+        schemaId:
+          description: Schema ID for the type of AA to match to the source sequence
+          example: ts_n4l12nf0
+          type: string
+        targetAASequenceIds:
+          description: API IDs of the AA sequences which matching regions will be found for
+          example:
+          - prtn_W7KgYydE
+          - prtn_g7SI2nih
+          items:
+            type: string
+          type: array
+      required:
+      - targetAASequenceIds
+      - schemaId
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          nullable: true
+          readOnly: true
+          type: string
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    CreateEntityIntoRegistry:
+      properties:
+        entityRegistryId:
+          description: 'Entity registry ID to set for the registered entity. Cannot specify both entityRegistryId and namingStrategy at the same time.
+
+            '
+          type: string
+        folderId:
+          description: ID of the folder containing the entity. Can be left empty when registryId is present.
+          type: string
+        namingStrategy:
+          $ref: '#/components/schemas/NamingStrategy'
+        registryId:
+          description: 'Registry ID into which entity should be registered. this is the ID of the registry which was configured for a particular organization
+
+            To get available registryIds, use the [/registries endpoint](#/Registry/listRegistries)
+
+
+            Required in order for entities to be created directly in the registry.
+
+            '
+          type: string
+      type: object
+    EntityUpsertBaseRequest:
+      properties:
+        archiveRecord:
+          $ref: '#/components/schemas/ArchiveRecordSet'
+        fields:
+          $ref: '#/components/schemas/FieldsWithResolution'
+        name:
+          type: string
+        registryId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - registryId
+      - name
+      - schemaId
+      type: object
+    AaSequencesUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving AA sequences.
+
+        '
+      properties:
+        aaSequenceIds:
+          items:
+            type: string
+          type: array
+      required:
+      - aaSequenceIds
+      type: object
+    AutoAnnotateAaSequences:
+      additionalProperties: false
+      properties:
+        aaSequenceIds:
+          description: Array of AA sequence IDs.
+          items:
+            type: string
+          type: array
+        featureLibraryIds:
+          description: Array of feature library IDs.
+          items:
+            type: string
+          type: array
+      required:
+      - aaSequenceIds
+      - featureLibraryIds
+      type: object
+    AaSequence:
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        aminoAcids:
+          description: Amino acids of the AA sequence.
+          example: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
+          type: string
+        annotations:
+          description: Array of annotation objects on the AA sequence.
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the AA Sequence in the API.
+          example: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the AA sequence was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the AA sequence.
+        entityRegistryId:
+          description: Registry ID of the AA sequence if registered.
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the AA sequence.
+          nullable: true
+          type: string
+        id:
+          description: ID of the AA sequence.
+          example: prtn_ObbdtGhC
+          type: string
+        length:
+          description: Number of amino acids in the AA sequence.
+          type: integer
+        modifiedAt:
+          description: DateTime the AA sequence was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the AA sequence.
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          description: Registry the AA sequence is registered in.
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          nullable: true
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          description: URL of the AA sequence.
+          example: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

@@ -1,0 +1,528 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences DNA Alignments API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: A DNA alignment is a Benchling object representing an alignment of multiple DNA sequences. This endpoint is deprecated, please migrate to the existing [Nucleotide Alignments endpoints.](#/Nucleotide%20Alignments)
+  name: DNA Alignments
+paths:
+  /dna-alignments:
+    get:
+      deprecated: true
+      description: List DNA Alignments
+      operationId: listDNAAlignments
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of a DNA Alignment. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of a DNA Alignment. Restricts results to those with names that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: seqanl_VfVOART1,seqanl_RFhDGaaC
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of sequence ids that own one or more DNA Alignments (i.e. ids of sequences used as the template in a Template Alignment or created as the consensus sequence from a Consensus Alignment). Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: sequenceIds
+        schema:
+          example: seq_VfVOART1,seq_RFhDGaaC
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnaAlignmentsPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of requests remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List DNA Alignments
+      tags:
+      - DNA Alignments
+  /dna-alignments/{dna_alignment_id}:
+    delete:
+      deprecated: true
+      description: Delete a DNA Alignment
+      operationId: deleteDNAAlignment
+      parameters:
+      - in: path
+        name: dna_alignment_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyObject'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Delete a DNA Alignment
+      tags:
+      - DNA Alignments
+    get:
+      deprecated: true
+      description: Get a DNA Alignment
+      operationId: getDNAAlignment
+      parameters:
+      - in: path
+        name: dna_alignment_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnaAlignment'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get a DNA Alignment
+      tags:
+      - DNA Alignments
+  /dna-alignments:create-consensus-alignment:
+    post:
+      deprecated: true
+      description: Create a consensus DNA alignment
+      operationId: createDnaConsensusAlignment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DnaConsensusAlignmentCreate'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns the [DNA Alignment](#/DNA%20Alignments/getDNAAlignment) resource that was created.
+
+            '
+      summary: Create a consensus DNA alignment
+      tags:
+      - DNA Alignments
+  /dna-alignments:create-template-alignment:
+    post:
+      deprecated: true
+      description: Create a template DNA alignment
+      operationId: createDnaTemplateAlignment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DnaTemplateAlignmentCreate'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns the [DNA Alignment](#/DNA%20Alignments/getDNAAlignment) resource that was created.
+
+            '
+      summary: Create a template DNA alignment
+      tags:
+      - DNA Alignments
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    DnaTemplateAlignmentCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentBase'
+      - properties:
+          shouldDisableCircularSequenceRotation:
+            default: false
+            description: Whether to disable circular sequence rotation.
+            type: boolean
+          templateSequenceId:
+            example: seq_rXqq0IHU
+            type: string
+        required:
+        - templateSequenceId
+        type: object
+    EmptyObject:
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    MafftOptions:
+      description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
+      properties:
+        adjustDirection:
+          default: fast
+          description: "Adjust direction:\n  * `fast`: Enabled, quickly.\n  * `accurate`: Enabled, accurately (slow).\n  * `disabled`: Disabled, fastest.\n"
+          enum:
+          - fast
+          - accurate
+          - disabled
+          type: string
+        gapExtensionPenalty:
+          default: 0.0
+          description: Gap extension penalty.
+          type: number
+        gapOpenPenalty:
+          default: 1.53
+          description: Gap open penalty.
+          type: number
+        maxIterations:
+          default: 0
+          description: Max refinement iterations. Not applicable for auto strategy, as it will be selected automatically.
+          type: integer
+        retree:
+          default: 2
+          description: Tree rebuilding. Only used for 6-mer strategy.
+          type: integer
+        strategy:
+          default: auto
+          description: "MAFFT Strategy:\n  * `auto`: Pick a strategy automatically based on the count and size of inputs.\n  * `sixmer`: Use 6-mer distance for constructing the guide tree.\n  * `localpair`: Compute local pairwise alignments using Smith-Waterman for constructing the guide tree and iterative refinement.\n  * `globalpair`: Compute global pairwise alignments using Needleman-Wunsch for constructing the guide tree and iterative refinement.\n"
+          enum:
+          - auto
+          - sixmer
+          - localpair
+          - globalpair
+          type: string
+      type: object
+    DnaAlignmentsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          dnaAlignments:
+            items:
+              $ref: '#/components/schemas/DnaAlignmentSummary'
+            type: array
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    ClustaloOptions:
+      description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
+      properties:
+        maxGuidetreeIterations:
+          default: -1
+          description: Max guide tree iterations within combined iterations. Use -1 for no max (all iterations will include guide tree iterations).
+          maximum: 5
+          minimum: -1
+          type: integer
+        maxHmmIterations:
+          default: -1
+          description: Max HMM iterations within combined iterations. Use -1 for no max (all iterations will include HMM iterations).
+          maximum: 5
+          minimum: -1
+          type: integer
+        mbedGuideTree:
+          default: true
+          description: Whether mBed-like clustering guide tree should be used (faster to use it).
+          type: boolean
+        mbedIteration:
+          default: true
+          description: Whether mBed-like clustering iteration should be used (faster to use it).
+          type: boolean
+        numCombinedIterations:
+          default: 0
+          description: Number of (combined guide-tree/HMM) iterations.
+          maximum: 5
+          minimum: 0
+          type: integer
+      type: object
+    DnaAlignment:
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentSummary'
+      - properties:
+          alignedSequences:
+            items:
+              $ref: '#/components/schemas/AlignedSequence'
+            type: array
+        type: object
+      type: object
+    DnaAlignmentSummary:
+      properties:
+        apiURL:
+          description: The canonical url of the DNA Alignment in the API.
+          example: https://benchling.com/api/v2/dna-alignments/seqanl_6ZVdX98t
+          format: uri
+          type: string
+        createdAt:
+          description: DateTime the DNA Alignment was created
+          format: date-time
+          type: string
+        id:
+          example: seqanl_6ZVdX98t
+          type: string
+        modifiedAt:
+          description: DateTime the DNA Alignment was last modified
+          format: date-time
+          type: string
+        name:
+          type: string
+        referenceSequenceId:
+          description: The ID of the template or consensus DNA Sequence associated with the DNA Alignment
+          example: seq_MYmsnS1u
+          type: string
+        webURL:
+          description: The Benchling web UI url to view the DNA Alignment
+          format: uri
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    DnaTemplateAlignmentFile:
+      properties:
+        data:
+          format: byte
+          type: string
+        name:
+          type: string
+      type: object
+    AlignedSequence:
+      properties:
+        bases:
+          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+          type: string
+        dnaSequenceId:
+          deprecated: true
+          example: seq_MYmsnS1u
+          nullable: true
+          type: string
+        name:
+          example: Gene001
+          type: string
+        pairwiseIdentity:
+          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
+
+            '
+          example: 0.505
+          format: float
+          type: number
+        sequenceId:
+          example: seq_MYmsnS1u
+          nullable: true
+          type: string
+        trimEnd:
+          example: 60
+          type: integer
+        trimStart:
+          example: 0
+          type: integer
+      type: object
+    DnaAlignmentBase:
+      properties:
+        algorithm:
+          enum:
+          - mafft
+          - clustalo
+          type: string
+        clustaloOptions:
+          $ref: '#/components/schemas/ClustaloOptions'
+        files:
+          items:
+            oneOf:
+            - properties:
+                sequenceId:
+                  example: seq_3cxbVcCf
+                  type: string
+              type: object
+            - $ref: '#/components/schemas/DnaTemplateAlignmentFile'
+          type: array
+        mafftOptions:
+          $ref: '#/components/schemas/MafftOptions'
+        name:
+          example: my new alignment
+          type: string
+      required:
+      - algorithm
+      - files
+      type: object
+    DnaConsensusAlignmentCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentBase'
+      - properties:
+          newSequence:
+            properties:
+              folderId:
+                example: lib_qQFY3WQH
+                type: string
+            type: object
+          sequenceId:
+            type: string
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

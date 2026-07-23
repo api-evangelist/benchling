@@ -1,0 +1,707 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Feature Libraries API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Feature Libraries are collections of shared canonical patterns that can be used to generate annotations on matching regions of DNA Sequences or AA Sequences.
+  name: Feature Libraries
+paths:
+  /feature-libraries:
+    get:
+      description: List Feature Libraries
+      operationId: listFeatureLibraries
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Method by which to order search results. Valid sorts are modifiedAt (modified time, most recent first) and name (entity name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of a Feature Library. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of a Feature Library. Restricts results to those with names that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: featlib_VfVOART1,featlib_RFhDGaaC
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: featureLibraries.id,featureLibraries.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureLibrariesPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of requests remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List Feature Libraries
+      tags:
+      - Feature Libraries
+    post:
+      description: Create a Feature Library
+      operationId: createFeatureLibrary
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureLibraryCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureLibrary'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create a Feature Library
+      tags:
+      - Feature Libraries
+  /feature-libraries/{feature_library_id}:
+    get:
+      description: Get a feature library by ID
+      operationId: getFeatureLibrary
+      parameters:
+      - description: ID of feature library to get
+        in: path
+        name: feature_library_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureLibrary'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a feature library by ID
+      tags:
+      - Feature Libraries
+    patch:
+      description: 'Update a feature library. Note: Features cannot be updated from this endpoint.
+
+        Use the /features* endpoints to add or modify features.
+
+        '
+      operationId: updateFeatureLibrary
+      parameters:
+      - in: path
+        name: feature_library_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureLibraryUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureLibrary'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a feature library
+      tags:
+      - Feature Libraries
+  /features:
+    get:
+      description: List Features
+      operationId: listFeatures
+      parameters:
+      - description: 'Number of results to return. Defaults to 50, maximum of 100.
+
+          '
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: Name of a Feature. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: feat_VfVOART1,feat_RFhDGaaC
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: Id of a Feature Library. Restricts results to those associated with the provided feature library
+        in: query
+        name: featureLibraryId
+        schema:
+          example: featlib_D0v2x9Q7
+          type: string
+      - description: 'The type of feature, like gene, promoter, etc. Note: This is an arbitrary string, not an enum
+
+          '
+        in: query
+        name: featureType
+        schema:
+          example: terminator
+          type: string
+      - description: The match type of the feature used to determine how auto-annotate matches are made.
+        in: query
+        name: matchType
+        schema:
+          enum:
+          - nucleotide
+          - protein
+          example: nucleotide
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: features.id,features.modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturesPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of requests remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List Features
+      tags:
+      - Feature Libraries
+    post:
+      description: Create a Feature
+      operationId: createFeature
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feature'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create a Feature
+      tags:
+      - Feature Libraries
+  /features/{feature_id}:
+    get:
+      description: Get a feature by ID
+      operationId: getFeature
+      parameters:
+      - description: ID of feature to get
+        in: path
+        name: feature_id
+        required: true
+        schema:
+          type: string
+      - description: Comma-separated list of fields to return. Modifies the output shape. To return all keys at a given level, enumerate them or use the wildcard, '*'. For more information, [click here](https://docs.benchling.com/docs/getting-started-1#returning-query-parameter).
+        in: query
+        name: returning
+        schema:
+          example: id,modifiedAt
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feature'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a feature by ID
+      tags:
+      - Feature Libraries
+    patch:
+      description: Update a feature
+      operationId: updateFeature
+      parameters:
+      - in: path
+        name: feature_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feature'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a feature
+      tags:
+      - Feature Libraries
+  /features:bulk-create:
+    post:
+      description: Bulk create Features
+      operationId: bulkCreateFeatures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturesBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of features that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk create Features
+      tags:
+      - Feature Libraries
+components:
+  schemas:
+    FeatureBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/FeatureCreate'
+    FeatureUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      description: Inputs for updating a feature
+      type: object
+    FeaturesBulkCreateRequest:
+      additionalProperties: false
+      description: Inputs for bulk creating a new feature
+      properties:
+        features:
+          items:
+            $ref: '#/components/schemas/FeatureBulkCreate'
+          maxItems: 1000
+          type: array
+      type: object
+    FeatureLibrariesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          featureLibraries:
+            items:
+              $ref: '#/components/schemas/FeatureLibrary'
+            type: array
+      description: A paginated list of feature libraries
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    FeatureLibraryUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      description: Inputs for updating a feature library
+      type: object
+    FeatureLibrary:
+      allOf:
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      - properties:
+          createdAt:
+            description: DateTime the Feature Library was created
+            format: date-time
+            type: string
+          id:
+            description: The id of the feature library
+            example: featlib_6ZVdX98t
+            type: string
+          modifiedAt:
+            description: DateTime the Feature Library was last modified
+            format: date-time
+            type: string
+          owner:
+            anyOf:
+            - $ref: '#/components/schemas/Organization'
+            - $ref: '#/components/schemas/UserSummary'
+          webURL:
+            description: The Benchling web UI url to view the Feature Library
+            format: uri
+            type: string
+      description: A feature library
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    FeatureCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      - required:
+        - name
+        - featureType
+        - pattern
+        - matchType
+        - featureLibraryId
+      description: Inputs for a new feature
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    FeatureBase:
+      properties:
+        color:
+          description: The color of the annotations generated by the feature. Must be a valid hex string
+          example: '#F58A5E'
+          type: string
+        featureLibraryId:
+          description: The id of the feature library the feature belongs to
+          example: featlib_19kd9aDq
+          type: string
+        featureType:
+          description: 'The type of feature, like gene, promoter, etc. Note: This is an arbitrary string, not an enum
+
+            '
+          nullable: true
+          type: string
+        name:
+          description: The name of the feature
+          type: string
+        pattern:
+          description: The pattern used for matching during auto-annotation.
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    Feature:
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          id:
+            description: The id of the feature
+            example: feat_4YVqX98z
+            type: string
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      description: A feature from a feature library
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Organization:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    FeaturesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          features:
+            description: List of features for the page
+            items:
+              $ref: '#/components/schemas/Feature'
+            type: array
+      description: A paginated list of features
+      type: object
+    FeatureLibraryBase:
+      properties:
+        description:
+          description: The description for the feature library
+          type: string
+        name:
+          description: The name of the feature library
+          type: string
+      type: object
+    FeatureLibraryCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      - properties:
+          organizationId:
+            description: 'The organization that will own the feature library. The requesting user must be an administrator of the organization. If unspecified and the organization allows personal ownables, then the requesting user will own the feature library
+
+              '
+            example: ent_a0SApq3z
+            type: string
+      - required:
+        - name
+        - description
+      description: Inputs for creating a feature library
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

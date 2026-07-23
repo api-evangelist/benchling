@@ -1,0 +1,855 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Assay Runs API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Runs capture the details / parameters of a run that was performed. Results are usually nested under a run.
+  name: Assay Runs
+paths:
+  /assay-runs:
+    get:
+      description: List runs
+      operationId: listAssayRuns
+      parameters:
+      - description: ID of the assay run schema to filter by
+        in: query
+        name: schemaId
+        required: true
+        schema:
+          type: string
+      - description: Filter by runs created after this unix timestamp
+        in: query
+        name: minCreatedTime
+        schema:
+          type: integer
+      - description: Filter by runs created before this unix timestamp
+        in: query
+        name: maxCreatedTime
+        schema:
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: Number of results to return. Defaults to 50, maximum of 100.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRunsPaginatedList'
+          description: OK
+      summary: List runs
+      tags:
+      - Assay Runs
+    post:
+      description: Create 1 or more runs.
+      operationId: createAssayRuns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayRunsBulkCreateRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRunsBulkCreateResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRunsBulkCreateErrorResponse'
+          description: Bad Request
+      summary: Create 1 or more runs.
+      tags:
+      - Assay Runs
+  /assay-runs/{assay_run_id}:
+    get:
+      description: Get a run
+      operationId: getAssayRun
+      parameters:
+      - in: path
+        name: assay_run_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRun'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get a run
+      tags:
+      - Assay Runs
+    patch:
+      description: Update a run
+      operationId: updateAssayRun
+      parameters:
+      - description: ID of the Run to be updated
+        in: path
+        name: assay_run_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayRunUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRun'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Update a run
+      tags:
+      - Assay Runs
+  /assay-runs/{assay_run_id}/automation-input-generators:
+    get:
+      description: list AutomationInputGenerators by Run
+      operationId: listAutomationInputGenerators
+      parameters:
+      - in: path
+        name: assay_run_id
+        required: true
+        schema:
+          type: string
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationFileInputsPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: list AutomationInputGenerators by Run
+      tags:
+      - Assay Runs
+  /assay-runs/{assay_run_id}/automation-output-processors:
+    get:
+      deprecated: true
+      description: Deprecated in favor of '/automation-output-processors'. For each output config in the run config, will create an empty automationOutputProcessor for the run if one doesn't exist.
+      operationId: listAutomationOutputProcessorsDeprecated
+      parameters:
+      - in: path
+        name: assay_run_id
+        required: true
+        schema:
+          type: string
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeprecatedAutomationOutputProcessorsPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: list AutomationOutputProcessors by Run
+      tags:
+      - Assay Runs
+  /assay-runs:archive:
+    post:
+      description: Archive assay runs that are not embedded in a notebook entry
+      operationId: archiveAssayRuns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayRunsArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRunsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive Assay Runs
+      tags:
+      - Assay Runs
+  /assay-runs:bulk-get:
+    get:
+      description: Bulk get runs by ID
+      operationId: bulkGetAssayRuns
+      parameters:
+      - description: Comma-separated list of assay run IDs
+        in: query
+        name: assayRunIds
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRunsBulkGet'
+          description: OK
+      summary: Bulk get runs by ID
+      tags:
+      - Assay Runs
+  /assay-runs:unarchive:
+    post:
+      description: Unarchive assay runs
+      operationId: unarchiveAssayRuns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayRunsUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayRunsArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive Assay Runs
+      tags:
+      - Assay Runs
+components:
+  schemas:
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    LabAutomationTransform:
+      properties:
+        apiURL:
+          description: The canonical url of the transform in the API.
+          format: uri
+          readOnly: true
+          type: string
+        blobId:
+          format: uuid
+          nullable: true
+          type: string
+        customTransformId:
+          format: uuid
+          nullable: true
+          type: string
+        errors:
+          $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
+        id:
+          type: string
+        inputGeneratorId:
+          nullable: true
+          type: string
+        modifiedAt:
+          description: DateTime the transform was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        outputProcessorId:
+          nullable: true
+          type: string
+        status:
+          enum:
+          - NOT_STARTED
+          - RUNNING
+          - FAILED
+          - SUCCEEDED
+          type: string
+      type: object
+    Blob:
+      properties:
+        id:
+          description: The universally unique identifier (UUID) for the blob.
+          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+          format: uuid
+          type: string
+        mimeType:
+          description: eg. application/jpeg
+          example: text/csv
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          example: MyInstrumentInputFile.csv
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - COMPLETE
+          - ABORTED
+          type: string
+      type: object
+    AssayRunsBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRunCreate'
+          type: array
+      required:
+      - assayRuns
+      type: object
+    AssayRunsArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Assay Runs.
+
+        '
+      properties:
+        assayRunIds:
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Assay Runs. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Archived
+          - Made in error
+          - Other
+          type: string
+      required:
+      - reason
+      - assayRunIds
+      type: object
+    AutomationOutputProcessor:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Output Processor in the API.
+            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            nullable: true
+          completeWithErrors:
+            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
+            type: boolean
+          createdAt:
+            description: DateTime the Automation Output Processor was created
+            format: date-time
+            type: string
+          errorFile:
+            allOf:
+            - $ref: '#/components/schemas/Blob'
+            nullable: true
+          id:
+            example: aop_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Output Processor was last modified
+            format: date-time
+            type: string
+          progressStats:
+            $ref: '#/components/schemas/AutomationProgressStats'
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+              nullable: true
+            type: array
+        type: object
+    AssayRunsArchivalChange:
+      description: 'IDs of all Assay Runs that were archived / unarchived.
+
+        '
+      properties:
+        assayRunIds:
+          items:
+            type: string
+          type: array
+      type: object
+    AssayRunValidationStatus:
+      description: Must be either VALID or INVALID
+      enum:
+      - VALID
+      - INVALID
+      type: string
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    DeprecatedAutomationOutputProcessorsPaginatedList:
+      description: Deprecated - A paginated list of automation output processors
+      properties:
+        automationOutputProcessors:
+          items:
+            $ref: '#/components/schemas/AutomationOutputProcessor'
+          type: array
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+      type: object
+    AssayRunUpdate:
+      additionalProperties: false
+      properties:
+        equipmentId:
+          description: The equipment that the assay run should be associated with.  This attribute is only supported if the equipment feature is enabled for the tenant; otherwise, supplying it leads to a 400 request error
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    AssayFieldsCreate:
+      additionalProperties: true
+      type: object
+    AssayRunCreate:
+      properties:
+        fields:
+          anyOf:
+          - $ref: '#/components/schemas/Fields'
+          - $ref: '#/components/schemas/AssayFieldsCreate'
+          description: Object of assay run fields
+        id:
+          description: ID of assay run
+          type: string
+        projectId:
+          description: 'The project that the assay run should be uploaded to. Only users with read access to the project will be able to read the assay run. Leaving this empty will result in only the creator having read access.
+
+            '
+          type: string
+        schemaId:
+          description: ID of assay schema that assay run conforms to
+          type: string
+        validationComment:
+          description: Additional information about the validation status
+          type: string
+        validationStatus:
+          $ref: '#/components/schemas/AssayRunValidationStatus'
+      required:
+      - schemaId
+      - fields
+      type: object
+    AssayRunsPaginatedList:
+      properties:
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRun'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AutomationProgressStats:
+      description: Processing progress information.
+      properties:
+        rowsFailed:
+          type: integer
+        rowsSucceeded:
+          type: integer
+        rowsUnprocessed:
+          type: integer
+      type: object
+    AssayRun:
+      properties:
+        apiURL:
+          description: The canonical url of the Run in the API.
+          example: https://benchling.com/api/v2/assay-runs/21f50003-0389-4b2a-9293-a17967b85961
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        createdAt:
+          example: '2021-05-06T13:43:25.752597+00:00'
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        entryId:
+          example: etr_Hds1XAaq
+          nullable: true
+          type: string
+        equipmentId:
+          example: eqpt_XzU5p4dR
+          nullable: true
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          example: 77af3205-65af-457f-87f5-75462b85075a
+          type: string
+        isReviewed:
+          type: boolean
+        projectId:
+          example: src_YzU5p4dR
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: assaysch_fFLKmdmG
+            name: Assay Run
+          nullable: true
+          title: SchemaProperty
+        v3Id:
+          description: V3 identifier for the run
+          example: run_21f50003
+          readOnly: true
+          type: string
+        validationComment:
+          example: Reported valid with no caveats
+          nullable: true
+          type: string
+        validationStatus:
+          $ref: '#/components/schemas/AssayRunValidationStatus'
+      type: object
+    LabAutomationBenchlingAppErrors:
+      properties:
+        topLevelErrors:
+          items:
+            properties:
+              errorMessage:
+                type: string
+            type: object
+          type: array
+      type: object
+    AutomationFileInputsPaginatedList:
+      properties:
+        automationInputGenerators:
+          items:
+            $ref: '#/components/schemas/AutomationInputGenerator'
+          type: array
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+      type: object
+    AssayRunsUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving Assay Runs.
+
+        '
+      properties:
+        assayRunIds:
+          items:
+            type: string
+          type: array
+      required:
+      - assayRunIds
+      type: object
+    AssayRunsBulkCreateResponse:
+      properties:
+        assayRuns:
+          items:
+            type: string
+          type: array
+        errors:
+          default: null
+          nullable: true
+          type: object
+      type: object
+    AutomationFile:
+      properties:
+        assayRunId:
+          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          type: string
+        automationFileConfig:
+          properties:
+            name:
+              example: MyInstrumentName
+              type: string
+          type: object
+        file:
+          allOf:
+          - $ref: '#/components/schemas/Blob'
+          nullable: true
+        id:
+          type: string
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+          - NOT_STARTED
+          - RUNNING
+          type: string
+      type: object
+    AutomationInputGenerator:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Input Generator in the API.
+            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          createdAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          id:
+            example: aif_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+              nullable: true
+            type: array
+        type: object
+    AssayRunsBulkCreateErrorResponse:
+      properties:
+        assayRuns:
+          default: null
+          items:
+            type: object
+          nullable: true
+          type: array
+        errors:
+          items:
+            properties:
+              fields:
+                type: object
+              global:
+                items:
+                  type: string
+                type: array
+            type: object
+          type: array
+      type: object
+    AssayRunsBulkGet:
+      properties:
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRun'
+          type: array
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

@@ -1,0 +1,579 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Users API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Manage user objects.
+  name: Users
+paths:
+  /users:
+    get:
+      description: "Returns all users that the caller has permission to view. The following roles have view permission:\n  - tenant admins\n  - members of the user's organizations\n"
+      operationId: listUsers
+      parameters:
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: ent_ZJy8RTbo,ent_8GVbVkPj,ent_qREJ33rn
+          type: string
+      - description: Name of a user. Restricts results to those with the specified name.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Name substring of a user. Restricts results to those with names that include the provided substring.
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Comma-separated list of organization and/or team API IDs. Restricts results to users that are members of all given groups.
+        in: query
+        name: memberOf
+        schema:
+          type: string
+      - description: Comma-separated list of organization and/or team API IDs. Restricts results to users that are admins of all given groups.
+        in: query
+        name: adminOf
+        schema:
+          type: string
+      - description: Comma-separated list of handles. Restricts results to the users with the specified handles.
+        in: query
+        name: handles
+        schema:
+          type: string
+      - description: Comma-separated list of emails. Maximum of 100. Restricts results to the users with the specified emails.
+        in: query
+        name: email.anyOf
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the >, >=, <, <=, operators. Time zone defaults to UTC. Restricts results to users who have last changed their password in the specified range. e.g. > 2017-04-30. If "null" is provided returns users that have no password set (SAML).
+
+          '
+        in: query
+        name: passwordLastChangedAt
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Sets the sort-order of the response. Valid sorts are modifiedAt (modified time, most recent first) and name (user name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersPaginatedList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List users
+      tags:
+      - Users
+    post:
+      description: Creates a single user.
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create a user
+      tags:
+      - Users
+  /users/{user_id}:
+    get:
+      description: "Returns a user by ID if the caller has permission to view. The following roles have view permission:\n  - tenant admins\n  - members of any of the user's organizations\n"
+      operationId: getUser
+      parameters:
+      - description: ID of user to get
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Get a user by ID
+      tags:
+      - Users
+    patch:
+      description: Update a single user.
+      operationId: updateUser
+      parameters:
+      - description: ID of user to update
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Update a user by ID
+      tags:
+      - Users
+  /users/{user_id}/activity:
+    get:
+      description: 'Returns activity metadata for a specific user by ID. This currently includes lastSeen data.
+
+        '
+      operationId: getUserActivity
+      parameters:
+      - description: ID of user to get
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActivity'
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: Last user activity
+      tags:
+      - Users
+  /users/{user_id}/warehouse-credentials:
+    get:
+      description: Returns the list of warehouse credential summaries for this user.
+      operationId: getUserWarehouseLogins
+      parameters:
+      - description: ID of user to get
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  warehouseCredentials:
+                    items:
+                      $ref: '#/components/schemas/WarehouseCredentialSummary'
+                    type: array
+                type: object
+          description: OK
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+          description: Not Found
+      summary: User warehouse credentials
+      tags:
+      - Users
+  /users:bulk-create:
+    post:
+      description: Bulk Create Users.
+      operationId: bulkCreateUsers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns a full list of [Users](#/users/bulkCreateUsers) resources that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Create Users
+      tags:
+      - Users
+  /users:bulk-update:
+    post:
+      description: 'There is currently **no support** for swapping emails or handles between existing users in the same request.
+
+        '
+      operationId: bulkUpdateUsers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            When successful, the task returns a full list of [Users](#/users/bulkUpdateUsers) resources that were updated.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Update Users.
+      tags:
+      - Users
+components:
+  schemas:
+    User:
+      allOf:
+      - $ref: '#/components/schemas/UserSummary'
+      - example:
+          email: lpasteur@benchling.com
+          handle: lpasteur
+          id: ent_a0SApq3z
+          isSuspended: false
+          name: Louis Pasteur
+      - properties:
+          apiKeyLastChangedAt:
+            nullable: true
+            type: string
+          email:
+            type: string
+          isSuspended:
+            type: boolean
+          passwordLastChangedAt:
+            nullable: true
+            type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    UserActivity:
+      properties:
+        lastSeen:
+          format: date-time
+          nullable: true
+          type: string
+        userId:
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    UserBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/UserCreate'
+          type: array
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    UserBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/UserBulkUpdate'
+          type: array
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    UserUpdate:
+      additionalProperties: false
+      properties:
+        email:
+          description: Email of the User
+          type: string
+        handle:
+          description: Handle of the User
+          type: string
+        isSuspended:
+          description: Suspended status of the User
+          type: boolean
+        name:
+          description: Name of the User
+          type: string
+      type: object
+    UserCreate:
+      additionalProperties: false
+      properties:
+        email:
+          description: Email of the User
+          type: string
+        handle:
+          description: Handle of the User
+          type: string
+        name:
+          description: Name of the User
+          type: string
+      required:
+      - name
+      - email
+      - handle
+      type: object
+    WarehouseCredentialSummary:
+      properties:
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: string
+        label:
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        userId:
+          readOnly: true
+          type: string
+        username:
+          description: The username to connect to the warehouse.
+          example: u$lpasteur_az
+          readOnly: true
+          type: string
+      type: object
+    UsersPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          users:
+            items:
+              $ref: '#/components/schemas/User'
+            type: array
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    UserBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        required:
+        - id
+        type: object
+      - $ref: '#/components/schemas/UserUpdate'
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

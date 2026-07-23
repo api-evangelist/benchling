@@ -1,0 +1,1092 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Mixtures API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Mixtures are solutions comprised of multiple ingredients where the exact quantities of each ingredient are important to track. Each ingredient is uniquely identified by its component entity.
+
+    '
+  name: Mixtures
+paths:
+  /mixtures:
+    get:
+      description: List mixtures
+      operationId: listMixtures
+      parameters:
+      - in: query
+        name: nextToken
+        schema:
+          type: string
+      - in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
+
+            '
+          enum:
+          - createdAt
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name
+          - name:asc
+          - name:desc
+          nullable: false
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models created within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for created models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models created after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: createdAt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+          '
+        examples:
+          and-range:
+            summary: Filter for all models modified within a certain range using the AND operator.
+            value: '> 2022-03-01 AND < 2022-04-01'
+          full-rfc-3339-format:
+            summary: Filter for modified models using the full RFC 3339 format
+            value: '> 2020-12-31T21:07:14-05:00'
+          greater-than-example:
+            summary: Filter for all models modified after a certain date
+            value: '> 2022-03-01'
+        in: query
+        name: modifiedAt
+        schema:
+          type: string
+      - description: Name of a mixture. Restricts results to those with the specified name, alias, or entity registry ID.
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Name substring of a mixture. Restricts results to those with names, aliases, or entity registry IDs that include the provided substring.
+
+          '
+        in: query
+        name: nameIncludes
+        schema:
+          type: string
+      - description: ID of a folder. Restricts results to those in the folder.
+        in: query
+        name: folderId
+        schema:
+          type: string
+      - description: 'Comma-separated list of entry IDs. Restricts results to mixtures mentioned in those entries.
+
+          '
+        in: query
+        name: mentionedIn
+        schema:
+          type: string
+      - description: ID of a project. Restricts results to those in the project.
+        in: query
+        name: projectId
+        schema:
+          type: string
+      - description: 'ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+
+          '
+        in: query
+        name: registryId
+        schema:
+          nullable: true
+          type: string
+      - description: 'ID of a schema. Restricts results to those of the specified schema.
+
+          '
+        in: query
+        name: schemaId
+        schema:
+          type: string
+      - description: 'Filter based on schema field value (not display value). Restricts results to those with a field whose value matches the filter. For Integer, Float, and Date type fields, supports the >= and <= operators (but not < or >). If any schemaField filters are present, the schemaId param must also be present. Note that all operators must be separated from any values by a single space.
+
+          '
+        in: query
+        name: schemaFields
+        schema:
+          $ref: '#/components/schemas/SchemaFieldsQueryParam'
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived mixtures. Use "ANY_ARCHIVED" to filter for archived mixtures regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      - description: 'Comma-separated list of resource IDs. Restricts results to those that mention the given items in the description.
+
+          '
+        in: query
+        name: mentions
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          example: bfi_blhxTUl1,bfi_y5bkDmJp,bfi_xwfILBog
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, aliases, or entity registry IDs, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+          '
+        in: query
+        name: names.anyOf
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, aliases, or entity registry IDs, case sensitive.
+
+          '
+        in: query
+        name: names.anyOf.caseSensitive
+        schema:
+          example: MyName1,MyName2
+          type: string
+      - description: 'Comma-separated list of entity registry IDs. Maximum of 100. Restricts results to those that match any of the specified registry IDs.
+
+          '
+        in: query
+        name: entityRegistryIds.anyOf
+        schema:
+          example: TP001,TP002
+          type: string
+      - description: 'Comma-separated list of ingredient component entity ids. Matches all mixtures that contain ingredients whose component entities match all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ingredientComponentEntityIds
+        schema:
+          example: bfi_blhxTUl1,bfi_y5bkDmJp,bfi_xwfILBog
+          type: string
+      - description: 'Comma-separated list of ingredient component entity ids. Maximum of 100. Matches all mixtures that contain ingredients whose component entities match any of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ingredientComponentEntityIds.anyOf
+        schema:
+          example: bfi_blhxTUl1,bfi_y5bkDmJp,bfi_xwfILBog
+          type: string
+      - description: Comma separated list of user or app IDs. Maximum of 100.
+        in: query
+        name: authorIds.anyOf
+        schema:
+          example: ent_a0SApq3z,ent_b4AApz9b
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MixturesPaginatedList'
+          description: OK
+          headers:
+            Result-Count:
+              description: The total number of items that match the given query
+              schema:
+                type: integer
+            x-rate-limit-limit:
+              description: The number of allowed requests in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-remaining:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+            x-rate-limit-reset:
+              description: The number of seconds remaining in the current rate-limit period
+              schema:
+                type: integer
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: List mixtures
+      tags:
+      - Mixtures
+    post:
+      description: 'Create a mixture.
+
+        To create a new child mixture (eg. a prep) from a parent mixture (eg. a recipe), set the parent mixture field and specify the desired final state for your ingredients.
+
+        Benchling will recognize that any ingredients you specify that match ingredients on the parent mixture (based on component entity) are inherited. This can be seen on the returned `ingredients[i].hasParent` attribute.
+
+        '
+      operationId: createMixture
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixtureCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mixture'
+          description: Created
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+        '503':
+          description: Deprecated, a 429 is returned for too many requests
+      summary: Create a mixture
+      tags:
+      - Mixtures
+  /mixtures/{mixture_id}:
+    get:
+      description: Get a mixture
+      operationId: getMixture
+      parameters:
+      - in: path
+        name: mixture_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mixture'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get a mixture
+      tags:
+      - Mixtures
+    patch:
+      description: 'Update a mixture.
+
+        To change the parent mixture, set the parent mixture field and specify the desired final state for your ingredients.
+
+        Benchling will recognize that any ingredients you specify that match ingredients on the parent mixture (based on component entity) are inherited. This can be seen on the returned `ingredients[i].hasParent` attribute.
+
+        '
+      operationId: updateMixture
+      parameters:
+      - in: path
+        name: mixture_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixtureUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mixture'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Update a mixture
+      tags:
+      - Mixtures
+  /mixtures:archive:
+    post:
+      description: Archive mixtures
+      operationId: archiveMixtures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixturesArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MixturesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive mixtures
+      tags:
+      - Mixtures
+  /mixtures:bulk-create:
+    post:
+      description: 'Create multiple mixtures. Limit of 1000 mixtures per request.
+
+        To create new child mixtures (eg. a prep) from parent mixtures (eg. a recipe), set the parent mixture field and specify the desired final state for your ingredients.
+
+        Benchling will recognize that any ingredients you specify that match ingredients on the parent mixtures (based on component entity) are inherited. This can be seen on the returned `ingredients[i].hasParent` attribute.
+
+        '
+      operationId: bulkCreateMixtures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixturesBulkCreateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of mixtures that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Create mixtures
+      tags:
+      - Mixtures
+  /mixtures:bulk-update:
+    post:
+      description: 'Update multiple mixtures.
+
+        To change the parent mixture on your specified mixtures, set the parent mixture field and specify the desired final state for your ingredients.
+
+        Benchling will recognize that any ingredients you specify that match ingredients on the parent mixtures (based on component entity) are inherited. This can be seen on the returned `ingredients[i].hasParent` attribute.
+
+        '
+      operationId: bulkUpdateMixtures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixturesBulkUpdateRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task.
+
+            The task response contains the full list of mixtures that were updated.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk Update mixtures
+      tags:
+      - Mixtures
+  /mixtures:unarchive:
+    post:
+      description: Unarchive mixtures
+      operationId: unarchiveMixtures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MixturesUnarchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MixturesArchivalChange'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive mixtures
+      tags:
+      - Mixtures
+components:
+  schemas:
+    MixtureBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MixtureUpdate'
+      - properties:
+          id:
+            example: ingr_3jshUi
+            type: string
+        required:
+        - id
+        type: object
+    EntityLabels:
+      properties:
+        entityRegistryId:
+          example: REAG000
+          nullable: true
+          type: string
+        id:
+          example: bfi_12345
+          type: string
+        name:
+          example: Deionized Water
+          type: string
+      type: object
+    MixturesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving mixtures.
+
+        '
+      properties:
+        mixtureIds:
+          items:
+            example: mxt_djw9aU
+            type: string
+          type: array
+        reason:
+          $ref: '#/components/schemas/EntityArchiveReason'
+      required:
+      - reason
+      - mixtureIds
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    MixturesBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        mixtures:
+          items:
+            $ref: '#/components/schemas/MixtureBulkUpdate'
+          type: array
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    MixturesArchivalChange:
+      description: 'IDs of all mixtures that were archived or unarchived.
+
+        '
+      properties:
+        mixtureIds:
+          items:
+            example: mxt_djw9aU
+            type: string
+          type: array
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    IngredientMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - mg
+      - g
+      - kg
+      - ug
+      - Units
+      - Cells
+      - mol
+      - mmol
+      - umol
+      example: mL
+      nullable: true
+      type: string
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    MixturesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        mixtures:
+          items:
+            $ref: '#/components/schemas/MixtureCreate'
+          maxItems: 1000
+          type: array
+      required:
+      - mixtures
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    Mixture:
+      properties:
+        aliases:
+          items:
+            example: FRM000
+            type: string
+          type: array
+        allowMeasuredIngredients:
+          description: Derived from the mixture's schema.
+          readOnly: true
+          type: boolean
+        amount:
+          description: The positive numerical amount value of this mixture in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4).
+          example: '123'
+          type: string
+        apiURL:
+          description: The canonical url of the Mixture in the API.
+          example: https://benchling.com/api/v2/mixtures/mxt_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          nullable: true
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: FRM000
+          nullable: true
+          type: string
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: Mixtures can have up to one parent mixture field.
+        folderId:
+          example: lib_R8KcsjhW
+          nullable: true
+          type: string
+        id:
+          example: mxt_xCUXNVyG
+          type: string
+        ingredients:
+          description: List of ingredients on this mixture.
+          items:
+            $ref: '#/components/schemas/Ingredient'
+          type: array
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: FRM000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          nullable: true
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Prep
+        units:
+          $ref: '#/components/schemas/MixtureMeasurementUnits'
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/mxt-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    ContainerLabels:
+      properties:
+        barcode:
+          example: VIAL001
+          type: string
+        id:
+          example: cnt_12345
+          type: string
+        name:
+          example: My Container
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    MixtureCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MixtureUpdate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+      - required:
+        - name
+        - ingredients
+        - schemaId
+        - units
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    MixtureUpdate:
+      additionalProperties: false
+      properties:
+        aliases:
+          description: Aliases to add to the mixture
+          items:
+            type: string
+          type: array
+        amount:
+          description: The positive numerical amount value of this mixture in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4).
+          example: '123'
+          type: string
+        authorIds:
+          description: IDs of users to set as the mixture's authors.
+          items:
+            type: string
+          type: array
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the mixture. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        entityRegistryId:
+          example: RCP001
+          type: string
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Schema fields to set on the mixture. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            If you are setting the parent mixture field here, you must also specify `ingredients`
+
+            '
+        folderId:
+          description: ID of the folder that the entity is moved into
+          type: string
+        ingredients:
+          description: 'Desired final state for the ingredients on this mixture.
+
+            Each ingredient you specify will be matched with the existing ingredients on the mixture based on the component entity, and Benchling will create, update, or delete this mixture''s ingredients so that the final state of this mixture''s ingredients matches your request.
+
+            Benchling will recognize that any ingredients you specify that match ingredients on the parent mixture (based on component entity) are inherited. This can be seen on the returned `ingredients[i].hasParent` attribute.
+
+            '
+          items:
+            $ref: '#/components/schemas/IngredientWriteParams'
+          type: array
+        name:
+          type: string
+        schemaId:
+          type: string
+        units:
+          $ref: '#/components/schemas/MixtureMeasurementUnits'
+      type: object
+    MixturesUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving mixtures.
+
+        '
+      properties:
+        mixtureIds:
+          items:
+            example: mxt_djw9aU
+            type: string
+          type: array
+      required:
+      - mixtureIds
+      type: object
+    MixturesPaginatedList:
+      properties:
+        mixtures:
+          items:
+            $ref: '#/components/schemas/Mixture'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    IngredientWriteParams:
+      properties:
+        amount:
+          description: 'The amount value of this ingredient in its mixture, in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4). One ingredient on this mixture can have an amount value of `"QS"`.
+
+            '
+          example: '12'
+          nullable: true
+          type: string
+        catalogIdentifier:
+          example: DION_004
+          nullable: true
+          type: string
+        componentEntityId:
+          description: The entity that uniquely identifies this component.
+          example: bfi_37hdg8
+          type: string
+        componentLotContainerId:
+          description: The container representing the component lot for this ingredient. This is only writable if the mixture schema supports component lots in "inventory" format.
+          example: cnt_12345
+          nullable: true
+          type: string
+        componentLotEntityId:
+          description: The entity representing the component lot for this ingredient. This is only writable if the mixture schema supports component lots in "inventory" format.
+          example: bfi_12345
+          nullable: true
+          type: string
+        componentLotText:
+          description: Text representing the component lot for this ingredient. This is only writable if the mixture schema supports component lots in "text" format.
+          example: DION_004-source_001
+          nullable: true
+          type: string
+        notes:
+          nullable: true
+          type: string
+        units:
+          $ref: '#/components/schemas/IngredientMeasurementUnits'
+      required:
+      - componentEntityId
+      - catalogIdentifier
+      - amount
+      - units
+      - componentLotText
+      - componentLotEntityId
+      - componentLotContainerId
+      - notes
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          nullable: true
+          readOnly: true
+          type: string
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    CreateEntityIntoRegistry:
+      properties:
+        entityRegistryId:
+          description: 'Entity registry ID to set for the registered entity. Cannot specify both entityRegistryId and namingStrategy at the same time.
+
+            '
+          type: string
+        folderId:
+          description: ID of the folder containing the entity. Can be left empty when registryId is present.
+          type: string
+        namingStrategy:
+          $ref: '#/components/schemas/NamingStrategy'
+        registryId:
+          description: 'Registry ID into which entity should be registered. this is the ID of the registry which was configured for a particular organization
+
+            To get available registryIds, use the [/registries endpoint](#/Registry/listRegistries)
+
+
+            Required in order for entities to be created directly in the registry.
+
+            '
+          type: string
+      type: object
+    MixtureMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - g
+      - kg
+      - mg
+      - ug
+      - Units
+      example: L
+      nullable: true
+      type: string
+    Ingredient:
+      properties:
+        amount:
+          description: 'The amount value of this ingredient in its mixture, in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4). One ingredient on this mixture can have an amount value of `"QS"`.
+
+            '
+          example: '12'
+          nullable: true
+          type: string
+        catalogIdentifier:
+          example: DION_004
+          nullable: true
+          type: string
+        componentEntity:
+          allOf:
+          - $ref: '#/components/schemas/EntityLabels'
+          - description: The entity that uniquely identifies this component.
+        componentLotContainer:
+          allOf:
+          - $ref: '#/components/schemas/ContainerLabels'
+          description: The container representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
+          nullable: true
+        componentLotEntity:
+          allOf:
+          - $ref: '#/components/schemas/EntityLabels'
+          description: The entity representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
+          nullable: true
+        componentLotText:
+          description: Text representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "text" format.
+          example: DION_004-source_001
+          nullable: true
+          type: string
+        hasParent:
+          type: boolean
+        notes:
+          nullable: true
+          type: string
+        targetAmount:
+          description: The target amount for this ingredient such that this ingredient's proportion in its mixture would preserve the equivalent ingredient's proportion in the parent mixture. Pair with `units`.
+          example: '123'
+          nullable: true
+          readOnly: true
+          type: string
+        units:
+          $ref: '#/components/schemas/IngredientMeasurementUnits'
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

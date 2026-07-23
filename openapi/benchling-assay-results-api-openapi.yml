@@ -1,0 +1,832 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Assay Results API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: '
+
+    Results represent the output of assays that have been performed. You can customize the schemas of results to fit your needs. Results can link to runs, entities, and other types.
+
+
+    To learn more about creating results, [click here](https://docs.benchling.com/docs/example-creating-results).
+
+    '
+  name: Assay Results
+paths:
+  /assay-results:
+    get:
+      description: List results
+      operationId: listAssayResults
+      parameters:
+      - description: ID of the assay result schema to filter by
+        in: query
+        name: schemaId
+        required: false
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+
+          '
+        in: query
+        name: createdAt.lt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+
+          '
+        in: query
+        name: createdAt.gt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created on or before the specified time. e.g. <= 2017-04-30.
+
+          '
+        in: query
+        name: createdAt.lte
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created on or after the specified time. e.g. >= 2017-04-30.
+
+          '
+        in: query
+        name: createdAt.gte
+        schema:
+          type: string
+      - deprecated: true
+        description: Filter by results created after this unix timestamp
+        in: query
+        name: minCreatedTime
+        schema:
+          type: integer
+      - deprecated: true
+        description: Filter by results created before this unix timestamp
+        in: query
+        name: maxCreatedTime
+        schema:
+          type: integer
+      - description: 'Method by which to order search results. Valid sorts are createdAt (created time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is createdAt:asc.
+
+          '
+        in: query
+        name: sort
+        schema:
+          default: createdAt:asc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          nullable: false
+          type: string
+      - description: Token for pagination
+        in: query
+        name: nextToken
+        schema:
+          type: string
+      - description: Number of results to return. Defaults to 50, maximum of 100.
+        in: query
+        name: pageSize
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 0
+          nullable: false
+          type: integer
+      - description: Filter by comma-separated list of related Entity IDs, maximum of 20.
+        in: query
+        name: entityIds
+        schema:
+          type: string
+      - description: 'Filter by comma-separated list of related inventory (container, box, plate, or location) IDs, maximum of 20.
+
+          '
+        in: query
+        name: storageIds
+        schema:
+          type: string
+      - description: Filter by comma-separated list of associated AssayRun IDs. At most one of {assayRunIds, automationOutputProcessorId} may be supplied.
+        in: query
+        name: assayRunIds
+        schema:
+          type: string
+      - description: Filter by Automation Output Processor ID. Either this or schemaId is required; if both are given, the associated schemas must match. At most one of {assayRunIds, automationOutputProcessorId} may be supplied.
+        in: query
+        name: automationOutputProcessorId
+        schema:
+          type: string
+      - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
+
+          '
+        in: query
+        name: ids
+        schema:
+          format: uuid
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+
+          '
+        in: query
+        name: modifiedAt.lt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+
+          '
+        in: query
+        name: modifiedAt.gt
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified on or before the specified time. e.g. <= 2017-04-30.
+
+          '
+        in: query
+        name: modifiedAt.lte
+        schema:
+          type: string
+      - description: 'Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified on or after the specified time. e.g. >= 2017-04-30.
+
+          '
+        in: query
+        name: modifiedAt.gte
+        schema:
+          type: string
+      - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived Assay Results. Use "ANY_ARCHIVED" to filter for archived Assay Results regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
+
+          '
+        examples:
+          1_not_archived:
+            summary: Only include unarchived items (default).
+            value: NOT_ARCHIVED
+          2_archived_reason:
+            summary: Includes items archived for a specific reason.
+            value: Retired
+          3_any_archived:
+            summary: Includes items archived for any reason.
+            value: ANY_ARCHIVED
+          4_any_archived_or_not_archived:
+            summary: Includes both archived and unarchived items.
+            value: ANY_ARCHIVED_OR_NOT_ARCHIVED
+        in: query
+        name: archiveReason
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultsPaginatedList'
+          description: OK
+      summary: List results
+      tags:
+      - Assay Results
+    post:
+      description: 'Create 1 or more results.
+
+        If you are looking to add results to a specific table in a notebook entry, please use the  [assay-results bulk-create](#/Assay%20Results/bulkCreateAssayResults) endpoint instead.
+
+        '
+      operationId: createAssayResults
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultsCreateResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Create 1 or more results.
+      tags:
+      - Assay Results
+  /assay-results/{assay_result_id}:
+    get:
+      description: Get a result
+      operationId: getAssayResult
+      parameters:
+      - in: path
+        name: assay_result_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResult'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Get a result
+      tags:
+      - Assay Results
+  /assay-results:archive:
+    post:
+      description: 'Results that have been added to a Legacy Result or Legacy Run table in a Notebook Entry **cannot** be Archived.
+
+        '
+      operationId: archiveAssayResults
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayResultsArchive'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultIdsResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Archive 1 or more results.
+      tags:
+      - Assay Results
+  /assay-results:bulk-create:
+    post:
+      description: Bulk create results. Limit of 4000 results per request.
+      operationId: bulkCreateAssayResults
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayResultsBulkCreateInTableRequest'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: 'This endpoint launches a [long-running task](#/Tasks/getTask) and returns the Task ID of the launched task. The task response contains the full list of results that were created.
+
+            '
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Bulk create results
+      tags:
+      - Assay Results
+  /assay-results:bulk-get:
+    get:
+      description: Up to 200 IDs can be specified at once.
+      operationId: bulkGetAssayResults
+      parameters:
+      - description: Comma-separated list of assay result IDs.
+        in: query
+        name: assayResultIds
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultsBulkGet'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Gets multiple results specified by a list of IDs.
+      tags:
+      - Assay Results
+  /assay-results:unarchive:
+    post:
+      description: Unarchive 1 or more results.
+      operationId: unarchiveAssayResults
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayResultIdsRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultIdsResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Unarchive 1 or more results.
+      tags:
+      - Assay Results
+  /result-transactions:
+    post:
+      description: 'Transactions allow results to be upload in multiple requests. This endpoint lets you create a transaction. You can then upload results to the transaction, abort the transaction, or commit the transaction.
+
+        '
+      operationId: createAssayResultsTransaction
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultTransactionCreateResponse'
+          description: OK
+      summary: Create a transaction
+      tags:
+      - Assay Results
+  /result-transactions/{transaction_id}/results:
+    post:
+      description: Create results in a transaction
+      operationId: createAssayResultsInTransaction
+      parameters:
+      - in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultsCreateResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultsCreateErrorResponse'
+          description: Bad Request
+      summary: Create results in a transaction
+      tags:
+      - Assay Results
+  /result-transactions/{transaction_id}:abort:
+    post:
+      description: Aborting a transaction will discard all uploaded results.
+      operationId: abortAssayResultsTransaction
+      parameters:
+      - in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultTransactionCreateResponse'
+          description: OK
+      summary: Abort a transaction
+      tags:
+      - Assay Results
+  /result-transactions/{transaction_id}:commit:
+    post:
+      description: Committing a transaction will cause all results that have been uploaded to be saved and visible to others.
+      operationId: commitAssayResultsTransaction
+      parameters:
+      - in: path
+        name: transaction_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssayResultTransactionCreateResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Commit a transaction
+      tags:
+      - Assay Results
+components:
+  schemas:
+    AssayResultIdsRequest:
+      additionalProperties: false
+      properties:
+        assayResultIds:
+          items:
+            format: uuid
+            type: string
+          type: array
+      required:
+      - assayResultIds
+      type: object
+    UserValidation:
+      properties:
+        validationComment:
+          description: A string explaining the reason for the provided validation status.
+          type: string
+        validationStatus:
+          description: 'Valid values for this enum depend on whether it is used to set a value (e.g., in a POST request), or is a return value for an existing result.
+
+            Acceptable values for setting a status are ''VALID'' or ''INVALID''. Possible return values are ''VALID'', ''INVALID'', or ''PARTIALLY_VALID'' (a result will be partially valid if it has some valid fields and some invalid fields).
+
+            '
+          enum:
+          - VALID
+          - INVALID
+          - PARTIALLY_VALID
+          type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    AssayResultsBulkCreateInTableRequest:
+      allOf:
+      - $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
+      - properties:
+          tableId:
+            example: strtbl_IakA58In
+            type: string
+        required:
+        - assayResults
+        type: object
+    AssayResultsPaginatedList:
+      properties:
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResult'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AssayResultCreate:
+      properties:
+        fieldValidation:
+          additionalProperties:
+            $ref: '#/components/schemas/UserValidation'
+          description: 'Dictionary mapping field names to UserValidation Resources.
+
+            '
+          type: object
+        fields:
+          anyOf:
+          - $ref: '#/components/schemas/Fields'
+          - $ref: '#/components/schemas/AssayFieldsCreate'
+          description: 'Dictionary of result fields. Please note the field keys must be the field''s system name, not display name.
+
+            '
+          example:
+            my_entity_link:
+              value: bfi_a0B1cd23
+            my_text_field:
+              value: some text
+        id:
+          description: UUID
+          type: string
+        projectId:
+          description: 'The project that the assay result should be uploaded to. Only users with read access to the project will be able to read the assay result. Leaving this empty will result in only the creator having read access.
+
+            '
+          nullable: true
+          type: string
+        schemaId:
+          description: ID of result schema under which to upload this result
+          type: string
+      required:
+      - schemaId
+      - fields
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    AssayResultsBulkGet:
+      properties:
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResult'
+          type: array
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    AssayResultsCreateResponse:
+      properties:
+        assayResults:
+          items:
+            format: uuid
+            type: string
+          type: array
+        errors:
+          default: null
+          nullable: true
+          type: object
+      type: object
+    AssayResultsArchive:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AssayResultIdsRequest'
+      - properties:
+          reason:
+            description: The reason for archiving the provided results. Accepted reasons may differ based on tenant configuration
+            enum:
+            - Made in error
+            - Archived
+            - Other
+            type: string
+        type: object
+    AssayResultIdsResponse:
+      properties:
+        assayResultIds:
+          items:
+            format: uuid
+            type: string
+          type: array
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    AssayFieldsCreate:
+      additionalProperties: true
+      type: object
+    AssayResultTransactionCreateResponse:
+      properties:
+        id:
+          format: uuid
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          nullable: true
+          readOnly: true
+          type: string
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          nullable: true
+          readOnly: true
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          nullable: true
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    AssayResult:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          description: 'ArchiveRecord Resource if the result is archived. This is null if the result is not archived.
+
+            '
+          nullable: true
+        createdAt:
+          description: DateTime at which the the result was created
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of who created the request
+          readOnly: true
+        entryId:
+          description: ID of the entry that this result is attached to
+          nullable: true
+          type: string
+        fieldValidation:
+          additionalProperties:
+            $ref: '#/components/schemas/UserValidation'
+          description: 'Object mapping field names to a UserValidation Resource object for that field. To **set** validation for a result, you *must* use this object.
+
+            '
+          type: object
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Field values for the returned result. Please note the keys of each field are the field''s system name (additional_prop) instead of the field''s display name (additionalProp).
+
+            '
+          example:
+          - additional_prop: null
+            displayValue: Amp
+            isMulti: true
+            textValue: Amp
+            type: dna_sequence_link
+            value:
+            - seq_jdf8BV24
+        id:
+          description: ID of the result
+          type: string
+        isReviewed:
+          description: Whether or not this result is attached to an accepted entry
+          type: boolean
+        modifiedAt:
+          description: DateTime at which the the result was last modified
+          format: date-time
+          readOnly: true
+          type: string
+        projectId:
+          description: ID of the project to insert the result into
+          nullable: true
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          description: Schema that the result belongs to
+          title: SchemaProperty
+        v3Id:
+          description: V3 identifier for the result
+          readOnly: true
+          type: string
+        validationComment:
+          readOnly: true
+          type: string
+        validationStatus:
+          readOnly: true
+          type: string
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AssayResultsBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResultCreate'
+          type: array
+      required:
+      - assayResults
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    AssayResultsCreateErrorResponse:
+      properties:
+        assayResults:
+          default: null
+          items:
+            type: object
+          nullable: true
+          type: array
+        errors:
+          items:
+            properties:
+              fields:
+                type: object
+              global:
+                items:
+                  type: string
+                type: array
+            type: object
+          type: array
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

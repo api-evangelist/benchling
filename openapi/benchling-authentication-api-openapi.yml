@@ -1,0 +1,142 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Authentication API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Endpoints to help authenticate with the rest of the API resources.
+  name: Authentication
+paths:
+  /token:
+    post:
+      description: Generate a token
+      operationId: generateToken
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          description: Generated token
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthBadRequestError'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthUnauthorizedError'
+          description: Unauthorized
+      security:
+      - basicClientIdSecretAuth: []
+      summary: Generate a token for usage with authenticating via OAuth2 in subsequent API calls.
+      tags:
+      - Authentication
+components:
+  schemas:
+    TokenCreate:
+      properties:
+        client_id:
+          description: 'ID of client to request token for. Leave off if client ID and secret are being supplied through Authorization header.
+
+            '
+          type: string
+        client_secret:
+          description: 'Leave off if client ID and secret are being supplied through Authorization header.
+
+            '
+          type: string
+        grant_type:
+          enum:
+          - client_credentials
+          example: client_credentials
+          type: string
+      required:
+      - grant_type
+      type: object
+    OAuthBadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request
+                - invalid_grant
+                - unauthorized_client
+                - unsupported_grant_type
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    TokenResponse:
+      properties:
+        access_token:
+          example: eyJ...
+          type: string
+        expires_in:
+          description: Number of seconds that token is valid for
+          example: 900
+          type: integer
+        token_type:
+          enum:
+          - Bearer
+          example: Bearer
+          type: string
+      type: object
+    OAuthUnauthorizedError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_client
+                type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com

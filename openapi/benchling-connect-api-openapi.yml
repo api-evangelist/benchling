@@ -1,0 +1,211 @@
+openapi: 3.0.1
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling AA Sequences Connect API
+  version: 2.0.0
+  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+
+    '
+servers:
+- url: /api/v2
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Connect endpoints support Benchling Connect actions, like instrument data conversion.
+  name: Connect
+paths:
+  /connect/convert-to-asm:
+    post:
+      description: 'Converts an input blob or file containing instrument data to ASM (Allotrope Simple Model) JSON.
+
+
+        May provide the name of the instrument vendor (see /connect/list-allotropy-vendors) or the ID of a
+
+        connection associated with an instrument vendor.
+
+        '
+      operationId: convertToASM
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertToASM'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  blobId:
+                    type: string
+                type: object
+          description: Blob ID of a blob containing the converted ASM
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Convert a blob or file containing instrument data to ASM (Allotrope Simple Model) JSON
+      tags:
+      - Connect
+  /connect/convert-to-csv:
+    post:
+      description: 'Convert a blob or file containing ASM, JSON, or instrument data to CSV.
+
+
+        If the file is ASM JSON, specify either no transform type (in which case all transform types will be returned),
+
+        a matching transform type for the ASM schema, or a custom JSON mapper config.
+
+
+        If the file non-ASM JSON, must provide a JSON mapper config argument, which specifies how to map the JSON to CSV.
+
+        Reach out to Benchling Support for more information about how to create a JSON mapper config.
+
+
+        If the file is an instrument file, must also specify an instrument vendor. The file will be converted first to
+
+        ASM JSON and then to CSV. Only the CSV output will be returned.
+
+
+        May provide an AutomationOutputFile with CSV transform arguments configured to read the transform type
+
+        or mapper config from.
+
+
+        May provide a connection ID associated with an instrument to read the vendor from.
+
+        '
+      operationId: convertToCSV
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertToCSV'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    blobId:
+                      type: string
+                    transformDataType:
+                      type: string
+                  type: object
+                type: array
+          description: List of pairs of (transformDataType, blobId) where the blob ID is the ID of a blob containing the converted CSV.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestError'
+          description: Bad Request
+      summary: Convert a blob or file containing ASM, JSON, or instrument data to CSV
+      tags:
+      - Connect
+  /connect/list-allotropy-vendors:
+    get:
+      description: Returns the list of available allotropy instrument vendor types.
+      operationId: listAllotropyVendors
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    displayName:
+                      type: string
+                    id:
+                      type: string
+                type: array
+          description: A list of the available allotropy instrument vendor types.
+      summary: Returns the list of available allotropy instrument vendor types
+      tags:
+      - Connect
+components:
+  schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ConvertToCSV:
+      additionalProperties: false
+      properties:
+        automationOutputFileId:
+          description: The ID of an AutomationOutputFile configured to with CSV transform argument. Transform parameters will be read from file settings.
+          type: string
+        blobOrFileId:
+          description: The ID of a blob link or the API ID of a file to process.
+          type: string
+        connectionId:
+          description: The ID of a connection to read the instrument vendor from.
+          type: string
+        mapperConfig:
+          description: A JSON configuration specifying how to convert a JSON file to CSV. Reach out to Benchling Support for more information about how to create a mapperConfig.
+          type: string
+        transformType:
+          description: The transform type to use to convert an ASM file to CSV.
+          type: string
+        vendor:
+          description: The instrument vendor to use for conversion. See /connect/list-allotropy-vendors.
+          type: string
+      required:
+      - blobOrFileId
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    ConvertToASM:
+      additionalProperties: false
+      properties:
+        blobOrFileId:
+          description: The ID of a blob link or the API ID of a file to process.
+          type: string
+        connectionId:
+          description: The ID of a connection to read the instrument vendor from.
+          type: string
+        vendor:
+          description: The instrument vendor to use for conversion. See /connect/list-allotropy-vendors.
+          type: string
+      required:
+      - blobOrFileId
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /api/v2/token
+      type: oauth2
+externalDocs:
+  description: Additional API Documentation
+  url: https://docs.benchling.com
