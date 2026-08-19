@@ -1,0 +1,188 @@
+generated: '2026-08-15'
+method: searched
+source: >-
+  https://docs.benchling.com/docs/rate-limiting,
+  https://docs.benchling.com/docs/authentication,
+  https://docs.benchling.com/docs/stability,
+  https://docs.benchling.com/docs/getting-started-benchling-apps,
+  https://docs.benchling.com/docs/webhook-verification and
+  openapi/benchling-v3-openapi.yaml (components.parameters,
+  components.responses, x-bnch-rate-limit-tier).
+description: >-
+  How the Benchling API behaves across every operation rather than on any single
+  endpoint: authentication style, pagination, field selection, bulk/batch write
+  semantics, versioning, the error envelope, and rate-limit signaling. The one
+  thing an integrator most wants — an idempotency key — Benchling does not
+  offer; the platform's answer to safe retries is the bulk/batch write family
+  plus 429 backoff, and that gap is recorded here explicitly rather than left
+  to be discovered at 2am.
+
+base_url: https://{tenant}.benchling.com/api/v3
+base_url_note: >-
+  Tenant-templated by design. Every customer gets their own subdomain and there
+  is no shared host; benchling.com/api/v2 works only for accounts on the
+  multi-tenant instance. Enterprise callers must use their own company URL
+  (docs.benchling.com/docs/authentication).
+api_style: REST over HTTPS, JSON request and response bodies
+api_versions:
+  - version: v2
+    path: /api/v2
+    spec: https://benchling.com/api/v2/openapi.yaml
+    status: stable
+  - version: v2-beta
+    path: /api/v2-beta
+    reference: https://benchling.com/api/v2-beta/reference
+    status: beta
+  - version: v2-alpha
+    path: /api/v2-alpha
+    reference: https://benchling.com/api/v2-alpha/reference
+    status: alpha
+  - version: v3
+    path: /api/v3
+    spec: https://benchling.com/api/v3/openapi.yaml
+    status: current
+    note: >-
+      The "unified API" — one contract across ELN, registry, inventory and
+      workflows, with RFC 9457 errors and a new stability policy.
+
+authentication:
+  schemes:
+    - name: Basic (user API key)
+      detail: API key as the HTTP Basic username with an EMPTY password (note the trailing colon in curl -u).
+    - name: OAuth 2.0 client credentials (Benchling Apps)
+      detail: >-
+        POST client_id/client_secret to /api/v2/token, receive a short-lived
+        access_token, send it as Authorization: Bearer, refresh on expiry.
+    - name: OpenID Connect id token
+      detail: >-
+        Enterprise only. A trusted IdP (Okta, Entra ID) issues an id token with
+        an `email` claim; Benchling verifies the signature against the IdP's
+        /.well-known/openid-configuration and authenticates as that user, who
+        must already exist in the tenant.
+  permission_model: >-
+    There are no API scopes. Anything the user or app can do in the UI it can do
+    through the API; access is granted by adding the principal to organizations,
+    teams and projects. A newly created app belongs to nothing and can read
+    nothing until an admin grants it access.
+  docs: https://docs.benchling.com/docs/authentication
+  detail: authentication/benchling-authentication.yml
+
+idempotency:
+  supported: false
+  mechanism: null
+  note: >-
+    Benchling publishes no Idempotency-Key header and none appears in either the
+    v2 or the v3 OpenAPI. Retrying a failed POST can therefore create duplicate
+    entities. The documented mitigations are (a) use the bulk/batch write
+    endpoints so one request covers many objects instead of many retryable
+    requests, and (b) treat a 429 as a signal to back off rather than to
+    immediately retry, since 429s are explicitly NOT queued for resubmission.
+  evidence: >-
+    Searched openapi/benchling-v3-openapi.yaml (874 operations) and
+    openapi/_original/benchling-openapi.yaml for idempotency parameters/headers
+    — none present; no idempotency page exists in
+    https://docs.benchling.com/llms.txt.
+
+pagination:
+  style: token
+  request_params:
+    pageSize: integer — number of results per page, default 50, maximum 100
+    nextToken: string — opaque token identifying the next page
+  applies_to: all list endpoints
+  note: >-
+    Benchling paginates every list endpoint; there is no "return everything"
+    mode. Sub-collections (entry authors, plate wells) are exposed as URI-valued
+    properties pointing at their own paginated sub-resource.
+  docs: https://docs.benchling.com/docs/rate-limiting
+
+field_selection:
+  supported: true
+  params:
+    returning: Comma-separated list of top-level fields to INCLUDE in each returned item.
+    omit: Comma-separated list of top-level fields to EXCLUDE from each returned item.
+  constraint: returning and omit cannot overlap.
+  added: 'v3 — see changelog entry "[V3 REST API] Returning and Omit Parameters"'
+  note: >-
+    The practical use is trimming heavyweight fields (sequence bases,
+    annotations) out of list responses.
+
+custom_fields:
+  mechanism: >-
+    Customer-configured fields arrive as `schemaFields` (SchemaFieldValue) on
+    the instance, defined by the paired <Entity>Schema resource, plus a separate
+    `customFields` map. Neither is enumerable from the OpenAPI — the shape is
+    per-tenant configuration, which is why an agent must read the tenant's
+    schemas before writing entities.
+  detail: data-model/benchling-data-model.yml
+
+bulk_operations:
+  shapes:
+    - name: Create / Update
+      detail: single object per request
+    - name: BatchCreate / BatchUpdate
+      detail: multiple objects, synchronous
+    - name: BulkCreate / BulkUpdate
+      detail: multiple objects, returns a Task to poll for completion
+  limits:
+    default_bulk_create: 1000 entities per request
+    bulk_create_custom_entities: 2500
+    register_entities: 2500
+    transfer_into_containers: 5000
+    create_assay_results: 100 per request, 10,000 requests per hour
+    max_payload: 100MB per POST/PATCH/PUT (413 Request Entity Too Large above it)
+  docs: https://docs.benchling.com/docs/rate-limiting
+
+request_tracing:
+  request_id_header: null
+  note: >-
+    No documented request-id echo header. The v3 500 problem-detail body carries
+    an `errorId` member, which is the value to quote to Benchling support.
+
+versioning:
+  scheme: path-based major versions (/api/v2, /api/v2-beta, /api/v2-alpha, /api/v3)
+  header: >-
+    EARLY-ACCESS — an optional request header declared on v3 operations,
+    "Set to true to access beta operations via /api/v3."
+  breaking_change_notice: 6-12 months for stable surfaces; 30 days for beta; none for alpha
+  docs: https://docs.benchling.com/docs/stability
+  detail: lifecycle/benchling-lifecycle.yml
+
+error_envelope:
+  v3:
+    media_type: application/problem+json
+    standard: RFC 9457
+    members: [type, title, detail, status, instance]
+  v2:
+    media_type: application/json
+    shape: '{"error": {"message", "type", "userMessage"}}'
+  detail: errors/benchling-problem-types.yml
+
+rate_limiting:
+  request_limits:
+    - 60 requests / 30s per tenant across all user API keys
+    - 300 requests / 30s per app key
+    - 1000 requests / 30s per tenant across all apps (not surfaced in headers)
+  throughput_limit: >-
+    A separate dynamic ceiling on objects created or updated per hour — "tens of
+    thousands" — that flexes with system load.
+  response_headers: [x-rate-limit-limit, x-rate-limit-remaining, x-rate-limit-reset]
+  exhausted_status: 429
+  retry_after_header: false
+  operation_tiering: >-
+    v3 tags every operation with x-bnch-rate-limit-tier (1-5) and a matching
+    "Tier N Rate Limit" tag, so the cost class of an operation is machine
+    readable from the spec even though the per-tier numbers are not published.
+  detail: rate-limits/benchling-rate-limits.yml
+
+webhooks:
+  verification: ECDSA signature over `{Webhook-Id}.{Webhook-Timestamp}.{body}`, keys from a per-app JWKS
+  headers: [Webhook-Id, Webhook-Timestamp, Webhook-Signature]
+  timestamp_tolerance: 5 minutes
+  detail: asyncapi/benchling-webhooks.yml
+
+cross_references:
+  authentication: authentication/benchling-authentication.yml
+  errors: errors/benchling-problem-types.yml
+  lifecycle: lifecycle/benchling-lifecycle.yml
+  rate_limits: rate-limits/benchling-rate-limits.yml
+  data_model: data-model/benchling-data-model.yml

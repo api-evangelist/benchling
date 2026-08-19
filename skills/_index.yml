@@ -1,0 +1,67 @@
+generated: '2026-08-15'
+method: generated
+source: >-
+  Authored by the API Evangelist enrichment pipeline against
+  openapi/benchling-v3-openapi.yaml (Benchling's own published v3 spec, fetched
+  from https://benchling.com/api/v3/openapi.yaml). Every operationId referenced
+  in every skill was verified present in that spec before publication; none are
+  invented. Runtime rules come from
+  https://docs.benchling.com/docs/rate-limiting,
+  /docs/stability-guidelines and /docs/webhook-verification. Benchling publishes
+  no AGENTS.md or skills of its own — searched docs.benchling.com/llms.txt and
+  the github.com/benchling organisation on 2026-08-15.
+description: >-
+  Packaged Agent Skills for the marquee Benchling flows. Each one is built
+  around the same hard truth about this API: entity payloads are tenant
+  configuration, not OpenAPI properties, so an agent must read the schema before
+  it writes — and there is no idempotency key, so a blind retry creates
+  duplicate scientific records.
+api: benchling:benchling-v3-api
+base_url: https://{tenant}.benchling.com/api/v3
+skills:
+  - name: benchling-register-dna-sequence
+    file: benchling-register-dna-sequence.md
+    summary: Create a DNA sequence and register it into the Registry for a controlled entityRegistryId.
+    domain: molecular-biology
+    operations: 6
+  - name: benchling-upload-assay-results
+    file: benchling-upload-assay-results.md
+    summary: Push instrument or analysis results into Benchling as schema-defined Results on a Run.
+    domain: assay-data
+    operations: 8
+  - name: benchling-create-notebook-entry
+    file: benchling-create-notebook-entry.md
+    summary: Create an ELN entry from a template, walk its parts, and follow it into review.
+    domain: eln
+    operations: 11
+  - name: benchling-inventory-transfer
+    file: benchling-inventory-transfer.md
+    summary: Create containers and transfer contents, polling the async transfer task to completion.
+    domain: inventory
+    operations: 13
+  - name: benchling-receive-verify-webhook
+    file: benchling-receive-verify-webhook.md
+    summary: Receive a Benchling App webhook, verify its ECDSA signature against the rotating JWKS, then fetch the object.
+    domain: events
+    operations: 5
+shared_rules:
+  schema_first: >-
+    Read the tenant's <Entity>Schema before writing any entity. Fields arrive as
+    schemaFields and are per-tenant configuration.
+  no_idempotency: >-
+    Benchling publishes no Idempotency-Key. A retried POST creates a duplicate
+    object. Where a webhook is involved, Webhook-Id is stable across resends and
+    is the natural de-duplication key.
+  errors: RFC 9457 application/problem+json in v3; proprietary {"error":{...}} envelope in v2.
+  rate_limits: >-
+    60 req/30s per tenant across user keys, 300 req/30s per app key. 429s are
+    NOT queued — back off exponentially with jitter, capped ~15s. No
+    Retry-After. 5xx means back off hard or abort.
+  pagination: pageSize (default 50, max 100) + opaque nextToken on every list endpoint.
+  field_selection: returning / omit query params on list and get-by-id, mutually exclusive.
+cross_references:
+  conventions: conventions/benchling-conventions.yml
+  errors: errors/benchling-problem-types.yml
+  rate_limits: rate-limits/benchling-rate-limits.yml
+  data_model: data-model/benchling-data-model.yml
+  webhooks: asyncapi/benchling-webhooks.yml

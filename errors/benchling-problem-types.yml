@@ -1,0 +1,136 @@
+generated: '2026-08-15'
+method: derived
+source: openapi/benchling-v3-openapi.yaml (components.responses + per-operation 4xx/5xx responses), enriched
+  from https://docs.benchling.com/docs/rate-limiting and https://docs.benchling.com/docs/authentication
+description: 'Benchling''s error contract, and it is two different contracts depending on which API you
+  call. The v3 API (openapi/benchling-v3-openapi.yaml) returns RFC 9457 problem details — media type application/problem+json
+  with the required members type, title, detail, status and instance — from a small set of shared components.responses
+  reused across all 874 operations. The older v2 API returns a Benchling-proprietary envelope, {"error":
+  {"message", "type", "userMessage"}}, which is what the rate-limit and authentication docs show. Clients
+  that talk to both must parse both.'
+format: rfc9457
+format_scope: v3 (/api/v3) only
+media_type: application/problem+json
+envelope:
+  v3:
+    schema: GeneralError
+    required:
+    - type
+    - title
+    - detail
+    - status
+    - instance
+    members:
+      type: string — problem type identifier
+      title: string|null — short, human-readable summary
+      detail: string|object|null — explanation specific to this occurrence
+      status: integer — HTTP status code
+      instance: string — identifier for this occurrence
+    variant:
+      schema: InternalServerError
+      note: 500 responses add an `errorId` member for support correlation.
+  v2:
+    shape: '{"error": {"message": string, "type": string, "userMessage": string}}'
+    media_type: application/json
+    example_type_values:
+    - authentication_error
+    - invalid_request_error
+    evidence: 'Observed live: GET https://benchling.com/api/v2/openapi.json returns 401 with {"error":{"message":"Failed
+      to authenticate","type":"authentication_error",...}}; the 429 body is documented at https://docs.benchling.com/docs/rate-limiting'
+shared_responses:
+  BadRequest:
+    description: Bad Request
+    content_type: application/problem+json
+    schema: GeneralError
+  Conflict:
+    description: Conflict
+    content_type: application/problem+json
+    schema: GeneralError
+  Forbidden:
+    description: Forbidden
+    content_type: application/problem+json
+    schema: GeneralError
+  InternalServerError:
+    description: Internal Server Error
+    content_type: application/problem+json
+    schema: InternalServerError
+  NotFound:
+    description: Not Found
+    content_type: application/problem+json
+    schema: GeneralError
+  PaymentRequired:
+    description: Payment Required
+    content_type: application/problem+json
+    schema: GeneralError
+  TooManyRequests:
+    description: Too Many Requests
+    content_type: application/problem+json
+    schema: GeneralError
+problem_types:
+- status: 400
+  name: BadRequest
+  operations: 873
+  title: Bad Request
+  content_type: application/problem+json
+  schema: GeneralError
+- status: 401
+  name: Unspecified
+  operations: 1
+- status: 402
+  name: PaymentRequired
+  operations: 1
+  title: Payment Required
+  content_type: application/problem+json
+  schema: GeneralError
+- status: 403
+  name: Forbidden
+  operations: 872
+  title: Forbidden
+  content_type: application/problem+json
+  schema: GeneralError
+- status: 404
+  name: NotFound
+  operations: 871
+  title: Not Found
+  content_type: application/problem+json
+  schema: GeneralError
+- status: 429
+  name: TooManyRequests
+  operations: 872
+  title: Too Many Requests
+  content_type: application/problem+json
+  schema: GeneralError
+- status: 500
+  name: InternalServerError
+  operations: 872
+  title: Internal Server Error
+  content_type: application/problem+json
+  schema: InternalServerError
+notable:
+- status: 413
+  title: Request Entity Too Large
+  detail: Total payload size for POST/PATCH/PUT is limited to 100MB.
+  source: https://docs.benchling.com/docs/rate-limiting
+  in_openapi: false
+- status: 429
+  title: Too Many Requests
+  detail: Request-rate or throughput limit exceeded. Not auto-queued — the caller must retry. Benchling
+    recommends exponential backoff with jitter, max ~15s delay.
+  remediation: See rate-limits/benchling-rate-limits.yml
+  in_openapi: true
+- status: 401
+  title: Unauthorized
+  detail: Returned when Basic auth (API key as username, blank password) or the bearer token fails.
+  source: https://docs.benchling.com/docs/authentication
+  in_openapi: true
+  note: Declared on the token operation only; most v3 operations declare 403 rather than 401.
+guidance:
+  five_xx: 'Benchling explicitly warns that 5XX responses can occur before the rate-limit bucket is exhausted,
+    because endpoints load the system unevenly: "If you are getting 5XX level error codes, you should
+    significantly back off or abort your process."'
+  source: https://docs.benchling.com/docs/rate-limiting
+summary:
+  operations_analyzed: 874
+  distinct_error_statuses: 7
+  shared_response_components: 7
+  rfc9457: true

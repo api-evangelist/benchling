@@ -1,0 +1,92 @@
+generated: '2026-08-15'
+method: probed
+source: >-
+  Direct HTTPS probes of every /.well-known/ path against the apis.yml base host
+  (benchling.com — the tenant-templated {tenant}.benchling.com resolves to the
+  same application), the marketing host (www.benchling.com) and the docs host
+  (docs.benchling.com). Status is the HTTP code observed at fetch time.
+description: >-
+  Benchling serves NO /.well-known/ discovery documents. Every path probed
+  either 404s or returns an HTML shell. IMPORTANT: benchling.com answers HTTP
+  200 with the ~55KB "Sign In · Benchling" HTML application shell for EVERY
+  unknown path, including /.well-known/security.txt, /.well-known/agent-card.json
+  and /openapi.json — those 200s are the SPA catch-all, not documents, and are
+  recorded here as misses so nothing downstream credits Benchling with a
+  discovery surface it does not publish. No WellKnown or SecurityTxt pointer is
+  emitted in apis.yml as a result.
+hosts:
+  - host: https://benchling.com
+    note: >-
+      SPA catch-all: unknown paths return HTTP 200 with text/html sign-in shell.
+      Treated as misses.
+    documents:
+      - path: /.well-known/security.txt
+        status: 200
+        type: text/html
+        document: false
+        note: HTML sign-in shell, not a security.txt
+      - path: /.well-known/oauth-authorization-server
+        status: 200
+        type: text/html
+        document: false
+        note: HTML sign-in shell
+      - path: /.well-known/agent-card.json
+        status: 200
+        type: text/html
+        document: false
+        note: HTML sign-in shell — NOT an A2A agent card
+  - host: https://www.benchling.com
+    documents:
+      - path: /.well-known/security.txt
+        status: 404
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/api-catalog
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404
+  - host: https://docs.benchling.com
+    documents:
+      - path: /.well-known/security.txt
+        status: 404
+      - path: /.well-known/openid-configuration
+        status: 404
+      - path: /.well-known/oauth-authorization-server
+        status: 404
+      - path: /.well-known/api-catalog
+        status: 404
+      - path: /.well-known/ai-plugin.json
+        status: 404
+      - path: /.well-known/agent-card.json
+        status: 404
+      - path: /.well-known/agent.json
+        status: 404
+  - host: https://demo.mcp.benchling.com
+    note: >-
+      Benchling's MCP host is wildcard-tenanted (*.mcp.benchling.com). The
+      RFC 9728 protected-resource metadata an MCP client needs is not served
+      anonymously — every path returns a JSON 403 Access Denied.
+    documents:
+      - path: /.well-known/oauth-protected-resource
+        status: 403
+        type: application/json
+        document: false
+      - path: /.well-known/oauth-protected-resource/mcp
+        status: 403
+        type: application/json
+        document: false
+      - path: /.well-known/oauth-authorization-server
+        status: 403
+        type: application/json
+        document: false
+summary:
+  paths_probed: 24
+  documents_found: 0
+  files_saved: 0
+  pointer_emitted: false

@@ -1,0 +1,192 @@
+generated: '2026-08-15'
+method: searched
+source: >-
+  https://docs.benchling.com/docs/stability (Benchling's published stability and
+  deprecation policy), https://docs.benchling.com/changelog,
+  https://docs.benchling.com/changelog/benchling-developer-changelog,
+  https://benchling.betteruptime.com/, and deprecated surfaces derived from
+  openapi/benchling-v3-openapi.yaml + the v2 tag list.
+description: >-
+  Benchling publishes an explicit, dated stability contract — rare enough in this
+  catalog to be worth naming. Stable API endpoints, Warehouse tables and Events
+  get 6-12 months of notice before a breaking change; beta gets 30 days; alpha
+  gets none by design. Maturity is expressed in the URL (/api/v2 vs /api/v2-beta
+  vs /api/v2-alpha) and, for the Warehouse, in the table name ($beta, $alpha), so
+  a caller can tell from the path alone what guarantee they are relying on.
+
+versioning:
+  scheme: path-based major version
+  mechanism: The major version and maturity band are both segments of the request path.
+  surfaces:
+    - path: /api/v2
+      band: stable
+      spec: https://benchling.com/api/v2/openapi.yaml
+    - path: /api/v2-beta
+      band: beta
+      reference: https://benchling.com/api/v2-beta/reference
+    - path: /api/v2-alpha
+      band: alpha
+      reference: https://benchling.com/api/v2-alpha/reference
+    - path: /api/v3
+      band: current
+      spec: https://benchling.com/api/v3/openapi.yaml
+      note: >-
+        The unified v3 API. Beta operations inside v3 are gated by the
+        EARLY-ACCESS request header rather than by a separate path.
+  docs: https://docs.benchling.com/docs/stability
+
+stability_policy_v3:
+  docs: https://docs.benchling.com/docs/stability-guidelines
+  updated: '2026-05-31'
+  note: >-
+    v3 has its OWN, tighter policy that supersedes the v2 page for /api/v3
+    traffic. Two levels only, and the beta guarantee is weaker than v2's:
+    beta may break at any time with no notice at all.
+  levels:
+    - name: stable
+      route: v3
+      breaking_change_frequency: rare
+      breaking_change_window: 90 days
+      recommended_environments: [prod, test, dev, other]
+      exception: Urgent security and bug fixes may ship inside the 90-day window.
+      categories:
+        - Deprecation of legacy functionality
+        - Significant feature redesign
+        - Security vulnerability
+        - Bug fix
+    - name: beta
+      route: v3-beta (now the EARLY-ACCESS:true header on /v3)
+      breaking_change_frequency: frequent
+      breaking_change_window: none
+      recommended_environments: [test, dev]
+  events: >-
+    An event inherits the stability level of the object it describes — stable
+    object, stable event; beta object, beta event. Same breaking-change rules.
+  mcp: >-
+    Benchling states the Benchling MCP also obeys SemVer, with new tools and
+    improved descriptions treated as non-breaking. First-party confirmation that
+    the MCP server is a versioned Benchling product, not an experiment.
+  notification_guarantee:
+    - https://docs.benchling.com/changelog
+    - https://docs.benchling.com/changelog.rss
+    - https://community.benchling.com/ (feature previews, not the breaking-change channel)
+
+stability_policy:
+  stable:
+    breaking_change_notice: 6-12 months
+    detail: >-
+      6 months for small changes such as a single field rename; up to 12 months
+      for major changes such as a significant endpoint or table rework, or a
+      migration to a new endpoint/table.
+  beta:
+    breaking_change_notice: 30 days
+    detail: >-
+      Brought into beta because Benchling knows it wants the functionality but
+      still wants model flexibility. Historically used for renames rather than
+      architectural shifts. Not recommended for production unless actively
+      monitored.
+    warehouse_marker: '$beta in the table name — benchling.bnch$table$beta'
+  alpha:
+    breaking_change_notice: none
+    detail: >-
+      "Essentially ideas that we are debating." Can change or be removed at any
+      time without warning; explicitly for testing and evaluation only.
+    warehouse_marker: '$alpha in the table name — benchling.bnch$table$alpha'
+  exceptions:
+    - Bugs exploited to provide unintended capability are patched without a deprecation period.
+    - Bugs causing significant performance issues are patched without a deprecation period.
+  sdk:
+    scheme: semver
+    detail: >-
+      The Python SDK obeys SemVer; breaking changes land in a new major version.
+      Because callers can pin, Benchling ships SDK majors far more often than API
+      majors. SDK support for alpha/beta APIs lags the API, so an API breaking
+      change may not reach the SDK until its next major.
+    package: packages/benchling-packages.yml
+
+deprecation:
+  policy_url: https://docs.benchling.com/docs/stability
+  meaning: >-
+    Deprecated means Benchling intends to remove the field, parameter, event or
+    endpoint in the future — not that support stops now. Prior to the end of the
+    deprecation period the surface is fully supported. New projects should avoid
+    deprecated features entirely.
+  planning_window:
+    stable: 6-12 months
+    beta: 30 days
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  rfc8594_note: >-
+    No Sunset or Deprecation response headers are documented or present in either
+    OpenAPI. Deprecation is signalled in the reference documentation, the
+    developer changelog and by direct outreach to affected customers — a
+    human-readable channel, not a machine-readable one. This is the single
+    biggest gap between Benchling's (strong) written policy and what an
+    automated client can detect at runtime.
+  notification_channels:
+    - Product release notes (subscribe via support@benchling.com)
+    - https://docs.benchling.com/changelog (Benchling Developer Changelog)
+    - Direct outreach to customers using the affected endpoint
+
+deprecated_surfaces:
+  - name: Legacy Workflows (deprecated)
+    aid: benchling:benchling-legacy-workflows-deprecated-api
+    spec: openapi/benchling-legacy-workflows-deprecated-api-openapi.yml
+    evidence: >-
+      Benchling ships a v2 tag literally named "Legacy Workflows (deprecated)";
+      superseded by the Workflow Tasks / Workflow Task Groups surface.
+    superseded_by: benchling:benchling-workflow-tasks-api
+  - name: Legacy Workflows
+    aid: benchling:benchling-legacy-workflows-api
+    evidence: v2 tag "Legacy Workflows"; the modern surface is Workflow Task Groups.
+    superseded_by: benchling:benchling-workflow-task-groups-api
+  - name: Legacy Requests
+    aid: benchling:benchling-legacy-requests-api
+    evidence: >-
+      v2 tag "Legacy Requests"; v3 replaces it with RequestV2Definition /
+      RequestV2Submission.
+    superseded_by: 'v3 RequestV2Definition, RequestV2Submission'
+  - name: Oligos
+    aid: benchling:benchling-oligos-api
+    evidence: >-
+      The stability doc itself illustrates deprecation with "Example of
+      deprecated /oligos endpoints"; split into DNA Oligos and RNA Oligos.
+    superseded_by: 'benchling:benchling-dna-oligos-api, benchling:benchling-rna-oligos-api'
+  - name: Legacy Apps
+    evidence: >-
+      https://docs.benchling.com/docs/legacy-apps-overview — legacy apps still
+      resolve JWKS from https://benchling.com/apps/jwks/{app_installation_id}
+      rather than the current apps.benchling.com endpoint.
+    superseded_by: Benchling Apps (app_definition_id / manifest)
+  - name: Benchling API v2
+    evidence: >-
+      Not marked deprecated, but v3 is described in the changelog as the
+      "Unified API" with new stability guidelines and breaking changes; v2
+      remains published and stable.
+    superseded_by: /api/v3
+
+status_page:
+  url: https://benchling.betteruptime.com/
+  provider: Better Stack (Better Uptime)
+  machine_readable: false
+  note: >-
+    Hosted status page. No documented status JSON/RSS endpoint, so uptime cannot
+    be polled programmatically the way a Statuspage.io atom feed can.
+
+sla:
+  url: null
+  public_uptime_target: null
+  note: >-
+    Benchling publishes no numeric uptime SLA. Availability commitments are
+    handled inside enterprise agreements; GxP/21 CFR Part 11 validation support
+    is a paid Enterprise-tier feature (plans/benchling-plans-pricing.yml).
+
+support:
+  email: support@benchling.com
+  rate_limit_increases: Configurable on request via Benchling support.
+
+cross_references:
+  changelog: changelog/benchling-changelog.yml
+  conventions: conventions/benchling-conventions.yml
+  rate_limits: rate-limits/benchling-rate-limits.yml

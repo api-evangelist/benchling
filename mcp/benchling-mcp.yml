@@ -1,0 +1,126 @@
+generated: '2026-08-15'
+method: searched
+status: published
+source: >-
+  https://help.benchling.com/hc/en-us/articles/40342713479437-Configure-Benchling-s-MCP-Server-for-other-MCP-clients
+  and https://www.benchling.com/ai/ecosystem-extensibility (Benchling's own
+  pages), corroborated by direct DNS + HTTPS probes of the MCP host on
+  2026-08-15.
+description: >-
+  Benchling operates an official, first-party REMOTE MCP server. It is
+  wildcard-tenanted: every Benchling tenant gets its own host under
+  *.mcp.benchling.com, and an MCP client POSTs to
+  https://{tenant}.mcp.benchling.com/mcp. Benchling describes MCP as a
+  "first-class integration layer" and runs it in both directions — as a server
+  exposing experiments, entities, results and relationships to approved AI
+  assistants, and as a client consuming external AI Connectors. Access is
+  governed by the same authentication and permission rules as the rest of the
+  tenant, so the tool list and its input schemas are NOT anonymously
+  introspectable.
+
+deployment:
+  mode: remote
+  endpoint: https://{tenant}.mcp.benchling.com/mcp
+  auth: oauth
+  verified: probed
+
+server:
+  name: benchling
+  transport: http
+  url: https://{tenant}.mcp.benchling.com/mcp
+  templated: true
+  template_variable: tenant
+  template_note: >-
+    Same tenant subdomain used for the REST API ({tenant}.benchling.com/api/v3).
+    The apex mcp.benchling.com does NOT resolve — only tenant subdomains do.
+  auth: oauth2
+  token_endpoint: https://{tenant}.mcp.benchling.com/auth/token
+  token_endpoint_note: >-
+    Documented by Benchling as available but explicitly "not officially
+    supported" for direct use; the supported path is the MCP client's OAuth
+    flow.
+  availability: >-
+    Benchling Enterprise tenants with the relevant features enabled. Benchling's
+    troubleshooting guidance states that a 404 from the MCP indicates one or more
+    required features are not enabled on the tenant.
+  legacy_url: https://{tenant}.mcp.benchling.com/2025-06-18/mcp
+  legacy_note: >-
+    Earlier date-prefixed URL convention; Benchling has since moved to the
+    unprefixed /mcp path.
+
+evidence:
+  - check: dns
+    target: mcp.benchling.com
+    result: NXDOMAIN — no apex record; the service is tenant-scoped only
+  - check: dns
+    target: demo.mcp.benchling.com
+    result: >-
+      CNAME enterprise-us-east-1.stacks.mcp.benchling.com ->
+      mcp.enterprise-us-east-1.enterprise.bnch.services (3.227.35.116,
+      3.217.61.104, 100.29.225.224) — a real Benchling-operated MCP stack
+  - check: http
+    target: POST https://demo.mcp.benchling.com/mcp {"method":"tools/list"}
+    http_status: 403
+    content_type: application/json
+    body: '{"error":"Access Denied"}'
+    result: >-
+      A real JSON API refusing an unauthenticated caller (not an SPA shell, not a
+      404). Confirms the endpoint exists and is auth-gated.
+  - check: http
+    target: GET https://demo.mcp.benchling.com/.well-known/oauth-protected-resource
+    http_status: 403
+    result: >-
+      RFC 9728 protected-resource metadata is not served anonymously, so an MCP
+      client cannot discover the authorization server without credentials.
+  - check: http
+    target: https://help.benchling.com/hc/en-us/articles/40342713479437
+    http_status: 403
+    result: >-
+      Benchling's MCP help centre sits behind a Cloudflare managed bot
+      challenge; the article content was read through search indexing rather
+      than fetched directly.
+
+tools:
+  status: gated
+  count: null
+  note: >-
+    NOT RECORDED. tools/list requires an authenticated Benchling tenant session
+    (403 anonymously) and Benchling's help centre is behind a bot challenge, so
+    no verbatim tool list with inputSchema could be captured. Benchling
+    describes the exposed context as experiments, entities, results and
+    relationships, but no tool names or schemas are published anonymously and
+    none are invented here. Recovering the real list requires authenticated
+    introspection from inside a tenant with the MCP feature enabled.
+
+tool_crosswalk:
+  emitted: false
+  reason: >-
+    A ToolCrosswalk binds MCP tools to backing OpenAPI operationIds. Benchling's
+    tool list is auth-gated (above) and the graphql/ schema in this repo is a
+    derived conceptual model, not a live endpoint, so there is nothing real to
+    bind the 874 v3 REST operations to. Emitting a crosswalk here would mean
+    inventing tool names, so none is written and no ToolCrosswalk pointer is
+    added.
+
+related_surfaces:
+  rest_openapi: openapi/benchling-v3-openapi.yaml
+  rest_operations: 874
+  ai_connectors: >-
+    Benchling also acts as an MCP CLIENT, consuming partner "AI Connectors"
+    (NVIDIA BioNeMo, Anthropic Claude, OpenAI, Lilly TuneLab, Twist Bioscience,
+    Adaptyv, Ginkgo Datapoints, Boltz-2/BoltzGen via BoltzLab). Those are
+    inbound integrations, not surfaces Benchling exposes.
+  docs:
+    - https://help.benchling.com/hc/en-us/articles/40342713479437-Benchling-MCP-Server
+    - https://help.benchling.com/hc/en-us/articles/42715696739341-Configure-AI-Connectors-for-Benchling-AI
+    - https://www.benchling.com/ai/ecosystem-extensibility
+
+third_party_servers:
+  - name: benchling-mcp
+    package: https://pypi.org/project/benchling-mcp/
+    source: https://github.com/longevity-genie/benchling-mcp
+    mode: local-stdio
+    official: false
+    note: >-
+      Community server (longevity-genie), last published 2025-06-20 at 0.1.1.
+      Wraps the REST API; unrelated to Benchling's own hosted server.
