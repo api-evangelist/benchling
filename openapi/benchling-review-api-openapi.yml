@@ -1,0 +1,589 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Review API
+  version: 2.0.0
+  description: 'Represents an active or completed review of a reviewable item such as an Entry or
+
+    StageEntry. A Review tracks the overall status, the assigned reviewers (see `Reviewer`),
+
+    and links back to the reviewable item. Reviews follow a configured `ReviewProcess`
+
+    that defines the stages and actions required for completion. The review status
+
+    progresses from submission through reviewer actions until reaching a terminal state
+
+    like ACCEPTED or REJECTED.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Represents an active or completed review of a reviewable item such as an Entry or
+
+    StageEntry. A Review tracks the overall status, the assigned reviewers (see `Reviewer`),
+
+    and links back to the reviewable item. Reviews follow a configured `ReviewProcess`
+
+    that defines the stages and actions required for completion. The review status
+
+    progresses from submission through reviewer actions until reaching a terminal state
+
+    like ACCEPTED or REJECTED.'
+  name: Review
+  x-bnch-organization: Benchling
+paths:
+  /review/items:
+    get:
+      description: List Review items.
+      operationId: Review.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/reviewableId.anyOf'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is createdAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: createdAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Review items
+      tags:
+      - Review
+      x-bnch-rate-limit-tier: 4
+  /review/{review_id}:
+    get:
+      description: Get a single Review by ID.
+      operationId: Review.Get
+      parameters:
+      - description: ID of the Review.
+        in: path
+        name: review_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get Review by ID
+      tags:
+      - Review
+      x-bnch-rate-limit-tier: 5
+  /review/{review_id}/review-history/items:
+    get:
+      description: List ReviewChange items.
+      operationId: Review.reviewHistory.List
+      parameters:
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: ID of the Review.
+        in: path
+        name: review_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewChangePaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ReviewChange items
+      tags:
+      - Review
+      x-bnch-rate-limit-tier: 4
+components:
+  schemas:
+    ReviewChangePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewChange'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ReviewPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Review'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ReviewRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ReviewChange:
+      description: 'Represents a single action taken within a review. ReviewChanges form an ordered
+
+        history of all changes made to a review, including status transitions,
+
+        reviewer assignments, and comments. Each ReviewChange records the action taken,
+
+        any associated comment, whether it was electronically signed, and an optional
+
+        point-in-time snapshot.'
+      properties:
+        __typename:
+          type: string
+        action:
+          description: The action taken
+          enum:
+          - SEND_FOR_REVIEW
+          - REQUEST_CHANGES
+          - APPROVE
+          - REJECT
+          - RETRACT
+          - ACCEPT
+          - COMPLETE
+          - SIGN
+          - REVIEW
+          - WITNESS
+          - SELF_REVIEW
+          - COMMENT
+          - REASSIGN
+          - null
+          type:
+          - 'null'
+          - string
+        comment:
+          description: Optional comment associated with this change
+          type:
+          - 'null'
+          - string
+        createdAt:
+          description: When this change occurred
+          format: datetime
+          type: string
+        eSigned:
+          description: Whether this change was electronically signed
+          type:
+          - 'null'
+          - boolean
+        id:
+          description: ID of the review change
+          type: string
+        review:
+          $ref: '#/components/schemas/ReviewRef'
+          description: The review this change belongs to
+        snapshot:
+          description: A point-in-time snapshot of the reviewable item taken at the time of this action
+          oneOf:
+          - $ref: '#/components/schemas/ReviewSnapshot'
+          - type: 'null'
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewProcessRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ReviewSnapshot:
+      description: 'A point-in-time snapshot of a reviewable item (e.g. an Entry) captured when a
+
+        review action was taken. Snapshots are a configurable feature enabled via
+
+        ENABLE_ELN_REVIEW_SNAPSHOTS. When status is SUCCEEDED, a time-limited downloadUrl is available.'
+      properties:
+        __typename:
+          type: string
+        downloadUrl:
+          description: URL to download the snapshot export. Only present when status is SUCCEEDED.
+          type:
+          - 'null'
+          - string
+        size:
+          description: Size of the snapshot export in bytes. Only present when status is SUCCEEDED.
+          type:
+          - 'null'
+          - integer
+        status:
+          description: Status of the snapshot export
+          enum:
+          - PENDING
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    Reviewer:
+      description: 'Represents a user assigned to review a specific stage of an Entry''s review process.
+
+        Each Reviewer is associated with a Review and tracks whether they have completed their
+
+        assigned action. The reviewer status progresses from BLOCKED (if sequential and waiting)
+
+        to PENDING (can act) to FINISHED or REJECTED. Reviewers are assigned based on the
+
+        `ReviewProcessStage` configuration and its `ReviewerType` requirements.'
+      properties:
+        __typename:
+          type: string
+        reviewProcessStageName:
+          description: Name of review process stage reviewer is meant to review
+          type:
+          - 'null'
+          - string
+        reviewerStatus:
+          description: The current status of this reviewer (FINISHED, PENDING, etc.)
+          enum:
+          - BLOCKED
+          - PENDING
+          - FINISHED
+          - REJECTED
+          - null
+          type:
+          - 'null'
+          - string
+        user:
+          description: User this reviewer represents
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+      type: object
+    Review:
+      description: 'Represents an active or completed review of a reviewable item such as an Entry or
+
+        StageEntry. A Review tracks the overall status, the assigned reviewers (see `Reviewer`),
+
+        and links back to the reviewable item. Reviews follow a configured `ReviewProcess`
+
+        that defines the stages and actions required for completion. The review status
+
+        progresses from submission through reviewer actions until reaching a terminal state
+
+        like ACCEPTED or REJECTED.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          description: Timestamp when this review was created
+          format: datetime
+          type: string
+        id:
+          description: ID of the review
+          type: string
+        reviewHistory:
+          description: 'Ordered list of ReviewChange records representing the full audit history of this review.
+
+            Each ReviewChange captures a single action taken (e.g. send-for-review, approve, reject, retract),
+
+            the timestamp it occurred, any associated comment, and an optional point-in-time snapshot.
+
+            To query review history by the reviewable item''s ID (e.g. an entry ID like etr_...) instead of
+
+            the review ID, use GET /benchling/review-change/items?reviewableId.anyOf=<id>.'
+          format: uri
+          type: string
+        reviewProcess:
+          description: The review process that governs this review
+          oneOf:
+          - $ref: '#/components/schemas/ReviewProcessRef'
+          - type: 'null'
+        reviewSender:
+          description: The user who last sent this reviewable for review, or self-approved in a self-review process.
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        reviewableId:
+          description: API identifier of the reviewable item (e.g. an Entry) that this review belongs to.
+          type: string
+        reviewers:
+          description: Reviewers associated with this review
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/Reviewer'
+            type: array
+          - type: 'null'
+        status:
+          description: The status of this review
+          enum:
+          - REVIEW_SNAPSHOT_IN_PROGRESS
+          - NEEDS_REVIEW
+          - REJECTED
+          - RETRACTED
+          - ACCEPTANCE_SNAPSHOT_IN_PROGRESS
+          - ACCEPTED
+          - CYCLE_COMPLETED
+          - ACTION_REQUIRED
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    reviewableId.anyOf:
+      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
+      explode: false
+      in: query
+      name: reviewableId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

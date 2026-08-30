@@ -1,0 +1,4228 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Worklist API
+  version: 2.0.0
+  description: 'A typed collection of items used to group related objects for batch operations. Unlike
+
+    folders, items can belong to multiple worklists simultaneously, making worklists useful
+
+    as temporary holding grounds for arbitrary groups of items. Each worklist has an `itemType`
+
+    that restricts what kinds of objects it can contain (containers, entities, or plates).
+
+    Common use cases include scanning containers into a worklist before adding them to a
+
+    transfer table, or grouping entities for bulk export. Worklists have an `owner` and support
+
+    `collaborations` for access control (see `Collaboratable` interface). The `items` field
+
+    returns the collection of `Worklistable` objects currently in the worklist.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'A typed collection of items used to group related objects for batch operations. Unlike
+
+    folders, items can belong to multiple worklists simultaneously, making worklists useful
+
+    as temporary holding grounds for arbitrary groups of items. Each worklist has an `itemType`
+
+    that restricts what kinds of objects it can contain (containers, entities, or plates).
+
+    Common use cases include scanning containers into a worklist before adding them to a
+
+    transfer table, or grouping entities for bulk export. Worklists have an `owner` and support
+
+    `collaborations` for access control (see `Collaboratable` interface). The `items` field
+
+    returns the collection of `Worklistable` objects currently in the worklist.'
+  name: Worklist
+  x-bnch-organization: Benchling
+paths:
+  /worklist:
+    post:
+      description: Create Worklist.
+      operationId: Worklist.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorklistInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worklist'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 4
+  /worklist/items:
+    get:
+      description: List Worklist items.
+      operationId: Worklist.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorklistPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Worklist items
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 4
+  /worklist/{worklist_id}:
+    delete:
+      description: Delete Worklist.
+      operationId: Worklist.Delete
+      parameters:
+      - description: ID of the Worklist.
+        in: path
+        name: worklist_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Delete Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 4
+    get:
+      description: Get a single Worklist by ID.
+      operationId: Worklist.Get
+      parameters:
+      - description: ID of the Worklist.
+        in: path
+        name: worklist_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worklist'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get Worklist by ID
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 5
+    patch:
+      description: Update Worklist.
+      operationId: Worklist.Update
+      parameters:
+      - description: ID of the Worklist.
+        in: path
+        name: worklist_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorklistInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Worklist'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 4
+  /worklist/{worklist_id}/items/items:
+    get:
+      description: List Worklistable items.
+      operationId: Worklist.items.List
+      parameters:
+      - description: ID of the Worklist.
+        in: path
+        name: worklist_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorklistableUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Worklistable items
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 4
+  /worklist:batch-create:
+    post:
+      description: Batch create Worklist synchronously in one transaction. Maximum 25 items per request.
+      operationId: Worklist.BatchCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateWorklistInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Worklist'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 3
+  /worklist:batch-delete:
+    post:
+      description: Batch delete Worklist synchronously in one transaction. Maximum 25 items per request.
+      operationId: Worklist.BatchDelete
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/DeleteWorklistInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      additionalProperties: false
+                      properties:
+                        id:
+                          type: string
+                      required:
+                      - id
+                      type: object
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch delete Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 3
+  /worklist:batch-update:
+    patch:
+      description: Batch update Worklist synchronously in one transaction. Maximum 25 items per request.
+      operationId: Worklist.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateWorklistInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Worklist'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 3
+  /worklist:bulk-create:
+    post:
+      description: Bulk create Worklist.
+      operationId: Worklist.BulkCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 2
+  /worklist:bulk-update:
+    patch:
+      description: Bulk update Worklist.
+      operationId: Worklist.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update Worklist
+      tags:
+      - Worklist
+      x-bnch-rate-limit-tier: 2
+components:
+  schemas:
+    Molecule:
+      allOf:
+      - $ref: '#/components/schemas/IMolecule'
+      - description: 'A Molecule represents a small molecule chemical compound in Benchling that is imported either as a MolFile or
+
+          using SMILES (Simplified Molecular Input Line Entry System) notation. Molecules are registry entities that can
+
+          be registered, searched, and linked to other items. When present, the `canonicalSmiles` field provides a
+
+          standardized SMILES representation for comparison, while originalSmiles preserves the user-provided SMILES and
+
+          may be null if SMILES was not provided at creation. Molecules support custom fields via schemas and can be
+
+          organized in folders and projects.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    MatrixPlate:
+      allOf:
+      - $ref: '#/components/schemas/IMatrixPlate'
+      - description: 'A MatrixPlate is a rack-style storage plate where Containers (tubes, vials) can be
+
+          inserted into and removed from grid positions. Unlike FixedPlate or WellPlate where
+
+          wells are permanently attached, MatrixPlate positions (see MatrixPlatePosition) can
+
+          be empty or hold movable containers. This makes MatrixPlates ideal for tube racks,
+
+          sample storage boxes with removable tubes, and other flexible storage formats. Each
+
+          plate tracks its capacity (totalCapacity, availableCapacity, occupiedCapacity) and
+
+          conforms to a MatrixPlateSchema that defines the grid dimensions and optionally
+
+          restricts which ContainerSchema types can be stored. MatrixPlates can be stored in
+
+          Locations, associated with Studies, and identified by barcode.'
+        properties:
+          __typename:
+            type: string
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+            description: The user who created the plate
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    AaAnnotation:
+      description: 'Represents an annotated region on an amino acid sequence (AaSequence). Annotations mark
+
+        functional domains, binding sites, post-translational modifications, engineered mutations,
+
+        or other biologically significant features. Each annotation defines a start and end
+
+        position (0-based, exclusive end), a name, optional type classification, display color,
+
+        and descriptive notes. Annotations appear as visual overlays on the sequence viewer.'
+      properties:
+        __typename:
+          type: string
+        aaSequence:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: AA sequence the annotation belongs to.
+        color:
+          description: Hex color when displaying the annotation.
+          type: string
+        end:
+          description: 0-based exclusive end index.
+          type: integer
+        id:
+          description: ID of the annotation.
+          type: string
+        name:
+          description: Name of the annotation.
+          type: string
+        notes:
+          description: Text notes on the annotation.
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        type:
+          description: Feature type of the annotation.
+          type:
+          - 'null'
+          - string
+      type: object
+    GridCoordinates:
+      description: Read model representing a fillable position in a box or plate.
+      properties:
+        __typename:
+          type: string
+        column:
+          description: The 0-indexed column index of the position
+          type: integer
+        index:
+          description: 'The 1-indexed position determined by counting across rows.
+
+            For example, for a six-well plate:
+
+            +---+---+---+
+
+            | 1 | 2 | 3 |
+
+            +---+---+---+
+
+            | 4 | 5 | 6 |
+
+            +---+---+---+'
+          type: integer
+        position:
+          description: 'The alphanumeric position, where rows are indexed alphabetically and columns are indexed numerically,
+
+            starting from "A1"'
+          type: string
+        row:
+          description: The 0-indexed row index of the position
+          type: integer
+      type: object
+    Transcription:
+      description: 'Represents a transcribed region on a DNA sequence that produces an RNA product. Transcriptions
+
+        link a region of a DnaSequence to the corresponding RnaSequence entity, enabling traceability
+
+        between DNA templates and their RNA transcripts. The position range (start/end) defines
+
+        where transcription begins and ends on the DNA template, while strand indicates the
+
+        transcribed strand direction. This feature is derived from schema field relationships
+
+        rather than being directly editable as an annotation.'
+      properties:
+        __typename:
+          type: string
+        end:
+          description: '0-based exclusive end index. For ranges ending at the end of a circular sequence, this value is
+
+            always the length of the sequence, never 0.'
+          type: integer
+        rnaSequence:
+          $ref: '#/components/schemas/RnaSequenceRef'
+          description: RNA sequence this transcription refers to.
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          description: Strand for this transcription; 1 for forward strand, -1 for reverse strand.
+          type: integer
+      type: object
+    MatrixPlatePosition:
+      description: A well position within a MatrixPlate.
+      properties:
+        __typename:
+          type: string
+        container:
+          description: Container at the current position within the matrix plate.
+          oneOf:
+          - $ref: '#/components/schemas/ContainerRef'
+          - type: 'null'
+        coordinates:
+          $ref: '#/components/schemas/GridCoordinates'
+          description: Coordinates of the current position within the matrix plate.
+      type: object
+    ProteinFormatChainPosition:
+      description: 'Defines each instance of a polypeptide chain within a `ProteinFormat`, specifying the chain type and
+
+        its constituent domains. Each chain position has a unique ref identifier and lists the domain positions
+
+        (see `ProteinFormatDomainPosition`) that compose it in order from N-terminus to C-terminus.
+
+        For example, a heavy chain position might reference domain positions [VH, CH1, Hinge, CH2, CH3].'
+      properties:
+        __typename:
+          type: string
+        domainPositions:
+          description: A list of all the domain positions that make up the chain position, in order
+          items:
+            $ref: '#/components/schemas/ProteinFormatDomainPosition'
+          type: array
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
+    IMolecule:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        canonicalSmiles:
+          description: 'The canonicalized chemical structure in SMILES format. E.g.,
+
+            Nc1nc(=O)n([H:1])cc1C1CC1'
+          type:
+          - 'null'
+          - string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+        originalSmiles:
+          description: 'The original chemical structure in SMILES format. Null if the user did not originally provide SMILES. E.g.,
+
+            Nc1nc(=O)n([H:1])cc1C1CC1'
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+      type: object
+    IMixture:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        allowMeasuredIngredients:
+          description: Derived from the mixture's schema.
+          type:
+          - 'null'
+          - boolean
+        amount:
+          description: 'The positive numerical amount value of this mixture in string format
+
+            (to preserve full precision). Pair with `units`. Supports scientific
+
+            notation (1.23e4).'
+          type:
+          - 'null'
+          - string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          type: string
+        ingredients:
+          description: List of ingredients on this mixture.
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/Ingredient'
+            type: array
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+        units:
+          enum:
+          - NL
+          - UL
+          - ML
+          - L
+          - G
+          - KG
+          - UNITS
+          - UG
+          - MG
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    ProteinFormatRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/IRnaOligo'
+      - description: 'Represents a short single-stranded RNA oligonucleotide in Benchling''s molecular biology
+
+          platform. RNA oligos are synthetic sequences used in applications such as RNA interference
+
+          (siRNA, shRNA), antisense oligonucleotides (ASOs), mRNA therapeutics, or CRISPR guide RNAs.
+
+          Each oligo stores its nucleotide base sequence, annotations for features of interest, and
+
+          chemical modifications (see ModifiedNucleotide) such as 2''-O-methyl sugars or phosphorothioate
+
+          backbones that enhance stability and efficacy. RNA oligos can be registered in the Registry
+
+          with unique identifiers, organized in folders, and linked to other entities via schema
+
+          fields. Unlike RnaSequence, oligos are specifically designed for shorter, synthesizable
+
+          sequences. Also referred to as RNA probes or therapeutic oligonucleotides depending on
+
+          their application.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    Primer:
+      description: 'Represents a primer binding site on a nucleotide sequence, indicating where an oligonucleotide primer anneals
+
+        for PCR amplification or sequencing. The Primer links to an Oligo entity containing the actual primer sequence
+
+        and name. Position fields define the binding region on the template (start/end), while bindPosition specifies
+
+        the 3'' end of the binding region (critical for extension). The overhangLength indicates how many 5'' bases
+
+        extend beyond the binding region (used for adding restriction sites or tags). Strand indicates whether the
+
+        primer binds to the forward (1) or reverse (-1) strand.'
+      properties:
+        __typename:
+          type: string
+        bindPosition:
+          description: 0-based index of the base at the 3' end of the binding region.
+          type: integer
+        end:
+          description: '0-based exclusive end of the binding region. For ranges ending at the end of a circular sequence,
+
+            this value is always the length of the sequence, never 0.'
+          type: integer
+        oligo:
+          $ref: '#/components/schemas/OligoRef'
+          description: Linked primer entity, which holds the name, bases, and color for this primer bind site.
+        overhangLength:
+          description: Number of 5' primer bases that are not part of the binding region.
+          type: integer
+        start:
+          description: 0-based inclusive start of the binding region.
+          type: integer
+        strand:
+          description: Strand for this primer; 1 for forward strand, -1 for reverse strand.
+          type: integer
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    Worklistable:
+      anyOf:
+      - $ref: '#/components/schemas/AaSequence'
+      - $ref: '#/components/schemas/Assembly'
+      - $ref: '#/components/schemas/Container'
+      - $ref: '#/components/schemas/CustomEntity'
+      - $ref: '#/components/schemas/DnaOligo'
+      - $ref: '#/components/schemas/DnaSequence'
+      - $ref: '#/components/schemas/MatrixPlate'
+      - $ref: '#/components/schemas/Mixture'
+      - $ref: '#/components/schemas/Molecule'
+      - $ref: '#/components/schemas/OligoConjugate'
+      - $ref: '#/components/schemas/OligoDuplex'
+      - $ref: '#/components/schemas/Plate'
+      - $ref: '#/components/schemas/Protein'
+      - $ref: '#/components/schemas/RnaOligo'
+      - $ref: '#/components/schemas/RnaSequence'
+      - $ref: '#/components/schemas/WellPlate'
+      - $ref: '#/components/schemas/WellPlatePosition'
+      discriminator:
+        propertyName: __typename
+      type: object
+    SchemaFieldValue:
+      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
+
+        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
+
+        date, or link to another object). The value may be null if no value has been set. Used within
+
+        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
+
+        custom field values defined by the object''s schema.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinition:
+          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
+        id:
+          type: string
+        linkedEntityId:
+          type:
+          - 'null'
+          - string
+        value:
+          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
+          oneOf:
+          - anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            - $ref: '#/components/schemas/ArrayValue'
+            discriminator:
+              propertyName: __typename
+          - type: 'null'
+      type: object
+    DnaSequence:
+      allOf:
+      - $ref: '#/components/schemas/IDnaSequence'
+      - description: 'Represents a DNA sequence in Benchling''s molecular biology platform. A `DnaSequence` stores the nucleotide
+
+          bases of the forward strand along with rich annotations for biological features such as genes, promoters, and
+
+          regulatory elements. Sequences can be linear or circular (controlled by `isCircular`) and support translation
+
+          annotations for protein-coding regions (see `Translation`), primer binding sites (see `Primer`), and part
+
+          features linking to other sequences (see `DnaPart`). DNA sequences can be registered in the Registry with a
+
+          unique `entityRegistryId`, organized in folders, and linked to other entities via schema fields. Also known as
+
+          "Sequence" in the Benchling interface, with IDs prefixed by ''seq''.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    AaSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ExpirationInfo:
+      description: 'Provides expiration tracking for inventory items such as containers and their
+
+        contents. The expirationDate may be explicitly set on the container or inherited
+
+        from the stored entity''s properties. The isExpired flag is a computed convenience
+
+        field that returns true if the current date is past the expiration date. Items
+
+        without an expiration date are considered non-expiring (isExpired returns false).'
+      properties:
+        __typename:
+          type: string
+        expirationDate:
+          description: Expiration date of the item, potentially inherited from the contents or overridden.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        isExpired:
+          description: Whether the item is past its expiration date. Items without an expiration date return False.
+          type: boolean
+      type: object
+    OligoConjugate:
+      allOf:
+      - $ref: '#/components/schemas/IOligoConjugate'
+      - description: 'An oligo conjugate is a therapeutic modality consisting of a single-stranded
+
+          oligonucleotide backbone with one or more attached conjugate molecules. Common
+
+          examples include antisense oligonucleotides (ASOs) with GalNAc ligands for liver
+
+          targeting, or siRNA strands with lipid or cholesterol conjugates. The backbone
+
+          references the underlying oligo entity, while conjugates lists the attached molecules.
+
+          Structure is defined using HELM notation and can be edited via the visual structure
+
+          editor. Supports versioning (see OligoConjugateVersion) to track changes over time.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
+    RegistrationOrigin:
+      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
+
+        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
+
+        providing traceability back to the original experimental context. The `registeredAt` timestamp
+
+        records when the registration occurred. This information helps scientists understand where
+
+        registered entities came from and when they were added to the registry.'
+      properties:
+        __typename:
+          type: string
+        originEntry:
+          oneOf:
+          - $ref: '#/components/schemas/DocumentLikeRef'
+          - type: 'null'
+        registeredAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+      type: object
+    Translation:
+      description: 'Represents a protein-coding region (CDS) on a nucleotide sequence, showing the translated
+
+        amino acid sequence. Translations can span a single contiguous region or multiple regions
+
+        for spliced genes (see RegionsListItem). The aminoAcids field contains the computed protein
+
+        sequence based on the geneticCode (see CodonTranslationTable). The translateFirstCodonToMethionine
+
+        option forces the start codon to encode methionine regardless of the actual codon. Translations
+
+        display as colored overlays on the sequence viewer, with the three-letter amino acid codes
+
+        shown above the nucleotide bases.'
+      properties:
+        __typename:
+          type: string
+        aminoAcids:
+          description: 'Calculated amino acid translation of the specified regions, combining codons across regions if
+
+            necessary.'
+          type: string
+        color:
+          description: Hex color when displaying the translation.
+          type: string
+        customFields:
+          description: Custom fields on the translation.
+          items:
+            $ref: '#/components/schemas/CustomField'
+          type: array
+        end:
+          deprecated: true
+          description: '0-based exclusive end index. For ranges ending at the end of a circular sequence, this value is
+
+            always the length of the sequence, never 0. Use regions instead for location information.'
+          type:
+          - 'null'
+          - integer
+        geneticCode:
+          description: Genetic code for the translation.
+          enum:
+          - STANDARD
+          - VERTEBRATE_MITOCHONDRIAL
+          - YEAST_MITOCHONDRIAL
+          - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
+          - INVERTEBRATE_MITOCHONDRIAL
+          - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
+          - ECHINODERM_FLATWORM_MITOCHONDRIAL
+          - EUPLOTID_NUCLEAR
+          - BACTERIAL_ARCHAEAL_PLANT_PLASTID
+          - ALTERNATIVE_YEAST_NUCLEAR
+          - ASCIDIAN_MITOCHONDRIAL
+          - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
+          - CHLOROPHYCEAN_MITOCHONDRIAL
+          - TREMATODE_MITOCHONDRIAL
+          - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
+          - THRAUSTOCHYTRIUM_MITOCHONDRIAL
+          - RHABDOPLEURIDAE_MITOCHONDRIAL
+          - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
+          - PACHYSOLEN_TANNOPHILUS_NUCLEAR
+          - KARYORELICT_NUCLEAR
+          - CONDYLOSTOMA_NUCLEAR
+          - MESODINIUM_NUCLEAR
+          - PERITRICH_NUCLEAR
+          - BLASTOCRITHIDIA_NUCLEAR
+          - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
+          type: string
+        name:
+          description: Name of the translation.
+          type: string
+        notes:
+          description: Text notes on the translation.
+          type: string
+        regions:
+          description: Array of regions of the translation. For single-region translations, this is an array with one element.
+          items:
+            $ref: '#/components/schemas/RegionsListItem'
+          type: array
+        start:
+          deprecated: true
+          description: '0-based inclusive start index.
+
+            Use regions instead for location information.'
+          type:
+          - 'null'
+          - integer
+        strand:
+          description: Strand for this annotation; 1 for forward strand, -1 for reverse strand.
+          type: integer
+        translateFirstCodonToMethionine:
+          description: Whether or not the first codon has been forced to be translated as methionine.
+          type: boolean
+      type: object
+    FolderRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    OligoRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    CustomEntity:
+      allOf:
+      - $ref: '#/components/schemas/ICustomEntity'
+      - description: 'A flexible, user-defined entity type in Benchling''s Registry. Unlike specialized entity
+
+          types such as DnaSequence or Molecule, CustomEntities allow organizations to model any
+
+          kind of scientific or business object using configurable EntitySchemas (see `schema`).
+
+          CustomEntities support customFields for storing structured data, can be organized into
+
+          Folders and Projects, and integrate with Benchling''s collaboration, search, and audit
+
+          systems. They are commonly used to represent cell lines, reagents, instruments, or any
+
+          domain-specific items that don''t fit predefined entity categories.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    ProteinFormatDomainPosition:
+      description: 'Defines a domain position within a1 `ProteinFormat`, specifying the domain type and identity of each
+
+        physical domain in the protein format. Each domain position has a unique ref identifier used
+
+        to construct HELM notation for complex polymer structures. Domain positions are grouped into ProteinFormatDomains,
+
+        and each group can be uniquely identified by its label, and will be a single amino acid sequence entity in proteins
+
+        of this format.'
+      properties:
+        __typename:
+          type: string
+        optional:
+          description: Whether this domain is optional in the format. If true, entities of this format may not have this domain.
+          type: boolean
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the domain
+          enum:
+          - VL
+          - CL
+          - VH
+          - VHH
+          - CH1
+          - CH2
+          - CH3
+          - CH4
+          - J
+          - H
+          - L
+          - VA
+          - CA
+          - VB
+          - CB
+          - VG
+          - CG
+          - VD
+          - CD
+          - F
+          - ELEMENT
+          type: string
+      type: object
+    RegionsListItem:
+      description: 'Represents a contiguous position range within a Translation or other multi-region feature.
+
+        For spliced genes or complex reading frames, a Translation may span multiple non-contiguous
+
+        regions (exons) that are joined during translation. Each RegionsListItem defines one such
+
+        segment using 0-based coordinates (start inclusive, end exclusive). For circular sequences,
+
+        regions can wrap around, but the end value is always the sequence length rather than 0.'
+      properties:
+        __typename:
+          type: string
+        end:
+          description: '0-based exclusive end index. For ranges ending at the end of a circular sequence, this value is
+
+            always the length of the sequence, never 0.'
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+      type: object
+    EntityRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ChemSimplePolymer:
+      description: 'Represents a small molecule within a complex polymer structure. Contains SMILES and molfile representations of
+
+        the chemical structure, along with connections to other polymers. The entity field links to a corresponding
+
+        `Molecule`. Commonly used as conjugate payloads attached to oligonucleotide backbones, such as lipid
+
+        nanoparticles, fluorescent labels, or therapeutic molecules.'
+      properties:
+        __typename:
+          type: string
+        connections:
+          items:
+            $ref: '#/components/schemas/ComplexPolymerConnection'
+          type: array
+        entity:
+          $ref: '#/components/schemas/MoleculeRef'
+        helmReference:
+          type: string
+        molfile:
+          type: string
+        polymerType:
+          type: string
+        smiles:
+          type: string
+      type: object
+    ProteinChain:
+      description: 'Represents a polypeptide chain within an `Protein`, containing the domain composition. Each chain has a
+
+        computed label derived from the format.'
+      properties:
+        __typename:
+          type: string
+        chainPositions:
+          description: 'Each chain position of this chain in the protein. If a chain has multiplicity > 1, each chain position
+
+            will be listed here.'
+          items:
+            $ref: '#/components/schemas/ProteinFormatChainPosition'
+          type: array
+        domains:
+          description: Each domain on the chain, ordered according to the format.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the chain.
+        label:
+          description: Unique label for the chain, computed from the format.
+          type: string
+        type:
+          description: The type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
+    ExperimentalRole:
+      description: 'Represents the complete experimental designation of a well or container within an assay,
+
+        combining a primary role (see PrimaryExperimentalRole), replicate group number, and
+
+        optional subrole. The group field identifies replicate sets: wells with the same primary
+
+        role and group number are treated as technical replicates for statistical analysis. The
+
+        subrole field provides additional categorization for controls (e.g., POSITIVE, NEGATIVE,
+
+        MAXIMUM, MINIMUM); only CONTROL primary roles may have subroles. ExperimentalRole is
+
+        used in plate-based workflows to define experimental layouts (see PlateMapPosition) and
+
+        annotate wells in FixedPlate and Container objects.'
+      properties:
+        __typename:
+          type: string
+        group:
+          description: Role group (aka replicate id)
+          type: integer
+        primaryRole:
+          description: Primary role
+          enum:
+          - CONTROL
+          - SAMPLE
+          - BLANK
+          - STANDARD
+          type: string
+        subrole:
+          description: Subrole, used to differentiate different sub types of a role (e.g. positive control)
+          type:
+          - 'null'
+          - string
+      type: object
+    ComplexPolymerStructure:
+      description: 'Contains the complete structural definition of a complex polymer, including all
+
+        component polymers and their interconnections. This is the core data structure that
+
+        defines how oligonucleotides, molecules, and peptides are assembled into bioconjugates.
+
+        The simplePolymers list contains all components, connections defines the bonds between
+
+        them, and resolvedAttachments provides detailed chemistry for drawn attachments.'
+      properties:
+        __typename:
+          type: string
+        connections:
+          description: A list of all the connections between simple polymers in this complex polymer.
+          items:
+            $ref: '#/components/schemas/ComplexPolymerConnection'
+          type: array
+        resolvedAttachments:
+          description: A list of attachment information, providing a more detailed chemical structure for a set of connections.
+          items:
+            $ref: '#/components/schemas/ComplexPolymerResolvedAttachment'
+          type: array
+        simplePolymers:
+          description: A list of all the simple polymers in this complex polymer.
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/NucleotideSimplePolymer'
+            - $ref: '#/components/schemas/ChemSimplePolymer'
+            - $ref: '#/components/schemas/PeptideSimplePolymer'
+            description: Union of NucleotideSimplePolymer, ChemSimplePolymer, PeptideSimplePolymer
+            discriminator:
+              propertyName: __typename
+          type: array
+      type: object
+    AaSequence:
+      allOf:
+      - $ref: '#/components/schemas/IAaSequence'
+      - description: 'Represents an amino acid sequence in Benchling''s molecular biology platform. An AaSequence stores the
+
+          one-letter amino acid code string along with annotations marking functional regions, domains, or other
+
+          features of interest. `AaSequence`s can be registered in the Registry with a unique entityRegistryId,
+
+          organized in folders, and linked via schema fields to other entities. The annotations array contains
+
+          `AaAnnotation` objects for features like signal peptides, binding domains, or engineered mutations.
+
+          Parts (see `AaPart`) indicate regions matching other registered `AaSequence`s.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    Plate:
+      allOf:
+      - $ref: '#/components/schemas/IPlate'
+      - description: 'A Plate is a legacy unified type representing both well plates and tube racks in
+
+          Benchling''s inventory system. The type field (see PlateType) indicates whether this
+
+          is a FIXED_PLATE (wells permanently attached, like 96-well or 384-well plates) or a
+
+          MATRIX_PLATE (removable containers in a grid, like tube racks). For new integrations,
+
+          prefer using the specific FixedPlate and MatrixPlate types which provide clearer
+
+          semantics and type-specific fields. Plates can be stored in Locations (via parentStorage),
+
+          associated with Studies, and identified by barcode. The wells field returns Container
+
+          objects representing the plate positions.'
+        properties:
+          __typename:
+            type: string
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+        type: object
+    ComplexPolymerResolvedAttachment:
+      description: 'Detailed information about a group of contiguous connections in a complex polymer.
+
+
+        The entire chemical structure of the connection group, and any components inside it, is represented by a molfile.
+
+        This allows for the representation of any bond chemistry, beyond the simple leaving group style supported by HELM.
+
+
+        For example, suppose we have two involved connections, one between a backbone oligo and a linker molecule,
+
+        and another between the linker molecule and a payload molecule.
+
+        Then the molfile would represent the entire complex of:
+
+        - the monomer on the backbone where the linker attaches
+
+        - the connection between monomer and linker
+
+        - the linker molecule
+
+        - the connection between linker and payload
+
+        - the payload molecule
+
+
+        Currently, this structure will only represent attachments that the user draws. However, in the future,
+
+        this object may also contain leaving group style connections as well.'
+      properties:
+        __typename:
+          type: string
+        connectionsInvolved:
+          items:
+            $ref: '#/components/schemas/ComplexPolymerConnection'
+          type: array
+        molfile:
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
+    EntitySchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinDomain:
+      description: 'Represents a domain within an `Protein`, containing the actual amino acid sequence for a specific label.
+
+        Unlike `ProteinFormatDomain` which is a template, `ProteinDomain` is a concrete instance of the domain and
+
+        links to the underlying amino acid sequence entity.'
+      properties:
+        __typename:
+          type: string
+        domainPositions:
+          description: 'Each domain position of this domain in the protein. If this domain appears multiple times in the physical
+
+            structure of the protein, each domain position will be listed here.'
+          items:
+            $ref: '#/components/schemas/ProteinFormatDomainPosition'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the domain.
+        label:
+          description: A human-readable label for the domain.
+          type: string
+        type:
+          description: The type of the domain.
+          enum:
+          - VL
+          - CL
+          - VH
+          - VHH
+          - CH1
+          - CH2
+          - CH3
+          - CH4
+          - J
+          - H
+          - L
+          - VA
+          - CA
+          - VB
+          - CB
+          - VG
+          - CG
+          - VD
+          - CD
+          - F
+          - ELEMENT
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    Ingredient:
+      description: 'Represents a single component within a Mixture, specifying the substance and its
+
+        amount. Each Ingredient references a componentEntity (the substance being added),
+
+        an amount with units (see IngredientMeasurementUnits), and optional lot tracking
+
+        information. The amount can be a numeric value or "QS" (quantum satis, meaning
+
+        "as much as is needed") for one ingredient per mixture. Ingredients may optionally
+
+        track component lots either as Container references (for physical inventory tracking)
+
+        or as text. The targetAmount field is used when a mixture is derived from a parent
+
+        mixture and indicates the proportional amount needed.'
+      properties:
+        __typename:
+          type: string
+        amount:
+          description: 'The amount value of this ingredient in its mixture, in string format
+
+            (to preserve full precision). Pair with `units`. Supports scientific
+
+            notation (1.23e4). One ingredient on this mixture can have an amount
+
+            value of `"QS"`.'
+          type:
+          - 'null'
+          - string
+        catalogIdentifier:
+          type:
+          - 'null'
+          - string
+        componentEntity:
+          oneOf:
+          - $ref: '#/components/schemas/EntityRef'
+          - type: 'null'
+        componentLotContainer:
+          description: 'The container representing the component lot for this ingredient. This
+
+            is only present if the mixture schema supports component lots in
+
+            "storage" format.'
+          oneOf:
+          - $ref: '#/components/schemas/ContainerRef'
+          - type: 'null'
+        componentLotEntity:
+          description: 'The entity representing the component lot for this ingredient. This is
+
+            only present if the mixture schema supports component lots in
+
+            "storage" format.'
+          oneOf:
+          - $ref: '#/components/schemas/EntityRef'
+          - type: 'null'
+        componentLotText:
+          description: 'Text representing the component lot for this ingredient. This is only
+
+            present if the mixture schema supports component lots in "text"
+
+            format.'
+          type:
+          - 'null'
+          - string
+        hasParent:
+          type:
+          - 'null'
+          - boolean
+        notes:
+          type:
+          - 'null'
+          - string
+        targetAmount:
+          description: 'The target amount for this ingredient such that this ingredient''s
+
+            proportion in its mixture would preserve the equivalent ingredient''s
+
+            proportion in the parent mixture. Pair with `units`.'
+          type:
+          - 'null'
+          - string
+        units:
+          enum:
+          - NL
+          - UL
+          - ML
+          - L
+          - MG
+          - G
+          - UNITS
+          - CELLS
+          - KG
+          - MOL
+          - UMOL
+          - MMOL
+          - UG
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    ContainerSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DeleteWorklistInputWithPathParams:
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+    ComplexPolymerConnection:
+      description: 'Represents a chemical bond between two polymers within a complex polymer structure.
+
+        Connections can be covalent bonds (including disulfide bonds) or hydrogen bonds
+
+        (for base pairing in duplexes). Each connection has source and target ConnectionSide
+
+        endpoints defining which polymers and residues are bonded. The attachmentStyle
+
+        indicates whether the connection was drawn graphically or specified via leaving groups.'
+      properties:
+        __typename:
+          type: string
+        attachmentStyle:
+          description: 'The format in which the user has defined the connection (i.e. drawn vs leaving group style).
+
+            Only applicable to covalent bond type connections.'
+          enum:
+          - LEAVING_GROUP
+          - DRAWN
+          - null
+          type:
+          - 'null'
+          - string
+        connectionType:
+          description: The kind of chemical bond this connection represents.
+          enum:
+          - COVALENT_BOND
+          - HYDROGEN_BOND
+          type: string
+        covalentBondType:
+          description: 'The type of covalent bond represented by the connection (i.e. disulfide bond or not).
+
+            Only applicable to covalent bond type connections.'
+          enum:
+          - DISULFIDE_BOND
+          - null
+          type:
+          - 'null'
+          - string
+        source:
+          $ref: '#/components/schemas/ConnectionSide'
+          description: '''source'' and ''target'' are interchangeable - connections are bidirectional.'
+        target:
+          $ref: '#/components/schemas/ConnectionSide'
+      type: object
+    UpdateWorklistInputWithPathParams:
+      additionalProperties: false
+      properties:
+        addItemIds:
+          description: Add items to the worklist (incremental)
+          items:
+            type: string
+          type: array
+        id:
+          type: string
+        itemIds:
+          description: Set/replace all items in the worklist
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        removeItemIds:
+          description: Remove items from the worklist by API ID (incremental)
+          items:
+            type: string
+          type: array
+      required:
+      - id
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    IOligoConjugate:
+      description: 'An oligo conjugate is a specific type of complex polymer that consists of a single short DNA/RNA strand with
+
+        multiple attached molecules (aka conjugates).'
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        backbone:
+          oneOf:
+          - $ref: '#/components/schemas/NucleotideSimplePolymer'
+          - type: 'null'
+        canonicalHelm:
+          type: string
+        conjugates:
+          oneOf:
+          - items:
+              anyOf:
+              - $ref: '#/components/schemas/NucleotideSimplePolymer'
+              - $ref: '#/components/schemas/ChemSimplePolymer'
+              description: Union of NucleotideSimplePolymer, ChemSimplePolymer
+              discriminator:
+                propertyName: __typename
+            type: array
+          - type: 'null'
+        createdAt:
+          format: datetime
+          type: string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityAssociations:
+          items:
+            $ref: '#/components/schemas/EntityAssociation'
+          type: array
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        originalHelm:
+          type:
+          - 'null'
+          - string
+        outOfSync:
+          type: boolean
+        outOfSyncReason:
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/EntitySchemaRef'
+        structure:
+          $ref: '#/components/schemas/ComplexPolymerStructure'
+      type: object
+    IRnaOligo:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          description: Array of aliases
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        annotations:
+          description: Annotations on the Oligo.
+          items:
+            $ref: '#/components/schemas/NucleotideAnnotation'
+          type: array
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        bases:
+          description: Bases of the Oligo.
+          type: string
+        createdAt:
+          description: DateTime the Oligo was created.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          description: Custom fields set on the Oligo.
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          description: Registry ID of the Oligo if registered.
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          description: ID of the Oligo.
+          type: string
+        modifiedAt:
+          description: DateTime the Oligo was last modified.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        modifiedNucleotides:
+          description: Modifications applied to this oligo.
+          format: uri
+          type: string
+        name:
+          description: Name of the Oligo.
+          type: string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          description: Registry the Oligo is registered in.
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+      type: object
+    SchemaFieldDefinitionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    NucleotideSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    EntityAssociation:
+      description: 'Every entity association maps a Benchling entity to one or more HELM references in the complex polymer.
+
+        These HELM polymers each have the same chemical structure as the Benchling entity.
+
+
+        For example, if a molecule entity maps to two CHEM polymers, it means that the molecule appears twice in the complex polymer.'
+      properties:
+        __typename:
+          type: string
+        entity:
+          $ref: '#/components/schemas/ObjectRef'
+          description: Union of RnaOligo, DnaOligo, RnaSequence, DnaSequence, Molecule, AaSequence
+        polymerRefs:
+          description: HELM polymer references identifying which polymers in the structure correspond to this entity.
+          items:
+            type: string
+          type: array
+      type: object
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    IContainer:
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        barcode:
+          type:
+          - 'null'
+          - string
+        checkoutRecord:
+          $ref: '#/components/schemas/CheckoutRecord'
+        contents:
+          items:
+            $ref: '#/components/schemas/ContainerContent'
+          type: array
+        coordinates:
+          description: Coordinates of the container within its contained grid, if it is contained within a grid.
+          oneOf:
+          - $ref: '#/components/schemas/GridCoordinates'
+          - type: 'null'
+        createdAt:
+          format: datetime
+          type: string
+        expirationInfo:
+          $ref: '#/components/schemas/ExpirationInfo'
+          description: Expiration info for the container.
+        gridNumber:
+          deprecated: true
+          description: Please use coordinates.index
+          type:
+          - 'null'
+          - number
+        gridPosition:
+          deprecated: true
+          description: Please use coordinates.position
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        parentStorage:
+          description: Union of Box, Plate, Location
+          oneOf:
+          - $ref: '#/components/schemas/ObjectRef'
+          - type: 'null'
+        parentStorageSchema:
+          description: Union of BoxSchema, PlateSchema, LocationSchema
+          oneOf:
+          - $ref: '#/components/schemas/ObjectRef'
+          - type: 'null'
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        quantity:
+          description: 'Quantity of a container, well, or transfer. Supports mass, volume, and
+
+            other quantities.'
+          oneOf:
+          - $ref: '#/components/schemas/Measurement'
+          - type: 'null'
+        role:
+          oneOf:
+          - $ref: '#/components/schemas/ExperimentalRole'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/ContainerSchemaRef'
+      type: object
+    IRnaSequence:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        annotations:
+          description: 'Annotations on the RNA sequence, not including translations or primers. Annotations on parts are
+
+            not included.'
+          items:
+            $ref: '#/components/schemas/NucleotideAnnotation'
+          type: array
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        bases:
+          description: Bases of the RNA sequence.
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        modifiedNucleotides:
+          description: Modifications applied to this RNA sequence.
+          format: uri
+          type: string
+        name:
+          type: string
+        parts:
+          description: Part features on the RNA sequence.
+          format: uri
+          type: string
+        primers:
+          description: Primer bind features on the RNA sequence. Primers on parts are not included.
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+        translations:
+          description: 'Translation annotations present on the RNA sequence. Translations may be one region or split
+
+            across multiple regions. Translations on parts are not included.'
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+      type: object
+    CreateWorklistInput:
+      additionalProperties: false
+      properties:
+        itemIds:
+          items:
+            type: string
+          type: array
+        itemType:
+          enum:
+          - CONTAINER
+          - ENTITY
+          - PLATE
+          type: string
+        name:
+          type: string
+      required:
+      - name
+      - itemType
+      type: object
+    BooleanValue:
+      description: A type that represents boolean values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The boolean value.
+          type: boolean
+      type: object
+    PeptideSimplePolymer:
+      description: 'Represents a peptide or protein chain within a complex polymer structure. Contains the amino acid residue
+
+        sequence and connections to other polymers. The entity field links to a corresponding `AaSequence`. Used when
+
+        protein/aa-sequence components are part of larger bioconjugate structures.'
+      properties:
+        __typename:
+          type: string
+        connections:
+          items:
+            $ref: '#/components/schemas/ComplexPolymerConnection'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+        helmReference:
+          type: string
+        polymerType:
+          type: string
+        residues:
+          type: string
+      type: object
+    IPlate:
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        availableCapacity:
+          description: The number of available positions in a matrix plate. Null for well plates.
+          type:
+          - 'null'
+          - integer
+        barcode:
+          description: Barcode of the plate
+          type:
+          - 'null'
+          - string
+        createdAt:
+          description: DateTime the plate was created
+          format: datetime
+          type:
+          - 'null'
+          - string
+        id:
+          description: ID of the plate
+          type: string
+        modifiedAt:
+          description: DateTime the plate was last modified
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: Name of the plate, defaults to barcode if name is not provided.
+          type:
+          - 'null'
+          - string
+        occupiedCapacity:
+          description: The number of containers currently in a matrix plate. Null for well plates.
+          type:
+          - 'null'
+          - integer
+        parentStorage:
+          description: Containing parent storage.
+          oneOf:
+          - $ref: '#/components/schemas/LocationRef'
+          - type: 'null'
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/PlateSchemaRef'
+          - type: 'null'
+        totalCapacity:
+          description: 'The total capacity of a matrix plate (i.e. how many containers it can store).
+
+            Null for well plates.'
+          type:
+          - 'null'
+          - integer
+        type:
+          enum:
+          - MATRIX_PLATE
+          - FIXED_PLATE
+          - null
+          type:
+          - 'null'
+          - string
+        wells:
+          description: Well contents of the plate, keyed by position string (eg. "A1").
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
+      type: object
+    ICustomEntity:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+      type: object
+    WorklistableUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Worklistable'
+          type: array
+      type: object
+    LocationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    DocumentLikeRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    NucleotideMonomerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    NucleotideAnnotation:
+      description: 'Represents a biological feature annotation on a nucleotide sequence (DNA or RNA). Annotations
+
+        mark regions of interest such as genes, promoters, terminators, regulatory elements, or other
+
+        functionally significant sequences. Each annotation specifies a position range (start/end),
+
+        strand orientation, feature type classification, display color, and descriptive notes.
+
+        Annotations appear as visual overlays on the sequence viewer and can be created manually,
+
+        imported from standard formats like GenBank, or generated automatically using FeatureLibraries.'
+      properties:
+        __typename:
+          type: string
+        color:
+          description: Hex color when displaying the annotation.
+          type: string
+        end:
+          description: '0-based exclusive end index. For ranges ending at the end of a circular sequence, this value is
+
+            always the length of the sequence, never 0.'
+          type: integer
+        name:
+          description: Name of the annotation.
+          type: string
+        notes:
+          description: Text notes on the annotation.
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          description: Strand for this annotation; 1 for forward strand, -1 for reverse strand, and 0 for no strand.
+          type: integer
+        type:
+          description: Feature type of the annotation.
+          type:
+          - 'null'
+          - string
+      type: object
+    IMatrixPlate:
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: Why the plate is archived
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether the plate is archived
+          type: boolean
+        availableCapacity:
+          description: The number of available positions in a matrix plate.
+          type: integer
+        barcode:
+          description: Barcode of the plate
+          type:
+          - 'null'
+          - string
+        createdAt:
+          description: DateTime the plate was created
+          format: datetime
+          type: string
+        id:
+          description: The ID of the plate.
+          type: string
+        modifiedAt:
+          description: DateTime the plate was last modified
+          format: datetime
+          type: string
+        name:
+          description: Name of the plate; defaults to barcode if name is not provided
+          type: string
+        occupiedCapacity:
+          description: The number of containers currently in a matrix plate.
+          type: integer
+        parentStorage:
+          description: Containing parent storage
+          oneOf:
+          - $ref: '#/components/schemas/LocationRef'
+          - type: 'null'
+        positions:
+          description: The wells of the plate
+          items:
+            $ref: '#/components/schemas/MatrixPlatePosition'
+          type: array
+        project:
+          description: The project the plate is associated with
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/MatrixPlateSchemaRef'
+          description: The schema of the plate
+        totalCapacity:
+          description: The total capacity of a matrix plate (i.e. how many containers it can store).
+          type: integer
+      type: object
+    UpdateWorklistInput:
+      additionalProperties: false
+      properties:
+        addItemIds:
+          description: Add items to the worklist (incremental)
+          items:
+            type: string
+          type: array
+        itemIds:
+          description: Set/replace all items in the worklist
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        removeItemIds:
+          description: Remove items from the worklist by API ID (incremental)
+          items:
+            type: string
+          type: array
+      type: object
+    RnaSequence:
+      allOf:
+      - $ref: '#/components/schemas/IRnaSequence'
+      - description: 'Represents an RNA sequence in Benchling''s molecular biology platform. An RnaSequence stores
+
+          the nucleotide bases (using A, C, G, U) along with annotations marking functional regions,
+
+          translation annotations for protein-coding regions (see Translation), primer binding sites
+
+          (see Primer), and part features linking to other registered sequences (see RnaPart). RNA
+
+          sequences are used for modeling messenger RNAs, non-coding RNAs, CRISPR guide RNAs, and
+
+          other RNA molecules. Sequences can be registered in the Registry with a unique
+
+          entityRegistryId, organized in folders, and linked via schema fields to other entities.
+
+          For modified therapeutic RNAs, see modifiedNucleotides which captures chemical modifications.
+
+          Also known as ''Sequence'' in the Benchling interface, with IDs prefixed by ''seq''.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    Assembly:
+      description: 'Represents a molecular cloning assembly that combines multiple DNA fragments into
+
+        complete constructs. Assemblies model the process of joining fragment sequences
+
+        (such as genes, promoters, and terminators) using methods like Gibson Assembly,
+
+        Golden Gate, or restriction enzyme-based cloning. The assembly tracks the input
+
+        fragments and resulting construct sequences, enabling design-to-experiment traceability.
+
+        Assemblies can be organized in folders and support archiving when no longer needed.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          description: DateTime the Assembly was created
+          format: datetime
+          type: string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        folder:
+          description: Folder that contains the Assembly.
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          description: Id of the Assembly
+          type: string
+        modifiedAt:
+          description: DateTime the Assembly was last modified
+          format: datetime
+          type: string
+        name:
+          description: Name of the Assembly
+          type: string
+      type: object
+    Worklist:
+      description: 'A typed collection of items used to group related objects for batch operations. Unlike
+
+        folders, items can belong to multiple worklists simultaneously, making worklists useful
+
+        as temporary holding grounds for arbitrary groups of items. Each worklist has an `itemType`
+
+        that restricts what kinds of objects it can contain (containers, entities, or plates).
+
+        Common use cases include scanning containers into a worklist before adding them to a
+
+        transfer table, or grouping entities for bulk export. Worklists have an `owner` and support
+
+        `collaborations` for access control (see `Collaboratable` interface). The `items` field
+
+        returns the collection of `Worklistable` objects currently in the worklist.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        id:
+          type: string
+        itemType:
+          enum:
+          - CONTAINER
+          - ENTITY
+          - PLATE
+          - null
+          type:
+          - 'null'
+          - string
+        items:
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+        owner:
+          oneOf:
+          - $ref: '#/components/schemas/OwnerRef'
+          - type: 'null'
+      type: object
+    Container:
+      allOf:
+      - $ref: '#/components/schemas/IContainer'
+      - description: 'A Container is a physical vessel (such as a tube, vial, or cryotube) that holds
+
+          biological or chemical samples in Benchling''s inventory system. Containers track
+
+          their contents (see ContainerContent), quantity, location within storage (via
+
+          parentStorage which can be a Box, Plate, or Location), and lifecycle information
+
+          including expiration and freeze-thaw cycles. Each container has a barcode for
+
+          physical identification and conforms to a ContainerSchema that defines its type
+
+          and schema fields. Containers support checkout tracking (see CheckoutRecord) and
+
+          can be associated with Studies. Also known as "tubes" or "sample containers" in
+
+          laboratory contexts.'
+        properties:
+          __typename:
+            type: string
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CheckoutRecord:
+      description: 'Tracks the checkout status of an inventory item such as a Container. When laboratory
+
+        samples need to be temporarily removed from storage (e.g., for an experiment), users
+
+        can check them out, optionally adding a comment and assigning responsibility to a
+
+        user or team (see Assignee). The record captures when the status was last modified.
+
+        This enables sample tracking workflows and prevents conflicts when multiple users
+
+        need access to the same samples.'
+      properties:
+        __typename:
+          type: string
+        assignee:
+          description: Union of User, Team
+          oneOf:
+          - $ref: '#/components/schemas/ObjectRef'
+          - type: 'null'
+        comment:
+          type:
+          - 'null'
+          - string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        status:
+          enum:
+          - AVAILABLE
+          - RESERVED
+          - CHECKED_OUT
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    WellPlate:
+      allOf:
+      - $ref: '#/components/schemas/IWellPlate'
+      - description: 'A WellPlate is a multi-well plate in Benchling''s inventory system where wells are
+
+          permanently fixed to the plate structure. This is the standard plate type for laboratory
+
+          multi-well formats such as 96-well, 384-well, and 1536-well plates used in high-throughput
+
+          screening, PCR, and other assay workflows. The plate''s grid dimensions are defined by its
+
+          WellPlateSchema, and each well (see WellPlatePosition) can contain samples, track quantities,
+
+          and be assigned experimental roles. WellPlates can be stored in Locations (via parentStorage),
+
+          associated with Studies, and identified by barcode. The plateRecords field tracks the history
+
+          of transfers and annotations performed on the plate (see PlateRecord). Unlike MatrixPlate
+
+          where containers can be inserted or removed, WellPlate wells are integral to the plate.'
+        properties:
+          __typename:
+            type: string
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+            description: The user who created the plate
+          positions:
+            description: The wells of the plate
+            format: uri
+            type: string
+          schemaFields:
+            description: Schema field values that belong to the plate
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    WellPlateSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    Protein:
+      allOf:
+      - $ref: '#/components/schemas/IProtein'
+      - description: 'A Protein is a complex biomolecule entity in Benchling representing immunoglobulins or
+
+          related therapeutic proteins like T-cell receptors. Proteins are defined by an
+
+          `ProteinFormat` that specifies their structural organization, with actual sequences
+
+          provided in domains (see `ProteinDomain`) and chains (see `ProteinChain`). Proteins support versioning
+
+          through history/fullHistory, allowing tracking of structural changes over time. As registry entities,
+
+          proteins can have schemas with custom fields, belong to projects and folders, and be linked to studies.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    OligoDuplex:
+      allOf:
+      - $ref: '#/components/schemas/IOligoDuplex'
+      - description: 'An oligo duplex is a therapeutic modality consisting of two complementary
+
+          oligonucleotide strands (forward and reverse) with optional conjugate molecules
+
+          attached to either strand. The classic example is siRNA (small interfering RNA),
+
+          which uses double-stranded RNA for gene silencing. The forwardStrand and reverseStrand
+
+          reference the underlying oligo entities, with hydrogen bonds automatically computed
+
+          for base pairing. Structure is defined using HELM notation and can be edited via
+
+          the visual structure editor. Supports versioning (see OligoDuplexVersion) to track
+
+          changes over time.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    OwnerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RnaSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    IDnaSequence:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        annotations:
+          description: 'Annotations on the DNA sequence, not including translations or primers. Annotations on parts are
+
+            not included.'
+          items:
+            $ref: '#/components/schemas/NucleotideAnnotation'
+          type: array
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        bases:
+          description: Bases of the forward strand of the DNA sequence.
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          type: string
+        isCircular:
+          description: Whether the DNA sequence is circular or linear.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        parts:
+          description: Part features on the DNA sequence.
+          format: uri
+          type: string
+        primers:
+          description: Primer bind features on the DNA sequence. Primers on parts are not included.
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+        startIndex:
+          description: Starting index for the sequence residues of linear DNA sequences. Implicitly 1 for other sequence types.
+          type: integer
+        transcriptions:
+          description: Transcriptions, derived from schema field data.
+          items:
+            $ref: '#/components/schemas/Transcription'
+          type: array
+        translations:
+          description: 'Translation annotations present on the DNA sequence. Translations may be one region or split
+
+            across multiple regions. Translations on parts are not included.'
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+      type: object
+    WellPlatePosition:
+      description: 'Represents a single well within a WellPlate, functioning as a fixed container at a
+
+        specific grid position. Each WellPlatePosition has coordinates identifying its row
+
+        and column, can hold sample contents (see ContainerContent), and tracks quantity as
+
+        a Measurement. Wells can be assigned an ExperimentalRole for assay organization and
+
+        support freeze/thaw tracking (see FreezeThawInfo) and expiration tracking (see
+
+        ExpirationInfo) when enabled on the well''s ContainerSchema. Unlike containers in a
+
+        MatrixPlate, WellPlatePositions are permanent parts of the plate structure and cannot
+
+        be removed or repositioned. Wells are accessed through the parent WellPlate''s positions
+
+        field.'
+      properties:
+        __typename:
+          type: string
+        contents:
+          description: Well contents of the well plate.
+          items:
+            $ref: '#/components/schemas/ContainerContent'
+          type: array
+        coordinates:
+          $ref: '#/components/schemas/GridCoordinates'
+          description: Coordinates of the current position within the well plate.
+        createdAt:
+          description: When the well plate was created.
+          format: datetime
+          type: string
+        expirationInfo:
+          $ref: '#/components/schemas/ExpirationInfo'
+          description: Expiration info for the container.
+        id:
+          description: The ID of the container representing the well at this plate position.
+          type: string
+        modifiedAt:
+          description: When the well plate was last modified.
+          format: datetime
+          type: string
+        name:
+          description: The name of the container representing the well at this position.
+          type: string
+        quantity:
+          description: Quantity of a well. Supports mass, volume, and other quantities.
+          oneOf:
+          - $ref: '#/components/schemas/Measurement'
+          - type: 'null'
+        role:
+          oneOf:
+          - $ref: '#/components/schemas/ExperimentalRole'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/ContainerSchemaRef'
+          description: The container schema used by wells in the well plate.
+      type: object
+    DnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/IDnaOligo'
+      - description: 'Represents a short single-stranded DNA oligonucleotide in Benchling''s molecular biology
+
+          platform. DNA oligos are typically synthetic sequences used as primers for PCR, probes
+
+          for hybridization assays, or components in cloning workflows. Each oligo stores its
+
+          nucleotide base sequence, annotations for features of interest, and any chemical
+
+          modifications (see ModifiedNucleotide) such as phosphorothioate backbones or fluorescent
+
+          labels. Oligos can be registered in the Registry with unique identifiers, organized in
+
+          folders, and linked to other entities via schema fields. Unlike DnaSequence, oligos are
+
+          specifically designed for shorter, synthesizable sequences. Also referred to as primers
+
+          or probes depending on their application.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    IProtein:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        chains:
+          description: The chains and associated amino acid sequences on the protein.
+          items:
+            $ref: '#/components/schemas/ProteinChain'
+          type: array
+        createdAt:
+          format: datetime
+          type: string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        domains:
+          description: The domains and associated amino acid sequences on the protein.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        format:
+          $ref: '#/components/schemas/ProteinFormatRef'
+          description: The protein format that defines the structure (domains, chains, interactions) for the protein.
+        fullHistory:
+          description: '`fullHistory` is a superset of `history` that also returns inactive versions that are not part of the
+
+            current version history. Versions are returned in chronological order (oldest first).'
+          format: uri
+          type: string
+        history:
+          description: 'Only the currently active version lineage, in chronological order (oldest first).
+
+
+            If a change was made and then undone by resetting to an earlier version, the version recording
+
+            that change is not relevant to the current state of the entity, so it is not included in this listing.'
+          format: uri
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        outOfSync:
+          description: Indicates if constituent domain or chain entities have changed since the protein was last updated.
+          type: boolean
+        outOfSyncReason:
+          description: Any additional information about why the protein is out of sync.
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/EntitySchemaRef'
+      type: object
+    IAaSequence:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          description: Array of aliases
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        aminoAcids:
+          description: Amino acids of the AA sequence.
+          type: string
+        annotations:
+          description: Array of annotation objects on the AA sequence.
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          description: DateTime the AA sequence was created.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          description: Custom fields set on the AA sequence.
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          description: Registry ID of the AA sequence if registered.
+          type:
+          - 'null'
+          - string
+        folder:
+          description: ID of the folder that contains the AA sequence.
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          description: ID of the AA sequence.
+          type: string
+        modifiedAt:
+          description: DateTime the AA sequence was last modified.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: Name of the AA sequence.
+          type: string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          description: Registry the AA sequence is registered in.
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+      type: object
+    NucleotideSimplePolymer:
+      description: 'Represents a nucleic acid strand (DNA or RNA) within a complex polymer structure. Contains the sequence
+
+        residues, any chemical modifications (see ModifiedNucleotide), and connections to other polymers. The entity
+
+        field links to a corresponding DnaSequence, RnaSequence, DnaOligo, or RnaOligo. Used as the backbone component
+
+        in OligoConjugate and as forward/reverse strands in OligoDuplex.'
+      properties:
+        __typename:
+          type: string
+        connections:
+          items:
+            $ref: '#/components/schemas/ComplexPolymerConnection'
+          type: array
+        entity:
+          $ref: '#/components/schemas/NucleotideSequenceRef'
+        helmReference:
+          type: string
+        modifications:
+          description: Chemical modifications applied at specific positions on this strand.
+          items:
+            $ref: '#/components/schemas/ModifiedNucleotide'
+          type: array
+        nucleotideType:
+          description: Whether this strand is DNA or RNA.
+          enum:
+          - DNA
+          - RNA
+          type: string
+        polymerType:
+          type: string
+        residues:
+          description: The nucleotide base sequence of this strand.
+          type: string
+      type: object
+    WorklistPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Worklist'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              propertyName: __typename
+          type: array
+      type: object
+    ContainerContent:
+      description: 'Represents a biological or chemical entity stored within a Container or well. Each
+
+        ContainerContent links an Entity (such as a DNA sequence, protein, or custom entity)
+
+        to its storage location, along with an optional concentration measurement. The
+
+        timestamps track when the entity was first placed in the container and when the
+
+        concentration was last modified. A container can hold multiple ContainerContent
+
+        items representing different entities or samples stored together.'
+      properties:
+        __typename:
+          type: string
+        concentration:
+          description: Concentration of the entity in the container.
+          oneOf:
+          - $ref: '#/components/schemas/Measurement'
+          - type: 'null'
+        createdAt:
+          description: When the container was first filled with this entity.
+          format: datetime
+          type: string
+        entity:
+          description: The entity in the container.
+          oneOf:
+          - $ref: '#/components/schemas/EntityRef'
+          - type: 'null'
+        modifiedAt:
+          description: When the entity was last added to this container or the concentration was last changed.
+          format: datetime
+          type: string
+      type: object
+    MatrixPlateSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    Mixture:
+      allOf:
+      - $ref: '#/components/schemas/IMixture'
+      - description: 'A Mixture is a formulation entity in Benchling that represents a combination of
+
+          ingredients with specified amounts. Mixtures are commonly used for buffers, media,
+
+          reagent preparations, and other multi-component solutions. Each mixture has a total
+
+          amount with units (see MixtureMeasurementUnits) and contains a list of Ingredients
+
+          specifying what goes into the mixture. Mixtures can be registered in the Registry,
+
+          organized in folders and projects, and may have preparation instructions attached
+
+          (see MixtureInstructions). The `allowMeasuredIngredients` setting (from the schema)
+
+          determines whether the mixture is a thoeretical "recipe", which has target amonunts, or a physical "prep",
+
+          with measured amounts.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+        type: object
+    Measurement:
+      description: 'Represents a quantity with an associated unit of measurement within Benchling''s inventory
+
+        system. Measurements are used throughout inventory to track container volumes, sample
+
+        masses, concentrations, and other quantitative values. Each Measurement pairs a numeric
+
+        value with a Unit (see Unit) to provide context-aware quantity handling. For example,
+
+        a container might have a Measurement of 500 uL for its volume. Unlike ContainerQuantity
+
+        which provides a simpler representation, Measurement supports the full Unit system with
+
+        dimensional conversions.'
+      properties:
+        __typename:
+          type: string
+        unit:
+          oneOf:
+          - $ref: '#/components/schemas/UnitRef'
+          - type: 'null'
+        value:
+          type:
+          - 'null'
+          - number
+      type: object
+    MoleculeRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ConnectionSide:
+      description: 'Represents one endpoint of a connection between polymers in a complex polymer structure.
+
+        Identifies the specific attachment point including the polymer reference, residue position
+
+        (for sequences), modification type (for nucleotides), and R-group number (for specific
+
+        attachment sites on monomers). Each ComplexPolymerConnection has a source and target
+
+        ConnectionSide defining the two endpoints of the bond.'
+      properties:
+        __typename:
+          type: string
+        modificationType:
+          description: 'Benchling has no concept of monomer index like HELM does, so specifying the modification type is our way
+
+            of telling the particular monomer for an attachment on a nucleotide polymer.
+
+
+            For non-nucleotide polymers, this is always null since we would only have one monomer at a particular
+
+            index.'
+          enum:
+          - SUGAR
+          - BASE
+          - PHOSPHATE
+          - null
+          type:
+          - 'null'
+          - string
+        polymerRef:
+          description: The ref of the simple polymer connected at this attachment point.
+          type: string
+        rGroup:
+          description: 'The r-group number designates the specific attachment site on the monomer used by this connection.
+
+            If not null, always >= 1.'
+          type:
+          - 'null'
+          - integer
+        residueIndex:
+          description: 'For sequence types, the index of the residue at this attachment point.
+
+
+            residueIndex is always 0 or null for CHEM polymers since we never have more than one "residue".'
+          type:
+          - 'null'
+          - integer
+      type: object
+    IWellPlate:
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: Why the plate is archived
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether the plate is archived
+          type: boolean
+        barcode:
+          description: Barcode of the plate
+          type:
+          - 'null'
+          - string
+        createdAt:
+          description: DateTime the plate was created
+          format: datetime
+          type: string
+        id:
+          description: ID of the plate
+          type: string
+        modifiedAt:
+          description: DateTime the plate was last modified
+          format: datetime
+          type: string
+        name:
+          description: Name of the plate; defaults to barcode if name is not provided
+          type: string
+        parentStorage:
+          description: Containing parent storage
+          oneOf:
+          - $ref: '#/components/schemas/LocationRef'
+          - type: 'null'
+        project:
+          description: The project the plate is associated with
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/WellPlateSchemaRef'
+          description: The schema of the plate
+      type: object
+    ModifiedNucleotide:
+      description: 'Represents a chemically modified nucleotide at a specific position in an oligonucleotide
+
+        sequence. Each modification specifies the sugar, base, and phosphate monomers (see NucleotideMonomer)
+
+        that replace or modify the natural nucleotide at that position. Common modifications include
+
+        2''-O-methyl sugars for stability, phosphorothioate backbones for nuclease resistance, or
+
+        modified bases for binding affinity. Used in NucleotideSimplePolymer to capture the
+
+        modification pattern of therapeutic oligonucleotides.'
+      properties:
+        __typename:
+          type: string
+        baseMonomer:
+          $ref: '#/components/schemas/NucleotideMonomerRef'
+          description: The base monomer for the modification.
+        createdAt:
+          description: DateTime the modification was created.
+          format: datetime
+          type: string
+        id:
+          description: The ID of the modified nucleotide.
+          type: string
+        nucleotideSequence:
+          $ref: '#/components/schemas/NucleotideSequenceRef'
+          description: The nucleotide sequence that this modification belongs to.
+        phosphateMonomer:
+          description: The phosphate monomer for the modification. If empty, it represents a null phosphate at the 5' end of the sequence.
+          oneOf:
+          - $ref: '#/components/schemas/NucleotideMonomerRef'
+          - type: 'null'
+        position:
+          description: 0-based index of the modification.
+          type: integer
+        sugarMonomer:
+          $ref: '#/components/schemas/NucleotideMonomerRef'
+          description: The sugar monomer for the modification.
+      type: object
+    IDnaOligo:
+      properties:
+        __typename:
+          type: string
+        aliases:
+          description: Array of aliases
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        annotations:
+          description: Annotations on the Oligo.
+          items:
+            $ref: '#/components/schemas/NucleotideAnnotation'
+          type: array
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        bases:
+          description: Bases of the Oligo.
+          type: string
+        createdAt:
+          description: DateTime the Oligo was created.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        customFields:
+          description: Custom fields set on the Oligo.
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          description: Registry ID of the Oligo if registered.
+          type:
+          - 'null'
+          - string
+        folder:
+          description: ID of the folder that contains the Oligo.
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        id:
+          description: ID of the Oligo.
+          type: string
+        modifiedAt:
+          description: DateTime the Oligo was last modified.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        modifiedNucleotides:
+          description: Modifications applied to this oligo.
+          format: uri
+          type: string
+        name:
+          description: Name of the Oligo.
+          type: string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          description: Registry the Oligo is registered in.
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+      type: object
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ContainerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PlateSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    IOligoDuplex:
+      description: 'An oligo duplex is a specific type of complex polymer that consists of two complementary DNA/RNA strands, with
+
+        multiple attached molecules on either strand (aka conjugates).'
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        canonicalHelm:
+          type: string
+        conjugates:
+          oneOf:
+          - items:
+              anyOf:
+              - $ref: '#/components/schemas/NucleotideSimplePolymer'
+              - $ref: '#/components/schemas/ChemSimplePolymer'
+              description: Union of NucleotideSimplePolymer, ChemSimplePolymer
+              discriminator:
+                propertyName: __typename
+            type: array
+          - type: 'null'
+        createdAt:
+          format: datetime
+          type: string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityAssociations:
+          items:
+            $ref: '#/components/schemas/EntityAssociation'
+          type: array
+        entityRegistryId:
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        forwardOffset:
+          type:
+          - 'null'
+          - integer
+        forwardStrand:
+          oneOf:
+          - $ref: '#/components/schemas/NucleotideSimplePolymer'
+          - type: 'null'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        originalHelm:
+          type:
+          - 'null'
+          - string
+        outOfSync:
+          type: boolean
+        outOfSyncReason:
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        reverseStrand:
+          oneOf:
+          - $ref: '#/components/schemas/NucleotideSimplePolymer'
+          - type: 'null'
+        schema:
+          $ref: '#/components/schemas/EntitySchemaRef'
+        structure:
+          $ref: '#/components/schemas/ComplexPolymerStructure'
+      type: object
+    UnitRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+  parameters:
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

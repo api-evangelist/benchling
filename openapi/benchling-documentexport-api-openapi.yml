@@ -1,0 +1,323 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Document Export API
+  version: 2.0.0
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- name: DocumentExport
+paths:
+  /document-export:
+    post:
+      description: 'Create an asynchronous task that exports a single item that can be downloaded as a ZIP
+
+        archive. The task can be polled via the returned `pollingUri` for status and, on success,
+
+        a download link.
+
+
+        Supported item types are resolved from the `id` prefix: notebook entries (`etr_`),
+
+        worksheets (`wks_`), sequences (`seq_`), proteins (`prtn_`), and molecules (`mol_`).
+
+
+        In rare cases, attachments still being scanned for viruses are omitted from the export.
+
+        '
+      operationId: DocumentExport.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                format:
+                  description: 'Export format. Only supported for notebook entries (`pdf` or `html`, default
+
+                    `pdf`). All other item types render to their single native output, so providing
+
+                    `format` for a non-entry item is rejected with a 400.
+
+                    '
+                  enum:
+                  - pdf
+                  - html
+                  example: pdf
+                  type: string
+                id:
+                  description: API ID of the item to export.
+                  example: etr_aBcD1234
+                  type: string
+              required:
+              - id
+              type: object
+        description: The item to export and the desired format.
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  pollingUri:
+                    example: https://example.benchling.com/api/v3/tasks/document-export/3f152353-7593-48bc-8049-962890d1be84
+                    type: string
+                  taskId:
+                    example: 3f152353-7593-48bc-8049-962890d1be84
+                    type: string
+                required:
+                - taskId
+                - pollingUri
+                type: object
+          description: Export task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Export a single item to a downloadable file
+      tags:
+      - DocumentExport
+      x-bnch-rate-limit-tier: 2
+  /tasks/document-export/{task_id}:
+    get:
+      description: 'Get the current status of a single-item document export task. When the export completes
+
+        successfully, the response populates a `downloadUrl` where the result can be downloaded.
+
+        The download URL is usable for a limited time after completion.
+
+        '
+      operationId: DocumentExport.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  downloadUrl:
+                    description: 'Link to download the exported file. Populated only when `status` is
+
+                      `COMPLETED`; `null` otherwise.
+
+                      '
+                    example: https://example.benchling.com/api/v3/tasks/document-export/3f152353-7593-48bc-8049-962890d1be84/download
+                    type:
+                    - string
+                    - 'null'
+                  message:
+                    example: Export completed successfully
+                    type: string
+                  status:
+                    description: '- NOT_STARTED: Task has been created but not yet started.
+
+                      - IN_PROGRESS: Task is currently running.
+
+                      - COMPLETED: Export finished successfully; `downloadUrl` is populated.
+
+                      - FAILED: Export encountered an error.
+
+                      '
+                    enum:
+                    - NOT_STARTED
+                    - IN_PROGRESS
+                    - COMPLETED
+                    - FAILED
+                    example: COMPLETED
+                    type: string
+                required:
+                - status
+                - message
+                type: object
+          description: Export task status
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get document export task status
+      tags:
+      - DocumentExport
+      x-bnch-rate-limit-tier: 5
+  /tasks/document-export/{task_id}/download:
+    get:
+      description: 'Redirects (303) to a presigned URL to download the exported file. Returns 404 if no
+
+        completed export is available for the task.
+
+        '
+      operationId: DocumentExportDownload.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '303':
+          content:
+            application/json: {}
+          description: 'Redirect to a short-lived presigned download URL via the `Location` header. The
+
+            response body is empty.
+
+            '
+          headers:
+            Location:
+              description: The presigned URL to download the exported file from.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Download a completed document export
+      tags:
+      - DocumentExport
+      x-bnch-rate-limit-tier: 5
+components:
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

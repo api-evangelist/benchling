@@ -1,0 +1,805 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Procedure Run API
+  version: 2.0.0
+  description: 'An active execution of a procedure template. Created when scientists start running an experiment
+
+    based on a `Procedure`. Contains experimental conditions (`conditions` via `ProcedureRunCondition`)
+
+    and their replicates, which in turn contain method execution instances (`methodExecutionInstances`
+
+    via `ProcedureMethodExecutionInstance`) where actual data are recorded. Links to its template via
+
+    `templateProcedureFlowchartVersion` or `procedureFlowchartConfigVersionProxy` and belongs to a `Study`. The
+
+    `defaultDataEntryMode` (see `ProcedureRunDataEntryMode`) determines whether each condition-replicate has its
+
+    own worksheet or all share one. Workflow orchestration is managed through `workflowRootTaskGroup`.
+
+    Also known as an "experiment" in the Benchling UI.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'An active execution of a procedure template. Created when scientists start running an experiment
+
+    based on a `Procedure`. Contains experimental conditions (`conditions` via `ProcedureRunCondition`)
+
+    and their replicates, which in turn contain method execution instances (`methodExecutionInstances`
+
+    via `ProcedureMethodExecutionInstance`) where actual data are recorded. Links to its template via
+
+    `templateProcedureFlowchartVersion` or `procedureFlowchartConfigVersionProxy` and belongs to a `Study`. The
+
+    `defaultDataEntryMode` (see `ProcedureRunDataEntryMode`) determines whether each condition-replicate has its
+
+    own worksheet or all share one. Workflow orchestration is managed through `workflowRootTaskGroup`.
+
+    Also known as an "experiment" in the Benchling UI.'
+  name: ProcedureRun
+  x-bnch-organization: Benchling
+paths:
+  /procedure-run/items:
+    get:
+      description: List ProcedureRun items.
+      operationId: ProcedureRun.List
+      parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/study.eq'
+      - $ref: '#/components/parameters/templateProcedureFlowchartVersion.anyOf'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcedureRunPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ProcedureRun items
+      tags:
+      - ProcedureRun
+      x-bnch-rate-limit-tier: 4
+  /procedure-run/{procedure_run_id}:
+    get:
+      description: Get a single ProcedureRun by ID.
+      operationId: ProcedureRun.Get
+      parameters:
+      - description: ID of the ProcedureRun.
+        in: path
+        name: procedure_run_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcedureRun'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get ProcedureRun by ID
+      tags:
+      - ProcedureRun
+      x-bnch-rate-limit-tier: 5
+  /procedure-run/{procedure_run_id}/conditions/items:
+    get:
+      description: List ProcedureRunCondition items.
+      operationId: ProcedureRun.conditions.List
+      parameters:
+      - description: ID of the ProcedureRun.
+        in: path
+        name: procedure_run_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcedureRunConditionUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ProcedureRunCondition items
+      tags:
+      - ProcedureRun
+      x-bnch-rate-limit-tier: 4
+  /procedure-run/{procedure_run_id}/method-execution-instances/items:
+    get:
+      description: List ProcedureMethodExecutionInstance items.
+      operationId: ProcedureRun.methodExecutionInstances.List
+      parameters:
+      - description: ID of the ProcedureRun.
+        in: path
+        name: procedure_run_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcedureMethodExecutionInstanceUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ProcedureMethodExecutionInstance items
+      tags:
+      - ProcedureRun
+      x-bnch-rate-limit-tier: 4
+components:
+  schemas:
+    ProcedureRunPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureRun'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ProcedureStepExecutionInstanceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureRunRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureRun:
+      description: 'An active execution of a procedure template. Created when scientists start running an experiment
+
+        based on a `Procedure`. Contains experimental conditions (`conditions` via `ProcedureRunCondition`)
+
+        and their replicates, which in turn contain method execution instances (`methodExecutionInstances`
+
+        via `ProcedureMethodExecutionInstance`) where actual data are recorded. Links to its template via
+
+        `templateProcedureFlowchartVersion` or `procedureFlowchartConfigVersionProxy` and belongs to a `Study`. The
+
+        `defaultDataEntryMode` (see `ProcedureRunDataEntryMode`) determines whether each condition-replicate has its
+
+        own worksheet or all share one. Workflow orchestration is managed through `workflowRootTaskGroup`.
+
+        Also known as an "experiment" in the Benchling UI.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        conditions:
+          description: An ordered list of the conditions that are part of this ProcedureRun.
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        description:
+          type: string
+        id:
+          type: string
+        methodExecutionInstances:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        procedureFlowchartConfigVersionProxy:
+          description: 'A simplified view of the flowchart config for this run. This is the preferred
+
+            way to access the flowchart config.'
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionProxyRef'
+          - type: 'null'
+        procedureType:
+          enum:
+          - RECIPE
+          - ASSAY
+          type: string
+        templateProcedureFlowchartVersion:
+          $ref: '#/components/schemas/ProcedureFlowchartVersionRef'
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureMethodDefinitionVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureMethodExecutionInstanceUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureMethodExecutionInstance'
+          type: array
+      type: object
+    ProcedureMethodExecutionInstance:
+      description: 'An instance of a method being executed within a procedure run. When a scientist runs a
+
+        procedure, each method in the flowchart becomes a ProcedureMethodExecutionInstance that tracks
+
+        the actual execution: the worksheet where data is entered (`worksheet`), the associated task
+
+        (`methodTask`), step groups with execution instances (`stepGroups`), and all parameter values
+
+        (planned, confirmed, and measured). Links to its `ProcedureRun`, the template method it''s based
+
+        on (`templateMethodVersion`), and the specific condition/replicate it belongs to
+
+        (`procedureRunConditionReplicate`). Material flow between methods is tracked via
+
+        `sourceProcedureMethodExecutionInstanceAssociations` and
+
+        `targetProcedureMethodExecutionInstanceAssociations`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type: string
+        dataParameterActualValues:
+          format: uri
+          type: string
+        dataParameterConfirmationValues:
+          format: uri
+          type: string
+        dataParameterPlannedValues:
+          description: Source of truth for this specific PMEI's planned data parameter values, with any condition overrides.
+          format: uri
+          type: string
+        equipmentConfirmationValues:
+          format: uri
+          type: string
+        equipmentPlannedValues:
+          description: Source of truth for this specific PMEI's planned equipment values, with any condition overrides.
+          format: uri
+          type: string
+        id:
+          type: string
+        materialInputConfirmationValues:
+          format: uri
+          type: string
+        materialInputPlannedValues:
+          description: 'Source of truth for this specific PMEI''s planned material input values, with any condition overrides.
+
+
+            Note: This will not include any process intermediate values when previous methods have not yet been
+
+            completed.'
+          format: uri
+          type: string
+        materialOutputConfirmationValues:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        procedureRun:
+          $ref: '#/components/schemas/ProcedureRunRef'
+        procedureRunConditionReplicate:
+          $ref: '#/components/schemas/ProcedureRunConditionReplicateRef'
+        stepGroups:
+          items:
+            $ref: '#/components/schemas/ProcedureExecutionStepGroup'
+          type: array
+        taskTransitionExtensions:
+          items:
+            $ref: '#/components/schemas/TaskTransitionExtension'
+          type: array
+        templateMethodVersion:
+          $ref: '#/components/schemas/ProcedureMethodDefinitionVersionRef'
+          description: 'The "template" method version represents the PMDV on the procedure template that this PMEI is based on.
+
+
+            In most cases this is equivalent to the planMethodVersion. They only differ on older legacy
+
+            ProcedureRuns, where "plan" PMDVs belong to a legacy "plan" ProcedureFlowchart model and we compiled a
+
+            dedicated ProcedureFlowchart for this run (with its own PMDVs) based on the template''s legacy ProcedureFlowchart.
+
+
+            Do not directly use the parameter planned values from this PMDV. dataParameterPlannedValues, materialInputPlannedValues,
+
+            and equipmentPlannedValues on the PMEI itself are the source of truth instead, since they account for
+
+            experiment planning condition overrides that are not reflected on the PMDV.
+
+
+            Do not use the confirmation methods from the parameter versions in this PMDV. parameterConfirmationMethods
+
+            on the PMEI itself is the source of truth instead, since it accounts for experiment planning condition
+
+            overrides that are not reflected on the PMDV.'
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureRunConditionUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureRunCondition'
+          type: array
+      type: object
+    ProcedureRunConditionReplicateRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureRunCondition:
+      description: "A ProcedureRunCondition represents a configuration of the methods of a Procedure that is being\nexecuted within a ProcedureRun.\n\nThe values associated with the ProcedureRunCondition are not exposed on the ProcedureRunCondition itself,\nbut instead can be found by traversing:\n\n    ProcedureRunCondition\n    -> ProcedureRunConditionReplicate   (pick any, since every replicate uses the same set of values)\n    -> ProcedureMethodExecutionInstance (join all, since each method has its own set of values)\n    -> ProcedureMethodDefinitionVersion\n    -> ProcedureParameterValueSet"
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          description: The user-defined description of the condition.
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          description: 'The user-defined name of the condition. In M1, this is non-user-configurable and instead auto-generated,
+
+            e.g. "Condition 1", "Condition 2", etc.'
+          type: string
+        procedureRun:
+          $ref: '#/components/schemas/ProcedureRunRef'
+          description: The ProcedureRun that this condition is a part of.
+        procedureRunConditionReplicates:
+          description: 'The replicates of this condition, each representing an execution of a Procedure with the same configuration.
+
+            The number of replicates is chosen by the user while designing their experiment, but must be at least 1.'
+          format: uri
+          type: string
+      type: object
+    TaskTransitionExtension:
+      description: 'Records a status change event on a method task during procedure execution. Captures the
+
+        comment provided, the human-readable status name, and the timestamp when the transition
+
+        occurred. Used to track the history of task state changes.'
+      properties:
+        __typename:
+          type: string
+        comment:
+          type: string
+        statusDisplayName:
+          type: string
+        timestampUtcIsoformat:
+          type: string
+      type: object
+    ProcedureFlowchartVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureFlowchartConfigVersionProxyRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureExecutionStepGroup:
+      description: 'Groups step execution instances by their execution phase during a procedure run. Analogous
+
+        to `ProcedureStepGroup` but contains actual execution instances (`ProcedureStepExecutionInstance`)
+
+        rather than step definitions. Each group''s steps are ordered by execution sequence.'
+      properties:
+        __typename:
+          type: string
+        group:
+          enum:
+          - PRE_RUN
+          - RUN
+          - POST_RUN
+          type: string
+        steps:
+          items:
+            $ref: '#/components/schemas/ProcedureStepExecutionInstanceRef'
+          type: array
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    study.eq:
+      description: ID of a study. Restricts results to only those that are part of the specified study.
+      in: query
+      name: study.eq
+      schema:
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    templateProcedureFlowchartVersion.anyOf:
+      description: Restricts results to only those created from template procedure flowchart versions matching any of the specified template procedure flowchart version IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: templateProcedureFlowchartVersion.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

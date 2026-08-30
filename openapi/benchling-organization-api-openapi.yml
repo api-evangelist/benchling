@@ -1,0 +1,522 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Organization API
+  version: 2.0.0
+  description: 'Represents a group of users within Benchling, typically corresponding to a company,
+
+    department, or research group. Organizations provide a many-to-many relationship between
+
+    users—each user can belong to multiple organizations, and each organization can have
+
+    multiple users. Users are designated as either ADMIN (with management privileges) or
+
+    MEMBER within the organization via `GroupMembership`. Organizations can own resources
+
+    like Projects and Folders, and can contain Teams for finer-grained user grouping.
+
+    Organizations also control access settings such as whether members can create personal
+
+    ownables and what default policies apply to new resources. In the UI, organizations
+
+    appear in user profiles and are used for sharing and access control throughout Benchling.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Represents a group of users within Benchling, typically corresponding to a company,
+
+    department, or research group. Organizations provide a many-to-many relationship between
+
+    users—each user can belong to multiple organizations, and each organization can have
+
+    multiple users. Users are designated as either ADMIN (with management privileges) or
+
+    MEMBER within the organization via `GroupMembership`. Organizations can own resources
+
+    like Projects and Folders, and can contain Teams for finer-grained user grouping.
+
+    Organizations also control access settings such as whether members can create personal
+
+    ownables and what default policies apply to new resources. In the UI, organizations
+
+    appear in user profiles and are used for sharing and access control throughout Benchling.'
+  name: Organization
+  x-bnch-organization: Benchling
+paths:
+  /organization/items:
+    get:
+      description: List Organization items.
+      operationId: Organization.List
+      parameters:
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Organization items
+      tags:
+      - Organization
+      x-bnch-rate-limit-tier: 4
+  /organization/{organization_id}:
+    get:
+      description: Get a single Organization by ID.
+      operationId: Organization.Get
+      parameters:
+      - description: ID of the Organization.
+        in: path
+        name: organization_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get Organization by ID
+      tags:
+      - Organization
+      x-bnch-rate-limit-tier: 5
+  /organization/{organization_id}/memberships/items:
+    get:
+      description: List GroupMembership items.
+      operationId: Organization.memberships.List
+      parameters:
+      - description: ID of the Organization.
+        in: path
+        name: organization_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMembershipUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List GroupMembership items
+      tags:
+      - Organization
+      x-bnch-rate-limit-tier: 4
+components:
+  schemas:
+    GroupMembershipUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/GroupMembership'
+          type: array
+      type: object
+    GroupMembership:
+      description: 'Indicates that a Principal is a member of Group. Role indicates that the Principal is
+
+        a member of a subgroup, such as Admins of the Group. Teams are the canonical example
+
+        of a Group.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        group:
+          $ref: '#/components/schemas/Group'
+        id:
+          type: string
+        member:
+          $ref: '#/components/schemas/PrincipalRef'
+        modifiedAt:
+          format: datetime
+          type: string
+        role:
+          enum:
+          - MEMBER
+          - ADMIN
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Organization'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    Group:
+      anyOf:
+      - $ref: '#/components/schemas/Organization'
+      - $ref: '#/components/schemas/Team'
+      discriminator:
+        propertyName: __typename
+      type: object
+    Team:
+      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
+
+        management and data sharing. Teams belong to exactly one organization, and users may
+
+        only join a team if they are already members of that team''s parent organization. Each
+
+        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
+
+        team membership, while members receive standard access. Unlike Organizations, teams
+
+        cannot directly own Projects or Folders—they are used for collaboration and access
+
+        control purposes. Teams can be configured with `provisionedCapabilities` to grant
+
+        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
+
+        flag controls whether team members can create and modify certain schema types.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: 'Indicates that members of the team are able to create and modify schemas that do not implement the
+
+            Collaboratable interface.'
+          type: boolean
+        memberships:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    Organization:
+      description: 'Represents a group of users within Benchling, typically corresponding to a company,
+
+        department, or research group. Organizations provide a many-to-many relationship between
+
+        users—each user can belong to multiple organizations, and each organization can have
+
+        multiple users. Users are designated as either ADMIN (with management privileges) or
+
+        MEMBER within the organization via `GroupMembership`. Organizations can own resources
+
+        like Projects and Folders, and can contain Teams for finer-grained user grouping.
+
+        Organizations also control access settings such as whether members can create personal
+
+        ownables and what default policies apply to new resources. In the UI, organizations
+
+        appear in user profiles and are used for sharing and access control throughout Benchling.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        handle:
+          type: string
+        id:
+          type: string
+        memberships:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

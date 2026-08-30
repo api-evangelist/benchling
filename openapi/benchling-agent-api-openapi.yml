@@ -1,0 +1,327 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Agent API
+  version: 2.0.0
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- name: Agent
+paths:
+  /agents:
+    post:
+      description: Create or continue a chat with an agent
+      operationId: Agent.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            examples:
+              benchling_ask_v1:
+                value:
+                  agent: benchling_ask_v1
+                  input:
+                  - text: What is the most recently created entry?
+                    type: text
+              benchling_deep_research_v1:
+                value:
+                  agent: benchling_deep_research_v1
+                  input:
+                  - text: What should I do next?
+                    type: text
+                  sources:
+                  - type: public_data
+              new_chat:
+                value:
+                  input:
+                  - text: What should I do next?
+                    type: text
+                  sources:
+                  - type: public_data
+            schema:
+              $ref: '#/components/schemas/CreateAgentInput'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  pollingUri:
+                    type: string
+                  taskId:
+                    type: string
+                type: object
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create or continue a chat with an agent
+      tags:
+      - Agent
+      x-bnch-rate-limit-tier: 2
+components:
+  schemas:
+    ConnectorsInput:
+      additionalProperties: false
+      properties:
+        mode:
+          description: '"none" disables connectors and "all_connected" enables all active connectors for the current user. A future "explicit" mode with an "ids" field is planned but is not currently supported.'
+          enum:
+          - none
+          - all_connected
+          type: string
+      required:
+      - mode
+      type: object
+    BaseCreateMessageBlockInput:
+      allOf:
+      - properties:
+          type:
+            enum:
+            - text
+            type: string
+        required:
+        - type
+      - oneOf:
+        - $ref: '#/components/schemas/CreateTextMessageBlockInput'
+      discriminator:
+        propertyName: type
+      type: object
+    CreateAgentInput:
+      additionalProperties: false
+      properties:
+        agent:
+          deprecated: true
+          description: Deprecated agent identifier to use.
+          enum:
+          - benchling_deep_research_v1
+          - benchling_ask_v1
+          type: string
+        chatId:
+          description: Existing chat ID to append to; omit to start a new chat.
+          type:
+          - 'null'
+          - string
+        connectors:
+          $ref: '#/components/schemas/ConnectorsInput'
+          description: 'Connector selection for this request. Omitting this field is equivalent to {"mode": "none"}. Only available when "agent" and "sources" are omitted.'
+        editingTarget:
+          $ref: '#/components/schemas/EditingTargetInput'
+          description: Benchling object (e.g. entry) to edit via a new chat. Not allowed when "agent" or "chatId" are specified.
+        input:
+          description: Ordered list of user message blocks.
+          items:
+            $ref: '#/components/schemas/BaseCreateMessageBlockInput'
+          type: array
+        sources:
+          description: Data sources the agent may use. Not available for benchling_ask_v1.
+          items:
+            $ref: '#/components/schemas/ChatSourceInput'
+          type: array
+      required:
+      - input
+      type: object
+    EditingTargetInput:
+      allOf:
+      - properties:
+          type:
+            enum:
+            - entry
+            type: string
+        required:
+        - type
+      - oneOf:
+        - $ref: '#/components/schemas/EntryEditingTargetInput'
+      discriminator:
+        propertyName: type
+      type: object
+    PublicDataChatSourceInput:
+      additionalProperties: false
+      properties:
+        type:
+          enum:
+          - public_data
+          type: string
+      required:
+      - type
+      type: object
+    ChatSourceInput:
+      allOf:
+      - properties:
+          type:
+            enum:
+            - mcp_server
+            - public_data
+            type: string
+        required:
+        - type
+      - oneOf:
+        - $ref: '#/components/schemas/McpServerChatSourceInput'
+        - $ref: '#/components/schemas/PublicDataChatSourceInput'
+      discriminator:
+        propertyName: type
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateTextMessageBlockInput:
+      additionalProperties: false
+      properties:
+        text:
+          type: string
+        type:
+          enum:
+          - text
+          type: string
+      required:
+      - type
+      - text
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    McpServerChatSourceInput:
+      additionalProperties: false
+      properties:
+        serverId:
+          description: API ID of the MCP server to enable (e.g. mcpconf_abc123).
+          type: string
+        type:
+          enum:
+          - mcp_server
+          type: string
+      required:
+      - type
+      - serverId
+      type: object
+    EntryEditingTargetInput:
+      additionalProperties: false
+      properties:
+        id:
+          description: API ID of the notebook entry to edit.
+          type: string
+        type:
+          enum:
+          - entry
+          type: string
+      required:
+      - type
+      - id
+      type: object
+  responses:
+    PaymentRequired:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Payment Required
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

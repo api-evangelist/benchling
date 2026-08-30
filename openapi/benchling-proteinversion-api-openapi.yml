@@ -1,0 +1,548 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Protein Version API
+  version: 2.0.0
+  description: 'A historical snapshot of an `Protein` at a specific point in time, preserving the complete
+
+    structural state including domains, chains, and HELM notation. Protein versions form a
+
+    lineage that tracks changes over time. Each version records its creator and creation time.
+
+    The parent field links to the version this one was derived from. Versions may become out of
+
+    sync with their constituent entities if underlying sequences change.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'A historical snapshot of an `Protein` at a specific point in time, preserving the complete
+
+    structural state including domains, chains, and HELM notation. Protein versions form a
+
+    lineage that tracks changes over time. Each version records its creator and creation time.
+
+    The parent field links to the version this one was derived from. Versions may become out of
+
+    sync with their constituent entities if underlying sequences change.'
+  name: ProteinVersion
+  x-bnch-organization: Benchling
+paths:
+  /protein-version/items:
+    get:
+      description: List ProteinVersion items.
+      operationId: ProteinVersion.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is createdAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: createdAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProteinVersionPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ProteinVersion items
+      tags:
+      - ProteinVersion
+      x-bnch-rate-limit-tier: 4
+  /protein-version/{protein_version_id}:
+    get:
+      description: Get a single ProteinVersion by ID.
+      operationId: ProteinVersion.Get
+      parameters:
+      - description: ID of the ProteinVersion.
+        in: path
+        name: protein_version_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProteinVersion'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get ProteinVersion by ID
+      tags:
+      - ProteinVersion
+      x-bnch-rate-limit-tier: 5
+components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    ProteinFormatChainPosition:
+      description: 'Defines each instance of a polypeptide chain within a `ProteinFormat`, specifying the chain type and
+
+        its constituent domains. Each chain position has a unique ref identifier and lists the domain positions
+
+        (see `ProteinFormatDomainPosition`) that compose it in order from N-terminus to C-terminus.
+
+        For example, a heavy chain position might reference domain positions [VH, CH1, Hinge, CH2, CH3].'
+      properties:
+        __typename:
+          type: string
+        domainPositions:
+          description: A list of all the domain positions that make up the chain position, in order
+          items:
+            $ref: '#/components/schemas/ProteinFormatDomainPosition'
+          type: array
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
+    ProteinFormatRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProteinVersion:
+      description: 'A historical snapshot of an `Protein` at a specific point in time, preserving the complete
+
+        structural state including domains, chains, and HELM notation. Protein versions form a
+
+        lineage that tracks changes over time. Each version records its creator and creation time.
+
+        The parent field links to the version this one was derived from. Versions may become out of
+
+        sync with their constituent entities if underlying sequences change.'
+      properties:
+        __typename:
+          type: string
+        chains:
+          description: The chains and associated amino acid sequences on the protein.
+          items:
+            $ref: '#/components/schemas/ProteinChain'
+          type: array
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        domains:
+          description: The domains and associated amino acid sequences on the protein.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        format:
+          $ref: '#/components/schemas/ProteinFormatRef'
+          description: The protein format that defines the structure (domains, chains, interactions) for the protein.
+        id:
+          type: string
+        name:
+          type: string
+        outOfSync:
+          description: Indicates if constituent domain or chain entities have changed since the protein was last updated.
+          type: boolean
+        outOfSyncReason:
+          description: Any additional information about why the protein is out of sync.
+          type:
+          - 'null'
+          - string
+        parent:
+          description: The parent version of the protein.
+          oneOf:
+          - $ref: '#/components/schemas/ProteinVersionRef'
+          - type: 'null'
+      type: object
+    ProteinDomain:
+      description: 'Represents a domain within an `Protein`, containing the actual amino acid sequence for a specific label.
+
+        Unlike `ProteinFormatDomain` which is a template, `ProteinDomain` is a concrete instance of the domain and
+
+        links to the underlying amino acid sequence entity.'
+      properties:
+        __typename:
+          type: string
+        domainPositions:
+          description: 'Each domain position of this domain in the protein. If this domain appears multiple times in the physical
+
+            structure of the protein, each domain position will be listed here.'
+          items:
+            $ref: '#/components/schemas/ProteinFormatDomainPosition'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the domain.
+        label:
+          description: A human-readable label for the domain.
+          type: string
+        type:
+          description: The type of the domain.
+          enum:
+          - VL
+          - CL
+          - VH
+          - VHH
+          - CH1
+          - CH2
+          - CH3
+          - CH4
+          - J
+          - H
+          - L
+          - VA
+          - CA
+          - VB
+          - CB
+          - VG
+          - CG
+          - VD
+          - CD
+          - F
+          - ELEMENT
+          type: string
+      type: object
+    AaSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinVersionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProteinVersion'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinFormatDomainPosition:
+      description: 'Defines a domain position within a1 `ProteinFormat`, specifying the domain type and identity of each
+
+        physical domain in the protein format. Each domain position has a unique ref identifier used
+
+        to construct HELM notation for complex polymer structures. Domain positions are grouped into ProteinFormatDomains,
+
+        and each group can be uniquely identified by its label, and will be a single amino acid sequence entity in proteins
+
+        of this format.'
+      properties:
+        __typename:
+          type: string
+        optional:
+          description: Whether this domain is optional in the format. If true, entities of this format may not have this domain.
+          type: boolean
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the domain
+          enum:
+          - VL
+          - CL
+          - VH
+          - VHH
+          - CH1
+          - CH2
+          - CH3
+          - CH4
+          - J
+          - H
+          - L
+          - VA
+          - CA
+          - VB
+          - CB
+          - VG
+          - CG
+          - VD
+          - CD
+          - F
+          - ELEMENT
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProteinChain:
+      description: 'Represents a polypeptide chain within an `Protein`, containing the domain composition. Each chain has a
+
+        computed label derived from the format.'
+      properties:
+        __typename:
+          type: string
+        chainPositions:
+          description: 'Each chain position of this chain in the protein. If a chain has multiplicity > 1, each chain position
+
+            will be listed here.'
+          items:
+            $ref: '#/components/schemas/ProteinFormatChainPosition'
+          type: array
+        domains:
+          description: Each domain on the chain, ordered according to the format.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the chain.
+        label:
+          description: Unique label for the chain, computed from the format.
+          type: string
+        type:
+          description: The type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

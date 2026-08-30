@@ -1,0 +1,550 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Audit Log API
+  version: 2.0.0
+  description: Represents a single entry in an object's audit log. Each entry captures what changed, who made the change, and contextual information about the affected object hierarchy.
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Represents a single entry in an object's audit log. Each entry captures what changed, who made the change, and contextual information about the affected object hierarchy.
+  name: AuditLog
+  x-bnch-organization: Benchling
+paths:
+  /audit-log/items:
+    get:
+      description: List AuditLog items.
+      operationId: AuditLog.List
+      parameters:
+      - $ref: '#/components/parameters/action.anyOf'
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/objectId.anyOf'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/reasonCode.anyOf'
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/userId.anyOf'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is createdAt:asc.'
+        in: query
+        name: sort
+        schema:
+          default: createdAt:asc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List AuditLog items
+      tags:
+      - AuditLog
+      x-bnch-rate-limit-tier: 4
+  /audit-log/{audit_log_id}:
+    get:
+      description: Get a single AuditLog by ID.
+      operationId: AuditLog.Get
+      parameters:
+      - description: ID of the AuditLog.
+        in: path
+        name: audit_log_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get AuditLog by ID
+      tags:
+      - AuditLog
+      x-bnch-rate-limit-tier: 5
+  /audit-log:export:
+    post:
+      description: Export the full audit log for an object as a CSV or PDF file
+      operationId: AuditLog.Export
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditLogExportInput'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Export the full audit log for an object as a CSV or PDF file
+      tags:
+      - AuditLog
+      x-bnch-rate-limit-tier: 4
+  /tasks/audit-log/export/{task_id}:
+    get:
+      description: Poll status for Export the full audit log for an object as a CSV or PDF file.
+      operationId: AuditLog.Export.Get
+      parameters:
+      - description: ID of the asynchronous task to poll.
+        in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                  result:
+                    oneOf:
+                    - $ref: '#/components/schemas/AuditLogExportOutput'
+                    - type: 'null'
+                  status:
+                    enum:
+                    - NOT_STARTED
+                    - IN_PROGRESS
+                    - COMPLETED
+                    - FAILED
+                    type: string
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Poll async task status
+      tags:
+      - AuditLog
+      x-bnch-rate-limit-tier: 5
+components:
+  schemas:
+    AuditLog:
+      description: Represents a single entry in an object's audit log. Each entry captures what changed, who made the change, and contextual information about the affected object hierarchy.
+      properties:
+        __typename:
+          type: string
+        action:
+          type: string
+        clientId:
+          type:
+          - 'null'
+          - string
+        clientName:
+          type:
+          - 'null'
+          - string
+        createdAt:
+          format: datetime
+          type: string
+        delegateUser:
+          type:
+          - 'null'
+          - string
+        electronicallySigned:
+          type: string
+        eventDescription:
+          type: string
+        id:
+          type: string
+        ipAddress:
+          type: string
+        item:
+          type: string
+        itemDeveloperId:
+          type: string
+        itemId:
+          type:
+          - 'null'
+          - string
+        itemType:
+          type: string
+        newValue:
+          type:
+          - 'null'
+          - string
+        oldValue:
+          type:
+          - 'null'
+          - string
+        parentItem1:
+          type:
+          - 'null'
+          - string
+        parentItem1DeveloperId:
+          type:
+          - 'null'
+          - string
+        parentItem1Type:
+          type:
+          - 'null'
+          - string
+        parentItem2:
+          type:
+          - 'null'
+          - string
+        parentItem2DeveloperId:
+          type:
+          - 'null'
+          - string
+        parentItem2Type:
+          type:
+          - 'null'
+          - string
+        parentItem3:
+          type:
+          - 'null'
+          - string
+        parentItem3DeveloperId:
+          type:
+          - 'null'
+          - string
+        parentItem3Type:
+          type:
+          - 'null'
+          - string
+        reasonCode:
+          type:
+          - 'null'
+          - string
+        reasonComment:
+          type:
+          - 'null'
+          - string
+        transactionId:
+          type: string
+        userHandle:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    AuditLogExportInput:
+      additionalProperties: false
+      properties:
+        format:
+          enum:
+          - CSV
+          - PDF
+          type: string
+        objectId:
+          type: string
+      required:
+      - objectId
+      - format
+      type: object
+    AuditLogPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AuditLog'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AuditLogExportOutput:
+      description: Output of the audit log export custom method. Contains a presigned download URL for the exported file.
+      properties:
+        downloadUrl:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    reasonCode.anyOf:
+      description: Restricts results to audit logs with any of the specified reason codes. Comma-separated list.
+      explode: false
+      in: query
+      name: reasonCode.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    objectId.anyOf:
+      description: Retrieves audit logs for the specified object API IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: objectId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    userId.anyOf:
+      description: Restricts results to those associated with any of the specified user API IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: userId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    action.anyOf:
+      description: Restricts results to audit logs matching any of the specified action display names (e.g. 'Updated name', 'Created'). Comma-separated list.
+      explode: false
+      in: query
+      name: action.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

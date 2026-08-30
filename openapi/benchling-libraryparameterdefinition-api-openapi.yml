@@ -1,0 +1,910 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Library Parameter Definition API
+  version: 2.0.0
+  description: 'A reusable parameter definition stored in the Parameter Library. LibraryParameterDefinitions allow
+
+    organizations to standardize parameters used across multiple procedures by defining a name, description, data
+
+    type, and optional unit type. When creating procedure parameters, users can link to a library parameter
+
+    definition to inherit its settings, ensuring consistency across experiments.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'A reusable parameter definition stored in the Parameter Library. LibraryParameterDefinitions allow
+
+    organizations to standardize parameters used across multiple procedures by defining a name, description, data
+
+    type, and optional unit type. When creating procedure parameters, users can link to a library parameter
+
+    definition to inherit its settings, ensuring consistency across experiments.'
+  name: LibraryParameterDefinition
+  x-bnch-organization: Benchling
+paths:
+  /library-parameter-definition:
+    post:
+      description: 'Create a new library parameter definition in the Parameter Library.
+
+        ## Required fields
+
+        | Field | Description |
+
+        | --- | --- |
+
+        | `name` | Display name (1-44 characters, must contain at least one alphanumeric character) |
+
+        | `description` | What this parameter measures or represents (max 2048 characters) |
+
+        | `dataType` | One of `FLOAT`, `DATETIME`, `TEXT`, or `DROPDOWN` |
+
+
+        ## Conditionally required fields
+
+        - **`unitTypeId`** — Required when `dataType` is `FLOAT`. Must be omitted or null otherwise. Obtain a valid ID from `GET /benchling/unit-type/items`.
+
+        - **`schemaFieldSelectorId`** — Required when `dataType` is `DROPDOWN`. Must be omitted or null otherwise. Obtain a valid ID from `GET /benchling/dropdown/items`.
+
+
+        ## Notes
+
+        - The **creator** is automatically set to the authenticated user or app. The deprecated `creatorId` field is ignored.
+
+        - `dataType` and `unitTypeId` are **immutable** after creation.
+
+        - There is a per-tenant limit on the total number of library parameter definitions.'
+      operationId: LibraryParameterDefinition.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLibraryParameterDefinitionInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryParameterDefinition'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create LibraryParameterDefinition
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 4
+  /library-parameter-definition/items:
+    get:
+      description: List LibraryParameterDefinition items.
+      operationId: LibraryParameterDefinition.List
+      parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryParameterDefinitionPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List LibraryParameterDefinition items
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 4
+  /library-parameter-definition/{library_parameter_definition_id}:
+    get:
+      description: Get a single LibraryParameterDefinition by ID.
+      operationId: LibraryParameterDefinition.Get
+      parameters:
+      - description: ID of the LibraryParameterDefinition.
+        in: path
+        name: library_parameter_definition_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryParameterDefinition'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get LibraryParameterDefinition by ID
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 5
+    patch:
+      description: 'Update a library parameter definition.
+
+        ## Updatable fields
+
+        | Field | Description |
+
+        | --- | --- |
+
+        | `name` | Display name (1-44 characters, at least one alphanumeric character) |
+
+        | `description` | Parameter description (max 2048 characters) |
+
+
+        ## Archiving
+
+        To archive, set all three fields together:
+
+        - `archived`: `true`
+
+        - `archiveReason`: a non-empty string explaining why
+
+        - `archiveUserId`: the ID of the user performing the archive (format: `ent_XXXXXXXX`)
+
+
+        To unarchive, set `archived` to `false`.
+
+
+        ## Immutable fields
+
+        The following fields are set at creation and **cannot be changed** via update:
+
+        - `dataType`
+
+        - `unitTypeId`'
+      operationId: LibraryParameterDefinition.Update
+      parameters:
+      - description: ID of the LibraryParameterDefinition.
+        in: path
+        name: library_parameter_definition_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLibraryParameterDefinitionInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryParameterDefinition'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update LibraryParameterDefinition
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 4
+  /library-parameter-definition:batch-create:
+    post:
+      description: Batch create LibraryParameterDefinition synchronously in one transaction. Maximum 25 items per request.
+      operationId: LibraryParameterDefinition.BatchCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateLibraryParameterDefinitionInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/LibraryParameterDefinition'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create LibraryParameterDefinition
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 3
+  /library-parameter-definition:batch-update:
+    patch:
+      description: Batch update LibraryParameterDefinition synchronously in one transaction. Maximum 25 items per request.
+      operationId: LibraryParameterDefinition.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateLibraryParameterDefinitionInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/LibraryParameterDefinition'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update LibraryParameterDefinition
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 3
+  /library-parameter-definition:bulk-create:
+    post:
+      description: 'Bulk create library parameter definitions asynchronously. Returns an async task link — poll the task to retrieve created object IDs.
+
+
+        Each item in the request array follows the same field requirements as the single-create endpoint. Partial failures are reported per-item in the task result.
+
+
+        See `POST /benchling/library-parameter-definition` for field details and constraints.'
+      operationId: LibraryParameterDefinition.BulkCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create LibraryParameterDefinition
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 2
+  /library-parameter-definition:bulk-update:
+    patch:
+      description: 'Bulk update library parameter definitions asynchronously. Returns an async task link — poll the task to check status.
+
+
+        Each item in the request array follows the same field requirements as the single-update endpoint. Partial failures are reported per-item in the task result.
+
+
+        See `PATCH /benchling/library-parameter-definition/{library_parameter_definition_id}` for field details and constraints.'
+      operationId: LibraryParameterDefinition.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update LibraryParameterDefinition
+      tags:
+      - LibraryParameterDefinition
+      x-bnch-rate-limit-tier: 2
+components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    UpdateLibraryParameterDefinitionInputWithPathParams:
+      additionalProperties: false
+      example:
+        description: The temperature at which the sample is incubated, measured in Celsius.
+        id: pardef_mG7kLpQw
+        name: Incubation Temperature (Updated)
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Updated description. Maximum 2048 characters.
+          type: string
+        id:
+          type: string
+        name:
+          description: Updated display name. Must contain at least one alphanumeric character. Maximum 44 characters.
+          type: string
+      required:
+      - id
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateLibraryParameterDefinitionInput:
+      additionalProperties: false
+      example:
+        dataType: FLOAT
+        description: The temperature at which the sample is incubated during the reaction step.
+        name: Incubation Temperature
+        unitTypeId: qnty_k8Rt4vNp
+      properties:
+        creatorId:
+          deprecated: true
+          description: Deprecated. This field is ignored — the creator is always set to the authenticated user.
+          type: string
+        dataType:
+          description: 'The data type of values recorded for this parameter. Determines which additional fields are required: `FLOAT` requires `unitTypeId`, `DROPDOWN` requires `schemaFieldSelectorId`. Cannot be changed after creation.'
+          enum:
+          - FLOAT
+          - DATETIME
+          - TEXT
+          - DROPDOWN
+          type: string
+        description:
+          description: A description of what this parameter measures or represents. Maximum 2048 characters.
+          type: string
+        name:
+          description: Display name for the parameter definition. Must contain at least one alphanumeric character. Maximum 44 characters.
+          type: string
+        unitTypeId:
+          description: 'The ID of the unit type for this parameter. Required when `dataType` is `FLOAT`, forbidden otherwise. Use `GET /benchling/unit-type/items` to list available unit types. Format: `qnty_XXXXXXXX`.'
+          type:
+          - 'null'
+          - string
+      required:
+      - name
+      - description
+      - dataType
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    LibraryParameterDefinition:
+      description: 'A reusable parameter definition stored in the Parameter Library. LibraryParameterDefinitions allow
+
+        organizations to standardize parameters used across multiple procedures by defining a name, description, data
+
+        type, and optional unit type. When creating procedure parameters, users can link to a library parameter
+
+        definition to inherit its settings, ensuring consistency across experiments.'
+      properties:
+        __typename:
+          type: string
+        archiveDatetime:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archiveUser:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        dataType:
+          enum:
+          - AA_PART_LINK
+          - AA_SEQUENCE_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BATCH_LINK
+          - BLOB_LINK
+          - BOOLEAN
+          - CUSTOM_ENTITY_LINK
+          - DATE
+          - DATETIME
+          - DNA_SEQUENCE_LINK
+          - ENTITY_LINK
+          - ENTRY_LINK
+          - FLOAT
+          - INTEGER
+          - JSON
+          - LONG_TEXT
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - BASE_MOLECULE_LINK
+          - PART_LINK
+          - SAMPLE_LINK
+          - DROPDOWN
+          - STORAGE_LINK
+          - TEXT
+          - TRANSCRIPTION_LINK
+          - TRANSLATION_LINK
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        unitType:
+          oneOf:
+          - $ref: '#/components/schemas/UnitTypeRef'
+          - type: 'null'
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    LibraryParameterDefinitionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/LibraryParameterDefinition'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    UpdateLibraryParameterDefinitionInput:
+      additionalProperties: false
+      example:
+        description: The temperature at which the sample is incubated, measured in Celsius.
+        name: Incubation Temperature (Updated)
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Updated description. Maximum 2048 characters.
+          type: string
+        name:
+          description: Updated display name. Must contain at least one alphanumeric character. Maximum 44 characters.
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UnitTypeRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

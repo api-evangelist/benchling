@@ -1,0 +1,538 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Policy API
+  version: 2.0.0
+  description: 'Defines a named set of permissions that can be assigned to users or groups through
+
+    collaborations. Policies contain PolicyStatements that specify allowed actions on
+
+    different item types. When a user is granted a collaboration with a specific policy,
+
+    they receive all permissions defined in that policy''s statements. Common policies
+
+    include viewer (read-only access), editor (read and write), and admin (full control).
+
+    Policies are reusable and can be applied across many collaborations.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Defines a named set of permissions that can be assigned to users or groups through
+
+    collaborations. Policies contain PolicyStatements that specify allowed actions on
+
+    different item types. When a user is granted a collaboration with a specific policy,
+
+    they receive all permissions defined in that policy''s statements. Common policies
+
+    include viewer (read-only access), editor (read and write), and admin (full control).
+
+    Policies are reusable and can be applied across many collaborations.'
+  name: Policy
+  x-bnch-organization: Benchling
+paths:
+  /policy/items:
+    get:
+      description: List Policy items.
+      operationId: Policy.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Policy items
+      tags:
+      - Policy
+      x-bnch-rate-limit-tier: 4
+  /policy/{policy_id}:
+    get:
+      description: Get a single Policy by ID.
+      operationId: Policy.Get
+      parameters:
+      - description: ID of the Policy.
+        in: path
+        name: policy_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get Policy by ID
+      tags:
+      - Policy
+      x-bnch-rate-limit-tier: 5
+components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    PolicyStatement:
+      description: 'A single permission rule within a Policy. Combines an ItemType (what kind of object),
+
+        an Action (what operation), and a Condition (when it applies) to define a specific
+
+        permission grant. Multiple PolicyStatements together form a complete Policy that
+
+        determines what actions a user can perform.'
+      properties:
+        __typename:
+          type: string
+        action:
+          enum:
+          - READ
+          - APPEND
+          - WRITE
+          - ADMIN
+          - ARCHIVE
+          - CHANGE_ASSIGNMENT_OF_OBJECTS
+          - CHANGE_REGISTRY_IDENTIFIER
+          - CREATE
+          - CREATE_LOCATION
+          - CREATE_REQUEST
+          - CREATE_RESULT
+          - CREATE_SUBFOLDER
+          - CREATE_TEST_ORDERS
+          - EDIT_BARCODES
+          - EDIT_CHEMICAL_STRUCTURE
+          - EDIT_CONTAINER
+          - EDIT_FIELDS_IF_PENDING_INVALID
+          - EDIT_FIELDS_IF_IN_PROGRESS
+          - EDIT_FIELDS_IF_TERMINAL
+          - EDIT_NAMES_AND_ALIASES
+          - EDIT_NAMES_AND_BARCODES
+          - EDIT_POLYMER_FEATURES
+          - EDIT_RESIDUES
+          - EDIT_RESTRICTED_SAMPLE_USERS
+          - EDIT_RESULT
+          - EDIT_SCHEMA_AND_FIELDS
+          - EDIT_STATUS
+          - EDIT_USER_EMAIL
+          - EXECUTE_REQUEST
+          - LIST_DEFINITION
+          - MANAGE_COLLABORATORS
+          - MANAGE_CAPABILITIES
+          - READ_APP_CONFIG
+          - READ_APP_SESSION
+          - REGISTER
+          - RETRACT_REVIEW
+          - RESTRICT_SAMPLES
+          - REVOKE_USER_CREDENTIALS
+          - SUSPEND_USER
+          - UNREGISTER
+          - UNRESTRICT_SAMPLES
+          - WRITE_APP_CONFIG
+          - WRITE_APP_SESSION
+          - UNKNOWN
+          type: string
+        condition:
+          enum:
+          - ALWAYS
+          - IS_AUTHOR
+          - IS_ASSIGNEE
+          - UNKNOWN
+          type: string
+        itemType:
+          enum:
+          - AA_MONOMER
+          - AGENT_SKILL
+          - AI_MODEL
+          - ANALYSIS
+          - ANALYTICS_DASHBOARD
+          - ANTIBODY_FORMAT
+          - APP_DEFINITION
+          - ASYNC_TASK
+          - AV_SCAN_RECORD
+          - BATCH
+          - BENCHLING_APP
+          - BENCHLING_APP_SESSION
+          - BIOENTITY
+          - BOX
+          - BUSINESS_RULE
+          - ASSEMBLY
+          - CHAT_SESSION
+          - CHEMICAL_COUNTERPART
+          - CONFIG_MIGRATION_HISTORY
+          - CONNECTION
+          - CONTAINER
+          - EVENT_SUBSCRIPTION
+          - EXTENSION_DEFINITION
+          - FOLDER_OR_PROJECT
+          - FILE
+          - INSTRUMENT
+          - NON_LOCATION_STORABLE
+          - LEGACY_DATA_IMPORT_RUN
+          - LIBRARY_PARAMETER_DEFINITION
+          - LOCATION
+          - MCP_SERVER_INSTALLATION
+          - MCP_SERVER_USER_CONFIG
+          - MODEL_RUN
+          - MONOMER
+          - NOTEBOOK
+          - ORGANIZATION
+          - PLATE
+          - PROCEDURE
+          - PROCESS_TASK_GROUP
+          - PROCESS_TASK
+          - PROCESS_OUTPUT
+          - PROTOCOL
+          - REGISTRY
+          - REVIEW_PROCESS
+          - REQUEST
+          - REQUEST_V2_DEFINITION
+          - REQUEST_V2_SUBMISSION
+          - RESULT
+          - ROUTINE
+          - SAMPLE_TYPE
+          - SCHEMA
+          - STUDY
+          - TEAM
+          - TEMPLATE_COLLECTION
+          - TENANT
+          - TEST_ORDER
+          - USER
+          - WAREHOUSE_LOGIN
+          - WAREHOUSE_USER_DEFINED_VIEW
+          - WORKFLOW
+          - WORKLIST
+          - WORKSHEET
+          - OTHER
+          - UNIT_TYPE
+          - UNKNOWN
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    Policy:
+      description: 'Defines a named set of permissions that can be assigned to users or groups through
+
+        collaborations. Policies contain PolicyStatements that specify allowed actions on
+
+        different item types. When a user is granted a collaboration with a specific policy,
+
+        they receive all permissions defined in that policy''s statements. Common policies
+
+        include viewer (read-only access), editor (read and write), and admin (full control).
+
+        Policies are reusable and can be applied across many collaborations.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        policyStatements:
+          items:
+            $ref: '#/components/schemas/PolicyStatement'
+          type: array
+        policyType:
+          enum:
+          - DATA_POLICY
+          - SCHEMA_POLICY
+          - POLICY
+          type: string
+      type: object
+    PolicyPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Policy'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

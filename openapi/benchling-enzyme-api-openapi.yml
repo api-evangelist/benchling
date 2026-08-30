@@ -1,0 +1,404 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Enzyme API
+  version: 2.0.0
+  description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+
+    enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+    that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+    has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+    details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+    site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+    pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+    during cloning workflow design.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+
+    enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+    that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+    has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+    details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+    site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+    pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+    during cloning workflow design.'
+  name: Enzyme
+  x-bnch-organization: Benchling
+paths:
+  /enzyme/items:
+    get:
+      description: List Enzyme items.
+      operationId: Enzyme.List
+      parameters:
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnzymePaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Enzyme items
+      tags:
+      - Enzyme
+      x-bnch-rate-limit-tier: 4
+  /enzyme/{enzyme_id}:
+    get:
+      description: Get a single Enzyme by ID.
+      operationId: Enzyme.Get
+      parameters:
+      - description: ID of the Enzyme.
+        in: path
+        name: enzyme_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Enzyme'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get Enzyme by ID
+      tags:
+      - Enzyme
+      x-bnch-rate-limit-tier: 5
+  /enzyme/{enzyme_id}/isoschizomers/items:
+    get:
+      description: List Enzyme items.
+      operationId: Enzyme.isoschizomers.List
+      parameters:
+      - description: ID of the Enzyme.
+        in: path
+        name: enzyme_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnzymeUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Enzyme items
+      tags:
+      - Enzyme
+      x-bnch-rate-limit-tier: 4
+components:
+  schemas:
+    EnzymeUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Enzyme'
+          type: array
+      type: object
+    EnzymePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Enzyme'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    CutSiteDetail:
+      description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
+
+        The position field indicates where the 5'' strand is cut, while offset specifies the distance
+
+        from position where the 3'' strand is cut. A zero offset produces blunt ends; non-zero offsets
+
+        create sticky ends (overhangs). Enzymes that cut once have a single CutSiteDetail, while
+
+        rare double-cutting enzymes have two. This information is essential for predicting fragment
+
+        sizes and compatible ends when designing cloning strategies.'
+      properties:
+        __typename:
+          type: string
+        offset:
+          description: Location, relative to `position`, where the 3' cut is made.
+          type: integer
+        position:
+          description: Location, relative to the restriction site bases, where the 5' cut is made.
+          type: integer
+      type: object
+    Enzyme:
+      description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+
+        enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+        that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+        has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+        details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+        site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+        pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+        during cloning workflow design.'
+      properties:
+        __typename:
+          type: string
+        cutSites:
+          description: Either one (for single cutters) or two (for double cutters) cut details.
+          items:
+            $ref: '#/components/schemas/CutSiteDetail'
+          type: array
+        id:
+          description: Id of the Enzyme
+          type: string
+        isoschizomers:
+          description: Other enzymes in the catalog that recognize the same restriction site.
+          format: uri
+          type: string
+        name:
+          description: The name of the Enzyme, like EcoRI.
+          type: string
+        restrictionSiteBases:
+          description: The DNA bases recognized by the Enzyme.
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

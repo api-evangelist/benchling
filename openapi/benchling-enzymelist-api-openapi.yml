@@ -1,0 +1,493 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Enzyme List API
+  version: 2.0.0
+  description: 'Represents a user-curated collection of restriction enzymes for molecular cloning workflows.
+
+    EnzymeLists allow users and organizations to organize commonly used enzymes into named groups
+
+    for easy access when planning restriction digests, cloning strategies, or analyzing DNA
+
+    sequences. Each list has an owner (either a user or organization) who controls access
+
+    permissions. See `Enzyme` for the individual restriction enzymes that can be added to a list.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Represents a user-curated collection of restriction enzymes for molecular cloning workflows.
+
+    EnzymeLists allow users and organizations to organize commonly used enzymes into named groups
+
+    for easy access when planning restriction digests, cloning strategies, or analyzing DNA
+
+    sequences. Each list has an owner (either a user or organization) who controls access
+
+    permissions. See `Enzyme` for the individual restriction enzymes that can be added to a list.'
+  name: EnzymeList
+  x-bnch-organization: Benchling
+paths:
+  /enzyme-list/items:
+    get:
+      description: List EnzymeList items.
+      operationId: EnzymeList.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnzymeListPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List EnzymeList items
+      tags:
+      - EnzymeList
+      x-bnch-rate-limit-tier: 4
+  /enzyme-list/{enzyme_list_id}:
+    get:
+      description: Get a single EnzymeList by ID.
+      operationId: EnzymeList.Get
+      parameters:
+      - description: ID of the EnzymeList.
+        in: path
+        name: enzyme_list_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnzymeList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get EnzymeList by ID
+      tags:
+      - EnzymeList
+      x-bnch-rate-limit-tier: 5
+  /enzyme-list/{enzyme_list_id}/enzymes/items:
+    get:
+      description: List Enzyme items.
+      operationId: EnzymeList.enzymes.List
+      parameters:
+      - description: ID of the EnzymeList.
+        in: path
+        name: enzyme_list_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnzymeUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Enzyme items
+      tags:
+      - EnzymeList
+      x-bnch-rate-limit-tier: 4
+components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    EnzymeListPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EnzymeList'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    OwnerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    EnzymeList:
+      description: 'Represents a user-curated collection of restriction enzymes for molecular cloning workflows.
+
+        EnzymeLists allow users and organizations to organize commonly used enzymes into named groups
+
+        for easy access when planning restriction digests, cloning strategies, or analyzing DNA
+
+        sequences. Each list has an owner (either a user or organization) who controls access
+
+        permissions. See `Enzyme` for the individual restriction enzymes that can be added to a list.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          description: DateTime the Enzyme List was created
+          format: datetime
+          type: string
+        description:
+          description: Description of the Enzyme List
+          type:
+          - 'null'
+          - string
+        enzymes:
+          description: List of Enzymes that are part of this Enzyme List
+          format: uri
+          type: string
+        id:
+          description: Id of the Enzyme List
+          type: string
+        modifiedAt:
+          description: DateTime the Enzyme List was last modified
+          format: datetime
+          type: string
+        name:
+          description: Name of the Enzyme List
+          type: string
+        owner:
+          $ref: '#/components/schemas/OwnerRef'
+          description: User or Organization owner
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    EnzymeUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Enzyme'
+          type: array
+      type: object
+    CutSiteDetail:
+      description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
+
+        The position field indicates where the 5'' strand is cut, while offset specifies the distance
+
+        from position where the 3'' strand is cut. A zero offset produces blunt ends; non-zero offsets
+
+        create sticky ends (overhangs). Enzymes that cut once have a single CutSiteDetail, while
+
+        rare double-cutting enzymes have two. This information is essential for predicting fragment
+
+        sizes and compatible ends when designing cloning strategies.'
+      properties:
+        __typename:
+          type: string
+        offset:
+          description: Location, relative to `position`, where the 3' cut is made.
+          type: integer
+        position:
+          description: Location, relative to the restriction site bases, where the 5' cut is made.
+          type: integer
+      type: object
+    Enzyme:
+      description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+
+        enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+        that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+        has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+        details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+        site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+        pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+        during cloning workflow design.'
+      properties:
+        __typename:
+          type: string
+        cutSites:
+          description: Either one (for single cutters) or two (for double cutters) cut details.
+          items:
+            $ref: '#/components/schemas/CutSiteDetail'
+          type: array
+        id:
+          description: Id of the Enzyme
+          type: string
+        isoschizomers:
+          description: Other enzymes in the catalog that recognize the same restriction site.
+          format: uri
+          type: string
+        name:
+          description: The name of the Enzyme, like EcoRI.
+          type: string
+        restrictionSiteBases:
+          description: The DNA bases recognized by the Enzyme.
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

@@ -1,0 +1,598 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Review Process API
+  version: 2.0.0
+  description: 'Defines a review process configuration that specifies how entries and other
+
+    reviewable items should be reviewed. A ReviewProcess belongs to an Organization
+
+    and can be associated with one or more Projects. When a review is initiated,
+
+    it follows the stages defined in the current `ReviewProcessVersion`. Review
+
+    processes enable organizations to enforce compliance requirements by defining
+
+    who must review, in what order, and what actions are required. Also known as
+
+    "Review Lifecycle" in the backend.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Defines a review process configuration that specifies how entries and other
+
+    reviewable items should be reviewed. A ReviewProcess belongs to an Organization
+
+    and can be associated with one or more Projects. When a review is initiated,
+
+    it follows the stages defined in the current `ReviewProcessVersion`. Review
+
+    processes enable organizations to enforce compliance requirements by defining
+
+    who must review, in what order, and what actions are required. Also known as
+
+    "Review Lifecycle" in the backend.'
+  name: ReviewProcess
+  x-bnch-organization: Benchling
+paths:
+  /review-process/items:
+    get:
+      description: List ReviewProcess items.
+      operationId: ReviewProcess.List
+      parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProcessPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ReviewProcess items
+      tags:
+      - ReviewProcess
+      x-bnch-rate-limit-tier: 4
+  /review-process/{review_process_id}:
+    get:
+      description: Get a single ReviewProcess by ID.
+      operationId: ReviewProcess.Get
+      parameters:
+      - description: ID of the ReviewProcess.
+        in: path
+        name: review_process_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewProcess'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get ReviewProcess by ID
+      tags:
+      - ReviewProcess
+      x-bnch-rate-limit-tier: 5
+  /review-process/{review_process_id}/projects/items:
+    get:
+      description: List Project items.
+      operationId: ReviewProcess.projects.List
+      parameters:
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: ID of the ReviewProcess.
+        in: path
+        name: review_process_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Project items
+      tags:
+      - ReviewProcess
+      x-bnch-rate-limit-tier: 4
+components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    ReviewProcessStageRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    OwnerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    Project:
+      description: 'A top-level organizational container in Benchling that groups related work and controls
+
+        access permissions. Projects contain Folders (see `Folder`) which in turn hold entities,
+
+        notebook entries, and other items. Each project has an owner (see `Owner`—typically a
+
+        User or Organization) and access is managed through collaborations (see `Collaboration`).
+
+        Projects serve as the primary unit for sharing and permission management: users who are
+
+        not collaborators on a project cannot access its contents. The isDataModsEnabled flag
+
+        controls whether data modification tracking is active for items in this project.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        collaborations:
+          description: List of access control information for this object.
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        description:
+          type:
+          - 'null'
+          - string
+        hideParentFolderNamesForSharedItems:
+          type: boolean
+        id:
+          type: string
+        isDataModsEnabled:
+          type:
+          - 'null'
+          - boolean
+        lockSequences:
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+        owner:
+          oneOf:
+          - $ref: '#/components/schemas/OwnerRef'
+          - type: 'null'
+        public:
+          type: boolean
+        reviewProcesses:
+          description: Review processes (a.k.a. review lifecycles) configured for this project.
+          format: uri
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewProcessPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewProcess'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ReviewProcess:
+      description: 'Defines a review process configuration that specifies how entries and other
+
+        reviewable items should be reviewed. A ReviewProcess belongs to an Organization
+
+        and can be associated with one or more Projects. When a review is initiated,
+
+        it follows the stages defined in the current `ReviewProcessVersion`. Review
+
+        processes enable organizations to enforce compliance requirements by defining
+
+        who must review, in what order, and what actions are required. Also known as
+
+        "Review Lifecycle" in the backend.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          description: Timestamp when this review process was created
+          format: datetime
+          type: string
+        currentVersion:
+          description: Current version of this review process
+          oneOf:
+          - $ref: '#/components/schemas/ReviewProcessVersion'
+          - type: 'null'
+        id:
+          description: ID of the review process
+          type: string
+        modifiedAt:
+          description: Timestamp when this review process was last modified
+          format: datetime
+          type: string
+        name:
+          description: Title of the review process
+          type:
+          - 'null'
+          - string
+        organization:
+          description: The organization that owns this review process
+          oneOf:
+          - $ref: '#/components/schemas/OrganizationRef'
+          - type: 'null'
+        projects:
+          description: All projects that point to this review process
+          format: uri
+          type: string
+      type: object
+    ReviewProcessVersion:
+      description: 'A specific version of a ReviewProcess configuration. Review processes are versioned
+
+        to allow changes to review requirements while preserving the rules that apply to
+
+        in-progress reviews. Each version defines the process type (self-review, parallel,
+
+        or sequential), the terminal state when complete, and the ordered list of
+
+        `ReviewProcessStage`s that must be completed.'
+      properties:
+        __typename:
+          type: string
+        processType:
+          description: Type of this review process
+          enum:
+          - SELF_REVIEW
+          - PARALLEL
+          - SEQUENTIAL
+          - null
+          type:
+          - 'null'
+          - string
+        reviewStages:
+          description: List of all stages the review must go through
+          items:
+            $ref: '#/components/schemas/ReviewProcessStageRef'
+          type: array
+        terminalState:
+          description: Stage of the reviewable at the end of the review process
+          enum:
+          - APPROVED
+          - COMPLETED
+          - ACCEPTED
+          - REVIEWED
+          - WITNESSED
+          - SELF_REVIEWED
+          type: string
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProjectPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Project'
+          type: array
+        nextToken:
+          type: string
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

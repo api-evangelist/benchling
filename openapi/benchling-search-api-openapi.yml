@@ -1,0 +1,918 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Search API
+  version: 2.0.0
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- name: Search
+paths:
+  /search:
+    post:
+      description: 'Search across Benchling objects that the caller has permission to view. Results can span multiple object types, and each hit includes the object''s V3 representation in `source`.
+
+        ## Consistency
+
+        Search result matching is eventually consistent: queries and filters are evaluated against an asynchronously updated search index, so recent changes may not immediately affect which objects match.
+
+        After identifying matches from the index, the endpoint loads their current V3 representations into `source`. This provides up-to-date object details, although recently changed fields may differ from the indexed values used for matching. Objects that have since been deleted or become inaccessible because of permission changes are omitted.'
+      operationId: Search.Search.SyncCustom
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            examples:
+              global_free_text_search:
+                summary: Global text search, sorted by relevance
+                value:
+                  query: expression plasmid
+              schema_field_search:
+                summary: Filter by schema-defined fields
+                value:
+                  filters:
+                    schemaFields:
+                      tsf_abc123:
+                        eq: Active
+                      tsf_def456:
+                        gte: 10
+                        lt: 20
+                  objectTypes:
+                  - CustomEntity
+              targeted_search:
+                summary: Scoped search with filters
+                value:
+                  filters:
+                    createdAt:
+                      gte: '2026-01-01T00:00:00Z'
+                    creator:
+                      anyOf:
+                      - usr_abc123
+                  objectTypes:
+                  - Entry
+                  - DnaSequence
+                  - Protein
+                  pageSize: 20
+                  query: expression plasmid
+                  sort: modifiedAt:desc
+            schema:
+              additionalProperties: false
+              properties:
+                filters:
+                  additionalProperties: false
+                  description: 'Structured filters applied to narrow the matching result set. Field names match the query parameters on per-entity List endpoints, and each field maps to an object of operators. Each standard filter key''s description lists the objectTypes that support it.
+
+                    The special `schemaFields` key filters by schema-defined field values, see the field''s description for more information.
+
+                    All filters are implicitly ANDed together. Archived objects are excluded unless an `archived` filter is provided.'
+                  example:
+                    createdAt:
+                      gte: '2025-09-15T05:22:30Z'
+                    schemaFields:
+                      tsf_abc123:
+                        eq: PD-L1
+                  properties:
+                    aminoAcids:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those whose sequence exactly matches any of the specified amino acid sequences (case-insensitive).
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    archived:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Analysis, AnalysisTemplate, Assembly, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, File, Folder, Location, MatrixPlate, OligoConjugate, OligoDuplex, PlateDesignTemplate, Procedure, Protein, RequestV2Definition, RequestV2Submission, RnaOligo, RnaSequence, Study, TestDefinition, WellPlate, WorkflowTaskGroup, Worksheet.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items.
+                          items:
+                            type: boolean
+                          maxItems: 2
+                          type: array
+                      type: object
+                    authors:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, CustomEntity, DnaOligo, DnaSequence, Entry, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those whose author matches any of the specified user or author IDs.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    barcode:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: Box, Container, Location, MatrixPlate, WellPlate.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those matching any of the specified barcodes. Fails and reports any invalid barcodes.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    bases:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: DnaSequence, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those whose sequence exactly matches any of the specified DNA base sequences (case-insensitive, accounting for circular and reverse complement).
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    createdAt:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Analysis, AnalysisTemplate, AppSession, Assembly, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, FeatureLibrary, File, Location, MatrixPlate, NucleotideAlignment, OligoConjugate, OligoDuplex, PlateDesignTemplate, Procedure, Protein, RequestV2Definition, RequestV2Submission, RnaOligo, RnaSequence, Study, Team, TestDefinition, WellPlate, WorkflowTaskGroup, Worklist, Worksheet.'
+                      minProperties: 1
+                      properties:
+                        gt:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+                          format: datetime
+                          type: string
+                        gte:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+                          format: datetime
+                          type: string
+                        lt:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+                          format: datetime
+                          type: string
+                        lte:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+                          format: datetime
+                          type: string
+                      type: object
+                    creator:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, AnalysisTemplate, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, Location, MatrixPlate, OligoConjugate, OligoDuplex, Procedure, Protein, RnaOligo, RnaSequence, TestDefinition, WellPlate, Worksheet.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those created by any of the specified user IDs.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    fieldset:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, CustomEntity, DnaOligo, DnaSequence, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those whose schema implements any of the specified fieldset API IDs (custom schema interfaces).
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    id:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Analysis, AnalysisTemplate, AppSession, Assembly, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, FeatureLibrary, File, Folder, Location, MatrixPlate, NucleotideAlignment, OligoConjugate, OligoDuplex, PlateDesignTemplate, Procedure, Protein, RequestV2Definition, RequestV2Submission, RnaOligo, RnaSequence, Study, Team, TestDefinition, User, WellPlate, WorkflowTaskGroup, Worklist, Worksheet.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those matching any of the specified IDs.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    mentionedIn:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, Location, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to items mentioned in entries matching any of the specified entry IDs.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    modifiedAt:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Analysis, AnalysisTemplate, AppSession, Assembly, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, FeatureLibrary, File, Folder, Location, MatrixPlate, NucleotideAlignment, OligoConjugate, OligoDuplex, PlateDesignTemplate, Procedure, Protein, RequestV2Definition, RequestV2Submission, RnaOligo, RnaSequence, Study, Team, TestDefinition, User, WellPlate, WorkflowTaskGroup, Worklist, Worksheet.'
+                      minProperties: 1
+                      properties:
+                        gt:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+                          format: datetime
+                          type: string
+                        gte:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+                          format: datetime
+                          type: string
+                        lt:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+                          format: datetime
+                          type: string
+                        lte:
+                          description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+                          format: datetime
+                          type: string
+                      type: object
+                    name:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Analysis, AnalysisTemplate, Assembly, Box, Container, CustomEntity, DnaOligo, DnaSequence, Entry, File, Folder, Location, MatrixPlate, NucleotideAlignment, OligoConjugate, OligoDuplex, Procedure, Protein, RequestV2Definition, RequestV2Submission, RnaOligo, RnaSequence, Study, Team, TestDefinition, User, WellPlate, Worklist, Worksheet.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                        caseSensitive:
+                          default: false
+                          description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time.
+                          type: boolean
+                      type: object
+                    parent:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: Folder.'
+                      minProperties: 1
+                      properties:
+                        eq:
+                          description: ID of a folder. Restricts results to its direct children.
+                          type: string
+                      type: object
+                    parentStorage:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: Box, Container, Location, MatrixPlate, WellPlate.'
+                      minProperties: 1
+                      properties:
+                        eq:
+                          description: ID of a location. Restricts results to those located in the specified inventory.
+                          type: string
+                      type: object
+                    project:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, CustomEntity, DnaOligo, DnaSequence, Folder, OligoConjugate, OligoDuplex, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        eq:
+                          description: ID of a project. Restricts results to those in the project.
+                          type: string
+                      type: object
+                    registry:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, CustomEntity, DnaOligo, DnaSequence, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        eq:
+                          description: ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+                          type: string
+                      type: object
+                    schema:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, Box, CustomEntity, DnaOligo, DnaSequence, Entry, Location, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                        eq:
+                          description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
+                          type: string
+                      type: object
+                    schemaFields:
+                      additionalProperties:
+                        anyOf:
+                        - additionalProperties: true
+                          description: Operators supported by text and long text schema fields. Matching is case-insensitive.
+                          example:
+                            eq: PD-L1
+                          minProperties: 1
+                          properties:
+                            anyOf:
+                              description: Match any of the specified values.
+                              oneOf:
+                              - type: string
+                              - items:
+                                  type: string
+                                minItems: 1
+                                type: array
+                            eq:
+                              description: Match the value exactly.
+                              type: string
+                            excludes:
+                              description: Exclude values containing any of the specified text.
+                              oneOf:
+                              - type: string
+                              - items:
+                                  type: string
+                                minItems: 1
+                                type: array
+                            includes:
+                              description: Match values containing any of the specified text.
+                              oneOf:
+                              - type: string
+                              - items:
+                                  type: string
+                                minItems: 1
+                                type: array
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                            noneOf:
+                              description: Exclude all of the specified values.
+                              oneOf:
+                              - type: string
+                              - items:
+                                  type: string
+                                minItems: 1
+                                type: array
+                            not:
+                              description: Exclude an exact value.
+                              type: string
+                            startsWith:
+                              description: Match values beginning with any of the specified text.
+                              oneOf:
+                              - type: string
+                              - items:
+                                  type: string
+                                minItems: 1
+                                type: array
+                          title: Text or long text field
+                          type: object
+                        - additionalProperties: true
+                          description: Operators supported by integer schema fields.
+                          example:
+                            gte: 1
+                            lt: 10
+                          minProperties: 1
+                          properties:
+                            anyOf:
+                              description: Match any of the specified values.
+                              items:
+                                type: integer
+                              minItems: 1
+                              type: array
+                            eq:
+                              description: Match the specified value.
+                              type: integer
+                            gt:
+                              description: Match values greater than the operand.
+                              type: integer
+                            gte:
+                              description: Match values greater than or equal to the operand.
+                              type: integer
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                            lt:
+                              description: Match values less than the operand.
+                              type: integer
+                            lte:
+                              description: Match values less than or equal to the operand.
+                              type: integer
+                            noneOf:
+                              description: Exclude all of the specified values.
+                              items:
+                                type: integer
+                              minItems: 1
+                              type: array
+                          title: Integer field
+                          type: object
+                        - additionalProperties: true
+                          description: Operators supported by decimal schema fields. Numeric strings are accepted to preserve decimal precision.
+                          example:
+                            gte: 0.1
+                            lt: 1.0
+                          minProperties: 1
+                          properties:
+                            anyOf:
+                              description: Match any of the specified values.
+                              items:
+                                oneOf:
+                                - type: number
+                                - type: string
+                              minItems: 1
+                              type: array
+                            eq:
+                              description: Match the specified value.
+                              oneOf:
+                              - type: number
+                              - type: string
+                            gt:
+                              description: Match values greater than the operand.
+                              oneOf:
+                              - type: number
+                              - type: string
+                            gte:
+                              description: Match values greater than or equal to the operand.
+                              oneOf:
+                              - type: number
+                              - type: string
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                            lt:
+                              description: Match values less than the operand.
+                              oneOf:
+                              - type: number
+                              - type: string
+                            lte:
+                              description: Match values less than or equal to the operand.
+                              oneOf:
+                              - type: number
+                              - type: string
+                            noneOf:
+                              description: Exclude all of the specified values.
+                              items:
+                                oneOf:
+                                - type: number
+                                - type: string
+                              minItems: 1
+                              type: array
+                          title: Decimal field
+                          type: object
+                        - additionalProperties: true
+                          description: Operators supported by date schema fields. Dates use RFC 3339 full-date format (`YYYY-MM-DD`).
+                          example:
+                            gte: '2026-01-01'
+                            lt: '2026-02-01'
+                          minProperties: 1
+                          properties:
+                            anyOf:
+                              description: Match any of the specified dates.
+                              items:
+                                format: date
+                                type: string
+                              minItems: 1
+                              type: array
+                            eq:
+                              description: Match the specified date.
+                              format: date
+                              type: string
+                            gt:
+                              description: Match dates after the operand.
+                              format: date
+                              type: string
+                            gte:
+                              description: Match dates on or after the operand.
+                              format: date
+                              type: string
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                            lt:
+                              description: Match dates before the operand.
+                              format: date
+                              type: string
+                            lte:
+                              description: Match dates on or before the operand.
+                              format: date
+                              type: string
+                            noneOf:
+                              description: Exclude all of the specified dates.
+                              items:
+                                format: date
+                                type: string
+                              minItems: 1
+                              type: array
+                          title: Date field
+                          type: object
+                        - additionalProperties: true
+                          description: Operators supported by datetime schema fields. Datetimes use RFC 3339 format; a datetime without an offset is interpreted as UTC.
+                          example:
+                            gte: '2026-01-01T00:00:00Z'
+                          minProperties: 1
+                          properties:
+                            anyOf:
+                              description: Match any of the specified datetimes.
+                              items:
+                                format: date-time
+                                type: string
+                              minItems: 1
+                              type: array
+                            eq:
+                              description: Match the specified datetime.
+                              format: date-time
+                              type: string
+                            gt:
+                              description: Match datetimes after the operand.
+                              format: date-time
+                              type: string
+                            gte:
+                              description: Match datetimes on or after the operand.
+                              format: date-time
+                              type: string
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                            lt:
+                              description: Match datetimes before the operand.
+                              format: date-time
+                              type: string
+                            lte:
+                              description: Match datetimes on or before the operand.
+                              format: date-time
+                              type: string
+                            noneOf:
+                              description: Exclude all of the specified datetimes.
+                              items:
+                                format: date-time
+                                type: string
+                              minItems: 1
+                              type: array
+                          title: Datetime field
+                          type: object
+                        - additionalProperties: true
+                          description: Operators supported by boolean schema fields.
+                          example:
+                            eq: true
+                          minProperties: 1
+                          properties:
+                            eq:
+                              description: Match fields equal to the operand.
+                              type: boolean
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                          title: Boolean field
+                          type: object
+                        - additionalProperties: true
+                          description: Operators supported by link and dropdown schema fields. Operands are API IDs of linked objects or dropdown options.
+                          example:
+                            anyOf:
+                            - bfi_abc123
+                            - bfi_def456
+                          minProperties: 1
+                          properties:
+                            allOf:
+                              description: Match fields containing all of the specified IDs.
+                              items:
+                                type: string
+                              minItems: 1
+                              type: array
+                            anyOf:
+                              description: Match fields containing any of the specified IDs.
+                              items:
+                                type: string
+                              minItems: 1
+                              type: array
+                            isEmpty:
+                              const: true
+                              description: Match fields with no value. The operand must be `true`.
+                              type: boolean
+                            isNotEmpty:
+                              const: true
+                              description: Match fields with a value. The operand must be `true`.
+                              type: boolean
+                            noneOf:
+                              description: Match fields containing none of the specified IDs.
+                              items:
+                                type: string
+                              minItems: 1
+                              type: array
+                          title: Link or dropdown field
+                          type: object
+                      description: 'Filter by schema-defined field values. Keys are schema field API IDs (`tsf_...`), and values are objects mapping operators to operands. The supported operators and operand types depend on the schema field''s type. Multiple operators on the same field are implicitly ANDed.
+
+                        Find schema field IDs in the owning schema''s `fieldDefinitions`. All field IDs in one request must belong to the same schema, and that schema must map to a searchable object type. If `objectTypes` is omitted, the search is automatically restricted to that object type. If `objectTypes` is provided, requesting any other type returns a 400. Invalid or inaccessible field IDs also return a 400.'
+                      propertyNames:
+                        pattern: ^tsf_
+                      type: object
+                    sequenceIds:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: NucleotideAlignment.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to Nucleotide Alignments owned by any of the specified sequence IDs (i.e. sequences used as the template in a Template Alignment or created as the consensus sequence from a Consensus Alignment). Fails and reports any invalid IDs.
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                    systemCategory:
+                      additionalProperties: false
+                      description: 'Supported objectTypes: AaSequence, CustomEntity, DnaOligo, DnaSequence, Protein, RnaOligo, RnaSequence.'
+                      minProperties: 1
+                      properties:
+                        anyOf:
+                          description: Restricts results to those whose schema implements any of the specified system category API IDs (non-exclusive static schema interfaces).
+                          items:
+                            type: string
+                          maxItems: 100
+                          type: array
+                      type: object
+                  type: object
+                nextToken:
+                  description: Opaque pagination token returned by the previous response. Use it with otherwise identical request parameters.
+                  type: string
+                objectTypes:
+                  description: 'Restrict results to one or more object types, using PascalCase names.
+
+                    If omitted or empty, the search includes every searchable object type compatible with all provided filters. A `schemaFields` filter restricts the search to the object type associated with the fields'' schema. The request is rejected with a 400 if no searchable type supports the complete filter combination.
+
+                    When a non-empty list is provided, every requested type must be compatible with every provided filter; otherwise the request is rejected with a 400. When `schemaFields` is provided, only the object type associated with the fields'' schema can be requested.
+
+                    Whether explicitly provided or automatically determined, the set of types that were searched is returned in the `searchedObjectTypes` field of the response.'
+                  example:
+                  - AaSequence
+                  - Entry
+                  items:
+                    enum:
+                    - AaSequence
+                    - Analysis
+                    - AnalysisTemplate
+                    - AppSession
+                    - Assembly
+                    - Box
+                    - Container
+                    - CustomEntity
+                    - DnaOligo
+                    - DnaSequence
+                    - Entry
+                    - FeatureLibrary
+                    - File
+                    - Folder
+                    - Location
+                    - MatrixPlate
+                    - NucleotideAlignment
+                    - OligoConjugate
+                    - OligoDuplex
+                    - PlateDesignTemplate
+                    - Procedure
+                    - Protein
+                    - RequestV2Definition
+                    - RequestV2Submission
+                    - RnaOligo
+                    - RnaSequence
+                    - Study
+                    - Team
+                    - TestDefinition
+                    - User
+                    - WellPlate
+                    - WorkflowTaskGroup
+                    - Worklist
+                    - Worksheet
+                    type: string
+                  type: array
+                pageSize:
+                  default: 50
+                  description: Number of results per page. Defaults to 50, max 100.
+                  maximum: 100
+                  minimum: 1
+                  type: integer
+                query:
+                  description: 'Free-text query matched against indexed object names, schema and custom field values, and searchable textual content. Extracted attachment text is included where supported and available. Searchable content varies by object type, and not every field returned in `source` is searchable.
+
+                    All whitespace-separated terms must match. Enclose multiple words in double quotes to search for them as a phrase. Boolean operators, wildcards, and field-qualified terms are not supported.
+
+                    If omitted, returns all accessible items matching the provided filters.'
+                  example: expression plasmid
+                  type: string
+                sort:
+                  description: Sort order for results, in `field:direction` format (same as V3 List endpoint sort params). When omitted, defaults to most-relevant-first if `query` is non-empty, otherwise `modifiedAt:desc`. Providing `sort` overrides relevance ordering.
+                  enum:
+                  - createdAt:asc
+                  - createdAt:desc
+                  - modifiedAt:asc
+                  - modifiedAt:desc
+                  - name:asc
+                  - name:desc
+                  type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  hits:
+                    description: Matching items in the requested or default order.
+                    items:
+                      properties:
+                        apiUrl:
+                          description: Absolute URL of the V3 Get endpoint for this item, e.g. `https://{tenant}.benchling.com/api/v3/aa-sequence/prtn_Xk9mP2vQ`.
+                          format: uri
+                          type: string
+                        id:
+                          description: ID of the matched item. Same format as the id field on the corresponding V3 entity (e.g. seq_Xk9mP2vQ, mol_Rv3nT8wL).
+                          type: string
+                        objectType:
+                          description: Type of the matched object (e.g. AaSequence, Entry).
+                          type: string
+                        source:
+                          additionalProperties: true
+                          description: Current V3 representation of the matched entity, with the same shape as the corresponding V3 Get response. The exact set of fields varies by object type and API version.
+                          type: object
+                      required:
+                      - id
+                      - objectType
+                      - apiUrl
+                      - source
+                      type: object
+                    type: array
+                  metadata:
+                    properties:
+                      queryId:
+                        description: Unique identifier for this search request. Include it when contacting Benchling Support about a search.
+                        type: string
+                      searchedObjectTypes:
+                        description: The set of types that were searched, whether explicitly provided in `objectTypes` or automatically determined based on the requested filters.
+                        example:
+                        - AaSequence
+                        - Entry
+                        items:
+                          type: string
+                        type: array
+                      totalHits:
+                        description: 'Total number of hits matching the query and filters. Returned only on the first
+
+                          page and omitted from responses to requests with a pagination `nextToken`.
+
+                          '
+                        properties:
+                          relation:
+                            description: '`eq` means the count is exact. `gte` means the count is a lower bound because exact counting was skipped for performance.'
+                            enum:
+                            - eq
+                            - gte
+                            type: string
+                          value:
+                            description: Exact count or lower bound, as indicated by `relation`. This can exceed the number of returned hits if an item becomes deleted or inaccessible before its `source` is loaded.
+                            type: integer
+                        required:
+                        - value
+                        - relation
+                        type: object
+                    required:
+                    - queryId
+                    - searchedObjectTypes
+                    type: object
+                  nextToken:
+                    description: Opaque cursor for fetching the next page. Empty string when there are no more results.
+                    type: string
+                required:
+                - metadata
+                - hits
+                - nextToken
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Search across Benchling objects
+      tags:
+      - Search
+      x-bnch-rate-limit-tier: 4
+components:
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

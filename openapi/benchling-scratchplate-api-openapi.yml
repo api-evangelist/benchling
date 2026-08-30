@@ -1,0 +1,1423 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Scratch Plate API
+  version: 2.0.0
+  description: 'A plate design or record used for designing, tracking, and analyzing experimental plates
+
+    outside of the inventory.
+
+
+    Scratch plates are the working surface for plate-based workflows: you build up
+
+    a plate''s layout (well roles, contents, concentrations, metadata, measurements)
+
+    through one or more creates and updates, then optionally convert it to a
+
+    persistent inventory plate via the `bulk-put-in-inventory` endpoint.
+
+
+    Each layer of data (label, content, concentration, metadata, measurements, etc.)
+
+    is accessible via its `dataFrame`.
+
+
+    These endpoints are not generally available and may fail depending on your tenant configuration.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'A plate design or record used for designing, tracking, and analyzing experimental plates
+
+    outside of the inventory.
+
+
+    Scratch plates are the working surface for plate-based workflows: you build up
+
+    a plate''s layout (well roles, contents, concentrations, metadata, measurements)
+
+    through one or more creates and updates, then optionally convert it to a
+
+    persistent inventory plate via the `bulk-put-in-inventory` endpoint.
+
+
+    Each layer of data (label, content, concentration, metadata, measurements, etc.)
+
+    is accessible via its `dataFrame`.
+
+
+    These endpoints are not generally available and may fail depending on your tenant configuration.'
+  name: ScratchPlate
+  x-bnch-organization: Benchling
+paths:
+  /scratch-plate:
+    post:
+      description: 'Create one or more ScratchPlates. Three creation modes are supported:
+
+
+        **From scratch**: Provide `name`, `height`, `width`, and any layer fields (`wells`, `concentrationLayers`, `metadataLayers`, etc.).
+
+
+        **From a design template**: Provide `plateDesignTemplateId` to clone a plate design. `height` and `width` default to the design''s dimensions. Omitting a layer field preserves the design''s layer; supplying an explicit empty list removes it.'
+      operationId: ScratchPlate.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScratchPlateInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScratchPlate'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create ScratchPlate
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 4
+  /scratch-plate/items:
+    get:
+      description: List ScratchPlate items.
+      operationId: ScratchPlate.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScratchPlatePaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List ScratchPlate items
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 4
+  /scratch-plate/{scratch_plate_id}:
+    get:
+      description: Get a single ScratchPlate by ID.
+      operationId: ScratchPlate.Get
+      parameters:
+      - description: ID of the ScratchPlate.
+        in: path
+        name: scratch_plate_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScratchPlate'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get ScratchPlate by ID
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 5
+    patch:
+      description: Update ScratchPlate.
+      operationId: ScratchPlate.Update
+      parameters:
+      - description: ID of the ScratchPlate.
+        in: path
+        name: scratch_plate_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScratchPlateInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScratchPlate'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update ScratchPlate
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 4
+  /scratch-plate:batch-create:
+    post:
+      description: Batch create ScratchPlate synchronously in one transaction. Maximum 25 items per request.
+      operationId: ScratchPlate.BatchCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateScratchPlateInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/ScratchPlate'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create ScratchPlate
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 3
+  /scratch-plate:batch-update:
+    patch:
+      description: Batch update ScratchPlate synchronously in one transaction. Maximum 25 items per request.
+      operationId: ScratchPlate.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateScratchPlateInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/ScratchPlate'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update ScratchPlate
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 3
+  /scratch-plate:bulk-create:
+    post:
+      description: 'Bulk create ScratchPlates asynchronously from an uploaded JSONL file.
+
+
+        Rows use the same field requirements as single create. Semantic/reference validation is row-isolated via connector validation, but two caveats apply:
+
+        - `vendorFile` / `plateReaderAsm` parse failures occur during create execution and can fail the whole chunk (up to batch size), not just one row.
+
+        - Malformed input rows fail at parse/deserialization time before connector row validation.'
+      operationId: ScratchPlate.BulkCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create ScratchPlate
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 2
+  /scratch-plate:bulk-put-in-inventory:
+    post:
+      description: 'Create a registry plate from each scratch plate, populating wells from the scratch plate''s label and content layers and any column mappings. Each item targets a plate schema (explicit or inherited from the scratch plate), an inventory location, and an optional project. The new plates are added to inventory and the original scratch plates are left unchanged.
+
+
+        The scratch file must be a JSONL file where each line is a JSON object with the following structure:
+
+
+        {"request_id": "unique-id-per-row", "input_object": {}}
+
+
+        The input_object fields (all camelCase) are:
+
+        - scratchPlateId (required): ID of the scratch plate to convert.
+
+        - plateSchemaId: ID of the plate schema for the new inventory plate. If omitted, resolved from the scratch plate''s own plateSchemaId; fails if neither is set.
+
+        - name: Name for the new inventory plate. Defaults to the scratch plate''s name.
+
+        - barcode: Barcode assignment. Either {"barcodeMode": "USE_NAME", "useNameAsBarcode": true} or {"barcodeMode": "SPECIFY_BARCODE", "barcode": "barcode-value"}.
+
+        - sourceId: API ID of the source entity to associate with the new plate.
+
+        - parentStorableId: API ID of the storage location to place the new plate into.
+
+        - columnMappings: List of {layerName, columnName, schemaFieldName} objects mapping scratch plate layer columns onto container-schema fields.
+
+        - studyIds: List of study IDs to associate with the new plate.'
+      operationId: ScratchPlate.BulkPutInInventory
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: 'Create a registry plate from each scratch plate, populating wells from the scratch plate''s label and content layers and any column mappings. Each item targets a plate schema (explicit or inherited from the scratch plate), an inventory location, and an optional project. The new plates are added to inventory and the original scratch plates are left unchanged.
+
+
+        The scratch file must be a JSONL file where each line is a JSON object with the following structure:
+
+
+        {"request_id": "unique-id-per-row", "input_object": {}}
+
+
+        The input_object fields (all camelCase) are:
+
+        - scratchPlateId (required): ID of the scratch plate to convert.
+
+        - plateSchemaId: ID of the plate schema for the new inventory plate. If omitted, resolved from the scratch plate''s own plateSchemaId; fails if neither is set.
+
+        - name: Name for the new inventory plate. Defaults to the scratch plate''s name.
+
+        - barcode: Barcode assignment. Either {"barcodeMode": "USE_NAME", "useNameAsBarcode": true} or {"barcodeMode": "SPECIFY_BARCODE", "barcode": "barcode-value"}.
+
+        - sourceId: API ID of the source entity to associate with the new plate.
+
+        - parentStorableId: API ID of the storage location to place the new plate into.
+
+        - columnMappings: List of {layerName, columnName, schemaFieldName} objects mapping scratch plate layer columns onto container-schema fields.
+
+        - studyIds: List of study IDs to associate with the new plate.'
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 2
+  /scratch-plate:bulk-update:
+    patch:
+      description: Bulk update ScratchPlate.
+      operationId: ScratchPlate.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update ScratchPlate
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 2
+  /scratch-plate:transfer:
+    post:
+      description: Create destination scratch plate(s) by transferring content out of existing source plates. Each move is recorded as a destination_transfer on the child and a source_transfer on the source. The source plates are historical records and are never rewritten; instead the result also carries a copy of each source holding what remained after the transfer, which is empty when any drawn-from well could not say how much it had left.
+      operationId: ScratchPlate.Transfer
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScratchPlateTransferRequestInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferScratchPlatesResult'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create destination scratch plate(s) by transferring content out of existing source plates. Each move is recorded as a destination_transfer on the child and a source_transfer on the source. The source plates are historical records and are never rewritten; instead the result also carries a copy of each source holding what remained after the transfer, which is empty when any drawn-from well could not say how much it had left.
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 4
+  /scratch-plate:transfer-async:
+    post:
+      description: Asynchronously create destination scratch plate(s) by transferring content out of existing source plates, alongside a copy of each source holding what remained.
+      operationId: ScratchPlate.TransferAsync
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScratchPlateTransferRequestInput'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Asynchronously create destination scratch plate(s) by transferring content out of existing source plates, alongside a copy of each source holding what remained.
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 4
+  /tasks/scratch-plate/transfer-async/{task_id}:
+    get:
+      description: Poll status for Asynchronously create destination scratch plate(s) by transferring content out of existing source plates, alongside a copy of each source holding what remained..
+      operationId: ScratchPlate.TransferAsync.Get
+      parameters:
+      - description: ID of the asynchronous task to poll.
+        in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                  result:
+                    oneOf:
+                    - $ref: '#/components/schemas/TransferScratchPlatesResult'
+                    - type: 'null'
+                  status:
+                    enum:
+                    - NOT_STARTED
+                    - IN_PROGRESS
+                    - COMPLETED
+                    - FAILED
+                    type: string
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Poll async task status
+      tags:
+      - ScratchPlate
+      x-bnch-rate-limit-tier: 5
+components:
+  schemas:
+    UpdateScratchPlateInput:
+      additionalProperties: false
+      properties:
+        concentrationLayers:
+          items:
+            $ref: '#/components/schemas/ConcentrationLayerInput'
+          type: array
+        height:
+          type: integer
+        metadataLayers:
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          type: string
+        parameterLayers:
+          items:
+            $ref: '#/components/schemas/ParameterLayerInput'
+          type: array
+        plateSchemaId:
+          type:
+          - 'null'
+          - string
+        wells:
+          items:
+            $ref: '#/components/schemas/ScratchPlateWellInput'
+          type: array
+        width:
+          type: integer
+      type: object
+    ScratchPlatePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ScratchPlate'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ConcentrationWellInput:
+      additionalProperties: false
+      properties:
+        concentrationAmount:
+          type:
+          - 'null'
+          - number
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - concentrationAmount
+      type: object
+    ScratchPlateLayer:
+      description: A named layer within a `ScratchPlate`, each backed by its own `DataFrame`.
+      properties:
+        __typename:
+          type: string
+        dataFrame:
+          $ref: '#/components/schemas/DataFrameRef'
+          description: The DataFrame holding this layer's per-well data.
+        name:
+          type: string
+      type: object
+    AnyType: {}
+    ScratchPlateRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ContentItemInput:
+      additionalProperties: false
+      properties:
+        columnIndex:
+          type: integer
+        concentrationAmount:
+          type: number
+        concentrationUnitId:
+          type: string
+        concentrationUnitVersionNumber:
+          type: integer
+        containerId:
+          type: string
+        contentLayerName:
+          type: string
+        entityId:
+          type: string
+        rowIndex:
+          type: integer
+        transferQuantityAmount:
+          type: number
+        transferQuantityUnitId:
+          type: string
+        transferQuantityUnitVersionNumber:
+          type: integer
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - rowIndex
+      - columnIndex
+      type: object
+    MetadataColumnInput:
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        plateValue:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - type: boolean
+          - type: 'null'
+        systemName:
+          type: string
+        type:
+          enum:
+          - text
+          - integer
+          - float
+          - boolean
+          - date
+          - datetime
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/MetadataWellInput'
+          type: array
+      required:
+      - name
+      - type
+      type: object
+    ScratchPlateMeasurementInput:
+      additionalProperties: false
+      properties:
+        analyticalMethod:
+          type: string
+        columnIndex:
+          type: integer
+        detectionType:
+          type: string
+        measurementConcept:
+          type: string
+        measurementIdentifier:
+          type: string
+        measurementName:
+          type: string
+        measurementUnit:
+          type: string
+        measurementValue:
+          type: number
+        rowIndex:
+          type: integer
+      required:
+      - rowIndex
+      - columnIndex
+      type: object
+    ScratchPlateWellInput:
+      additionalProperties: false
+      properties:
+        columnIndex:
+          type: integer
+        roles:
+          items:
+            $ref: '#/components/schemas/WellRoleInput'
+          type: array
+        rowIndex:
+          type: integer
+        sampleSchemaId:
+          type: string
+        schemaTags:
+          additionalProperties:
+            $ref: '#/components/schemas/AnyType'
+          type: object
+        wellVolumeAmount:
+          type: number
+        wellVolumeUnitId:
+          type: string
+        wellVolumeUnitVersionNumber:
+          type: integer
+      required:
+      - rowIndex
+      - columnIndex
+      type: object
+    QuantityInput:
+      additionalProperties: false
+      properties:
+        amount:
+          type: number
+        unit:
+          $ref: '#/components/schemas/UnitInput'
+      required:
+      - amount
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TransferScratchPlatesResult:
+      description: The scratch plate(s) produced by a transfer.
+      properties:
+        createdPlateIds:
+          deprecated: true
+          description: Use createdPlates instead, and select the id subfield.
+          items:
+            type: string
+          type: array
+        createdPlates:
+          description: The destination scratch plates created by the transfer.
+          items:
+            $ref: '#/components/schemas/ScratchPlateRef'
+          type: array
+        decrementedSourcePlates:
+          description: Copies of the source plates the transfer drew from, holding what remained after it. The source plates themselves are historical records and are never rewritten. Empty when any drawn-from source well could not say how much it had left, since a partial list would read as the full set of what remains.
+          items:
+            $ref: '#/components/schemas/ScratchPlateRef'
+          type: array
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    ScratchPlate:
+      description: 'A plate design or record used for designing, tracking, and analyzing experimental plates
+
+        outside of the inventory.
+
+
+        Scratch plates are the working surface for plate-based workflows: you build up
+
+        a plate''s layout (well roles, contents, concentrations, metadata, measurements)
+
+        through one or more creates and updates, then optionally convert it to a
+
+        persistent inventory plate via the `bulk-put-in-inventory` endpoint.
+
+
+        Each layer of data (label, content, concentration, metadata, measurements, etc.)
+
+        is accessible via its `dataFrame`.
+
+
+        These endpoints are not generally available and may fail depending on your tenant configuration.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        height:
+          type: integer
+        id:
+          type: string
+        layers:
+          items:
+            $ref: '#/components/schemas/ScratchPlateLayer'
+          type: array
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        plateSchema:
+          description: The plate schema associated with this scratch plate. Used as the default schema when converting to an inventory plate via `bulk-put-in-inventory`; can be overridden per-item in that call.
+          oneOf:
+          - $ref: '#/components/schemas/PlateSchemaRef'
+          - type: 'null'
+        width:
+          type: integer
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    CreateScratchPlateInput:
+      additionalProperties: false
+      properties:
+        concentrationLayers:
+          items:
+            $ref: '#/components/schemas/ConcentrationLayerInput'
+          type: array
+        contents:
+          items:
+            $ref: '#/components/schemas/ContentItemInput'
+          type: array
+        height:
+          type: integer
+        measurements:
+          items:
+            $ref: '#/components/schemas/ScratchPlateMeasurementInput'
+          type: array
+        metadataLayers:
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          type: string
+        originDesignId:
+          type: string
+        parameterLayers:
+          items:
+            $ref: '#/components/schemas/ParameterLayerInput'
+          type: array
+        plateDesignTemplateId:
+          type: string
+        plateReaderAsm:
+          $ref: '#/components/schemas/ScratchPlatePlateReaderAsmInput'
+        plateSchemaId:
+          type: string
+        vendorFile:
+          $ref: '#/components/schemas/ScratchPlateVendorFileInput'
+        wells:
+          items:
+            $ref: '#/components/schemas/ScratchPlateWellInput'
+          type: array
+        width:
+          type: integer
+      required:
+      - name
+      type: object
+    UnitInput:
+      additionalProperties: false
+      properties:
+        versionNumber:
+          type: integer
+      type: object
+    WellRoleInput:
+      additionalProperties: false
+      properties:
+        group:
+          type: string
+        role:
+          type: string
+        subrole:
+          type: string
+      required:
+      - role
+      type: object
+    ConcentrationLayerInput:
+      additionalProperties: false
+      properties:
+        concentrationUnitId:
+          type: string
+        concentrationUnitVersionNumber:
+          type: integer
+        name:
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/ConcentrationWellInput'
+          type: array
+      required:
+      - name
+      - concentrationUnitId
+      - concentrationUnitVersionNumber
+      type: object
+    MetadataWellInput:
+      additionalProperties: false
+      properties:
+        value:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - type: boolean
+          - type: 'null'
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - value
+      type: object
+    ScratchPlatePlateReaderAsmInput:
+      additionalProperties: false
+      properties:
+        scratchFileId:
+          type: string
+      required:
+      - scratchFileId
+      type: object
+    ScratchPlateTransferInput:
+      additionalProperties: false
+      properties:
+        direction:
+          description: Well traversal order for layout-based transfers. Defaults to ACROSS_ROWS.
+          enum:
+          - ACROSS_ROWS
+          - DOWN_COLUMNS
+          type: string
+        layout:
+          description: 'Layout algorithm used with sourcePlateIds. Determines the fan ratio of sources to destinations: STAMP (1:1), STAMP_TO_QUADRANTS/INTERLEAVE (4:1), COLUMN_INTERLEAVE (2:1), and their REVERSE_ variants (1:4, 1:2).'
+          enum:
+          - COLUMN_INTERLEAVE
+          - INTERLEAVE
+          - REVERSE_COLUMN_INTERLEAVE
+          - REVERSE_INTERLEAVE
+          - REVERSE_STAMP_TO_QUADRANTS
+          - STAMP
+          - STAMP_TO_QUADRANTS
+          type: string
+        operations:
+          description: Explicit well-to-well moves. Use this mode for fan-in, many-to-many, or serial dilution transfers. Mutually exclusive with sourcePlateIds + layout.
+          items:
+            $ref: '#/components/schemas/WellTransferInput'
+          type: array
+        skipEmpty:
+          description: If true (default), empty source wells are skipped rather than producing empty destination wells in layout-based transfers.
+          type: boolean
+        sourcePlateIds:
+          description: Ordered source plates for layout-based transfers. Consumed group by group according to the fan ratio of the chosen layout. Mutually exclusive with operations.
+          items:
+            type: string
+          type: array
+        transferQuantity:
+          $ref: '#/components/schemas/QuantityInput'
+          description: Volume to transfer per well in layout-based transfers. If omitted, the entire source well content is recorded as transferred.
+      type: object
+    WellTransferInput:
+      additionalProperties: false
+      properties:
+        destinationPlateIndex:
+          type: integer
+        destinationWellPosition:
+          type: string
+        diluentEntityId:
+          type: string
+        diluentQuantity:
+          $ref: '#/components/schemas/QuantityInput'
+        finalVolume:
+          $ref: '#/components/schemas/QuantityInput'
+        sourceDestinationPlateIndex:
+          type: integer
+        sourcePlateId:
+          type: string
+        sourceWellPosition:
+          type: string
+        transferQuantity:
+          $ref: '#/components/schemas/QuantityInput'
+      required:
+      - sourceWellPosition
+      - destinationPlateIndex
+      - destinationWellPosition
+      type: object
+    PlateSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ScratchPlateTransferRequestInput:
+      additionalProperties: false
+      properties:
+        height:
+          description: Number of rows in each destination scratch plate.
+          type: integer
+        metadataLayers:
+          description: Metadata layers to apply to each created destination scratch plate.
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          description: Base name for destination scratch plate(s). If multiple are created, numeric suffixes are appended.
+          type: string
+        plateSchemaId:
+          description: ID of the plate schema to apply to each destination scratch plate. If omitted, no plate schema is attached.
+          type: string
+        transfer:
+          $ref: '#/components/schemas/ScratchPlateTransferInput'
+          description: Transfer specification describing explicit operations or a layout-derived transfer.
+        width:
+          description: Number of columns in each destination scratch plate.
+          type: integer
+      required:
+      - name
+      - height
+      - width
+      - transfer
+      type: object
+    ParameterLayerInput:
+      additionalProperties: false
+      properties:
+        fieldType:
+          enum:
+          - TEXT
+          - FLOAT
+          - DATETIME
+          type: string
+        name:
+          type: string
+        parameterVersionId:
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/ParameterWellInput'
+          type: array
+      required:
+      - parameterVersionId
+      - name
+      - fieldType
+      type: object
+    ScratchPlateVendorFileInput:
+      additionalProperties: false
+      properties:
+        scratchFileId:
+          type: string
+        vendor:
+          type: string
+      required:
+      - scratchFileId
+      - vendor
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DataFrameRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ParameterWellInput:
+      additionalProperties: false
+      properties:
+        value:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - type: 'null'
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - value
+      type: object
+    UpdateScratchPlateInputWithPathParams:
+      additionalProperties: false
+      properties:
+        concentrationLayers:
+          items:
+            $ref: '#/components/schemas/ConcentrationLayerInput'
+          type: array
+        height:
+          type: integer
+        id:
+          type: string
+        metadataLayers:
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          type: string
+        parameterLayers:
+          items:
+            $ref: '#/components/schemas/ParameterLayerInput'
+          type: array
+        plateSchemaId:
+          type:
+          - 'null'
+          - string
+        wells:
+          items:
+            $ref: '#/components/schemas/ScratchPlateWellInput'
+          type: array
+        width:
+          type: integer
+      required:
+      - id
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+  securitySchemes:
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2
