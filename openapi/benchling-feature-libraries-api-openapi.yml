@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Feature Libraries API
+  title: Benchling Feature Libraries API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: Feature Libraries are collections of shared canonical patterns that can be used to generate annotations on matching regions of DNA Sequences or AA Sequences.
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,6 @@ tags:
 paths:
   /feature-libraries:
     get:
-      description: List Feature Libraries
       operationId: listFeatureLibraries
       parameters:
       - description: 'Number of results to return. Defaults to 50, maximum of 100.
@@ -31,7 +28,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: Token for pagination
         in: query
@@ -55,7 +51,6 @@ paths:
           - name
           - name:asc
           - name:desc
-          nullable: false
           type: string
       - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
 
@@ -140,7 +135,6 @@ paths:
       tags:
       - Feature Libraries
     post:
-      description: Create a Feature Library
       operationId: createFeatureLibrary
       requestBody:
         content:
@@ -165,7 +159,6 @@ paths:
       - Feature Libraries
   /feature-libraries/{feature_library_id}:
     get:
-      description: Get a feature library by ID
       operationId: getFeatureLibrary
       parameters:
       - description: ID of feature library to get
@@ -199,9 +192,7 @@ paths:
     patch:
       description: 'Update a feature library. Note: Features cannot be updated from this endpoint.
 
-        Use the /features* endpoints to add or modify features.
-
-        '
+        Use the /features* endpoints to add or modify features.'
       operationId: updateFeatureLibrary
       parameters:
       - in: path
@@ -238,7 +229,6 @@ paths:
       - Feature Libraries
   /features:
     get:
-      description: List Features
       operationId: listFeatures
       parameters:
       - description: 'Number of results to return. Defaults to 50, maximum of 100.
@@ -250,7 +240,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: Token for pagination
         in: query
@@ -341,7 +330,6 @@ paths:
       tags:
       - Feature Libraries
     post:
-      description: Create a Feature
       operationId: createFeature
       requestBody:
         content:
@@ -366,7 +354,6 @@ paths:
       - Feature Libraries
   /features/{feature_id}:
     get:
-      description: Get a feature by ID
       operationId: getFeature
       parameters:
       - description: ID of feature to get
@@ -398,7 +385,6 @@ paths:
       tags:
       - Feature Libraries
     patch:
-      description: Update a feature
       operationId: updateFeature
       parameters:
       - in: path
@@ -435,7 +421,6 @@ paths:
       - Feature Libraries
   /features:bulk-create:
     post:
-      description: Bulk create Features
       operationId: bulkCreateFeatures
       requestBody:
         content:
@@ -464,14 +449,143 @@ paths:
       - Feature Libraries
 components:
   schemas:
+    FeaturesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          features:
+            description: List of features for the page
+            items:
+              $ref: '#/components/schemas/Feature'
+            type: array
+      description: A paginated list of features
+      type: object
     FeatureBulkCreate:
       allOf:
       - $ref: '#/components/schemas/FeatureCreate'
-    FeatureUpdate:
+    FeatureLibrariesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          featureLibraries:
+            items:
+              $ref: '#/components/schemas/FeatureLibrary'
+            type: array
+      description: A paginated list of feature libraries
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    FeatureLibraryCreate:
       additionalProperties: false
       allOf:
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      - properties:
+          organizationId:
+            description: 'The organization that will own the feature library. The requesting user must be an administrator of the organization. If unspecified and the organization allows personal ownables, then the requesting user will own the feature library
+
+              '
+            example: ent_a0SApq3z
+            type: string
+      - required:
+        - name
+        - description
+      description: Inputs for creating a feature library
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    FeatureLibraryUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      description: Inputs for updating a feature library
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    FeatureLibraryBase:
+      properties:
+        description:
+          description: The description for the feature library
+          type: string
+        name:
+          description: The name of the feature library
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    FeatureBase:
+      properties:
+        color:
+          description: The color of the annotations generated by the feature. Must be a valid hex string
+          example: '#F58A5E'
+          type: string
+        featureLibraryId:
+          description: The id of the feature library the feature belongs to
+          example: featlib_19kd9aDq
+          type: string
+        featureType:
+          description: 'The type of feature, like gene, promoter, etc. Note: This is an arbitrary string, not an enum
+
+            '
+          type:
+          - string
+          - 'null'
+        name:
+          description: The name of the feature
+          type: string
+        pattern:
+          description: The pattern used for matching during auto-annotation.
+          type: string
+      type: object
+    Feature:
+      allOf:
       - $ref: '#/components/schemas/FeatureBase'
-      description: Inputs for updating a feature
+      - properties:
+          id:
+            description: The id of the feature
+            example: feat_4YVqX98z
+            type: string
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      description: A feature from a feature library
       type: object
     FeaturesBulkCreateRequest:
       additionalProperties: false
@@ -483,32 +597,24 @@ components:
           maxItems: 1000
           type: array
       type: object
-    FeatureLibrariesPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          featureLibraries:
-            items:
-              $ref: '#/components/schemas/FeatureLibrary'
-            type: array
-      description: A paginated list of feature libraries
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    FeatureLibraryUpdate:
+    FeatureCreate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/FeatureLibraryBase'
-      description: Inputs for updating a feature library
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      - required:
+        - name
+        - featureType
+        - pattern
+        - matchType
+        - featureLibraryId
+      description: Inputs for a new feature
       type: object
     FeatureLibrary:
       allOf:
@@ -536,111 +642,6 @@ components:
             type: string
       description: A feature library
       type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    FeatureCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      - properties:
-          matchType:
-            description: The match type of the feature. Used to determine how auto-annotate matches are made.
-            enum:
-            - nucleotide
-            - protein
-            type: string
-      - required:
-        - name
-        - featureType
-        - pattern
-        - matchType
-        - featureLibraryId
-      description: Inputs for a new feature
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    FeatureBase:
-      properties:
-        color:
-          description: The color of the annotations generated by the feature. Must be a valid hex string
-          example: '#F58A5E'
-          type: string
-        featureLibraryId:
-          description: The id of the feature library the feature belongs to
-          example: featlib_19kd9aDq
-          type: string
-        featureType:
-          description: 'The type of feature, like gene, promoter, etc. Note: This is an arbitrary string, not an enum
-
-            '
-          nullable: true
-          type: string
-        name:
-          description: The name of the feature
-          type: string
-        pattern:
-          description: The pattern used for matching during auto-annotation.
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    Feature:
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      - properties:
-          id:
-            description: The id of the feature
-            example: feat_4YVqX98z
-            type: string
-          matchType:
-            description: The match type of the feature. Used to determine how auto-annotate matches are made.
-            enum:
-            - nucleotide
-            - protein
-            type: string
-      description: A feature from a feature library
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
     Organization:
       properties:
         handle:
@@ -650,41 +651,26 @@ components:
         name:
           type: string
       type: object
-    FeaturesPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          features:
-            description: List of features for the page
-            items:
-              $ref: '#/components/schemas/Feature'
-            type: array
-      description: A paginated list of features
-      type: object
-    FeatureLibraryBase:
+    Pagination:
       properties:
-        description:
-          description: The description for the feature library
+        nextToken:
           type: string
-        name:
-          description: The name of the feature library
-          type: string
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
-    FeatureLibraryCreate:
+    FeatureUpdate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/FeatureLibraryBase'
-      - properties:
-          organizationId:
-            description: 'The organization that will own the feature library. The requesting user must be an administrator of the organization. If unspecified and the organization allows personal ownables, then the requesting user will own the feature library
-
-              '
-            example: ent_a0SApq3z
-            type: string
-      - required:
-        - name
-        - description
-      description: Inputs for creating a feature library
+      - $ref: '#/components/schemas/FeatureBase'
+      description: Inputs for updating a feature
       type: object
   securitySchemes:
     basicApiKeyAuth:

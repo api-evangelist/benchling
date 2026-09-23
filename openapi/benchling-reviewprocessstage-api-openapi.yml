@@ -7,22 +7,7 @@ info:
   version: 2.0.0
   description: 'A single stage within a ReviewProcess that defines a required step in the review
 
-    workflow. Each stage specifies what action reviewers must take (see
-
-    `ReviewProcessActionType`), who is eligible to be a reviewer (see `ReviewerType`),
-
-    and optionally a specific Team. For sequential review processes, stages have a
-
-    position index determining their order. Stages can be configured to allow or
-
-    disallow authors and senders as reviewers, and can permit team member reassignment.
-
-
-    The list endpoint returns stages from the current version of each accessible review
-
-    process. To retrieve stages scoped to a specific review process, use
-
-    `GET /benchling/review-process/{review_process_id}` and inspect `currentVersion.reviewStages`.'
+    workflow.'
 servers:
 - url: /api/v3
 security:
@@ -31,22 +16,7 @@ security:
 tags:
 - description: 'A single stage within a ReviewProcess that defines a required step in the review
 
-    workflow. Each stage specifies what action reviewers must take (see
-
-    `ReviewProcessActionType`), who is eligible to be a reviewer (see `ReviewerType`),
-
-    and optionally a specific Team. For sequential review processes, stages have a
-
-    position index determining their order. Stages can be configured to allow or
-
-    disallow authors and senders as reviewers, and can permit team member reassignment.
-
-
-    The list endpoint returns stages from the current version of each accessible review
-
-    process. To retrieve stages scoped to a specific review process, use
-
-    `GET /benchling/review-process/{review_process_id}` and inspect `currentVersion.reviewStages`.'
+    workflow.'
   name: ReviewProcessStage
   x-bnch-organization: Benchling
 paths:
@@ -129,15 +99,69 @@ paths:
       - ReviewProcessStage
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
-    TeamRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -248,6 +272,24 @@ components:
           - 'null'
           - integer
       type: object
+    ReviewProcessStagePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewProcessStage'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    TeamRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     GeneralError:
       properties:
         detail:
@@ -272,78 +314,6 @@ components:
       - status
       - instance
       type: object
-    ReviewProcessStagePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewProcessStage'
-          type: array
-        nextToken:
-          type: string
-      type: object
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

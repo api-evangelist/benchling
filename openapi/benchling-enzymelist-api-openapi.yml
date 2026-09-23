@@ -170,144 +170,14 @@ paths:
       - EnzymeList
       x-bnch-rate-limit-tier: 4
 components:
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   schemas:
-    EnzymeListPaginatedList:
+    EnzymeUnpaginatedList:
       additionalProperties: false
       properties:
         items:
           items:
-            $ref: '#/components/schemas/EnzymeList'
+            $ref: '#/components/schemas/Enzyme'
           type: array
-        nextToken:
-          type: string
       type: object
     OwnerRef:
       properties:
@@ -316,46 +186,6 @@ components:
         id:
           format: api_id
           type: string
-      type: object
-    EnzymeList:
-      description: 'Represents a user-curated collection of restriction enzymes for molecular cloning workflows.
-
-        EnzymeLists allow users and organizations to organize commonly used enzymes into named groups
-
-        for easy access when planning restriction digests, cloning strategies, or analyzing DNA
-
-        sequences. Each list has an owner (either a user or organization) who controls access
-
-        permissions. See `Enzyme` for the individual restriction enzymes that can be added to a list.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          description: DateTime the Enzyme List was created
-          format: datetime
-          type: string
-        description:
-          description: Description of the Enzyme List
-          type:
-          - 'null'
-          - string
-        enzymes:
-          description: List of Enzymes that are part of this Enzyme List
-          format: uri
-          type: string
-        id:
-          description: Id of the Enzyme List
-          type: string
-        modifiedAt:
-          description: DateTime the Enzyme List was last modified
-          format: datetime
-          type: string
-        name:
-          description: Name of the Enzyme List
-          type: string
-        owner:
-          $ref: '#/components/schemas/OwnerRef'
-          description: User or Organization owner
       type: object
     InternalServerError:
       properties:
@@ -382,36 +212,6 @@ components:
       - detail
       - status
       - instance
-      type: object
-    EnzymeUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Enzyme'
-          type: array
-      type: object
-    CutSiteDetail:
-      description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
-
-        The position field indicates where the 5'' strand is cut, while offset specifies the distance
-
-        from position where the 3'' strand is cut. A zero offset produces blunt ends; non-zero offsets
-
-        create sticky ends (overhangs). Enzymes that cut once have a single CutSiteDetail, while
-
-        rare double-cutting enzymes have two. This information is essential for predicting fragment
-
-        sizes and compatible ends when designing cloning strategies.'
-      properties:
-        __typename:
-          type: string
-        offset:
-          description: Location, relative to `position`, where the 3' cut is made.
-          type: integer
-        position:
-          description: Location, relative to the restriction site bases, where the 5' cut is made.
-          type: integer
       type: object
     Enzyme:
       description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
@@ -475,6 +275,206 @@ components:
       - status
       - instance
       type: object
+    CutSiteDetail:
+      description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
+
+        The position field indicates where the 5'' strand is cut, while offset specifies the distance
+
+        from position where the 3'' strand is cut. A zero offset produces blunt ends; non-zero offsets
+
+        create sticky ends (overhangs). Enzymes that cut once have a single CutSiteDetail, while
+
+        rare double-cutting enzymes have two. This information is essential for predicting fragment
+
+        sizes and compatible ends when designing cloning strategies.'
+      properties:
+        __typename:
+          type: string
+        offset:
+          description: Location, relative to `position`, where the 3' cut is made.
+          type: integer
+        position:
+          description: Location, relative to the restriction site bases, where the 5' cut is made.
+          type: integer
+      type: object
+    EnzymeListPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EnzymeList'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    EnzymeList:
+      description: 'Represents a user-curated collection of restriction enzymes for molecular cloning workflows.
+
+        EnzymeLists allow users and organizations to organize commonly used enzymes into named groups
+
+        for easy access when planning restriction digests, cloning strategies, or analyzing DNA
+
+        sequences. Each list has an owner (either a user or organization) who controls access
+
+        permissions. See `Enzyme` for the individual restriction enzymes that can be added to a list.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          description: DateTime the Enzyme List was created
+          format: datetime
+          type: string
+        description:
+          description: Description of the Enzyme List
+          type:
+          - 'null'
+          - string
+        enzymes:
+          description: List of Enzymes that are part of this Enzyme List
+          format: uri
+          type: string
+        id:
+          description: Id of the Enzyme List
+          type: string
+        modifiedAt:
+          description: DateTime the Enzyme List was last modified
+          format: datetime
+          type: string
+        name:
+          description: Name of the Enzyme List
+          type: string
+        owner:
+          $ref: '#/components/schemas/OwnerRef'
+          description: User or Organization owner
+      type: object
+  parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -5,39 +5,15 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Pipeline Step API
   version: 2.0.0
-  description: 'Represents a single operation node within a Pipeline''s directed acyclic graph (DAG). Each
-
-    step performs a specific transformation determined by its stepType (see `PipelineStepType`),
-
-    with configuration options stored in the config field. Steps receive data through
-
-    inputStepDatas and produce results via outputStepDatas (see `PipelineStepData`). The
-
-    incomingEdges and outgoingEdges (see `PipelineStepEdge`) define the data flow connections
-
-    to other steps. Execution state is tracked through statusCode and statusMessage. Steps
-
-    support provenance tracking through the provenanceUri field for tracing data lineage.'
+  description: Represents a single operation node within a Pipeline's directed acyclic graph (DAG).
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: 'Represents a single operation node within a Pipeline''s directed acyclic graph (DAG). Each
-
-    step performs a specific transformation determined by its stepType (see `PipelineStepType`),
-
-    with configuration options stored in the config field. Steps receive data through
-
-    inputStepDatas and produce results via outputStepDatas (see `PipelineStepData`). The
-
-    incomingEdges and outgoingEdges (see `PipelineStepEdge`) define the data flow connections
-
-    to other steps. Execution state is tracked through statusCode and statusMessage. Steps
-
-    support provenance tracking through the provenanceUri field for tracing data lineage.'
-  name: PipelineStep
+- description: Represents a single operation node within a Pipeline's directed acyclic graph (DAG).
+  name: Pipeline Step
   x-bnch-organization: Benchling
 paths:
   /pipeline-step/items:
@@ -95,7 +71,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: List PipelineStep items
       tags:
-      - PipelineStep
+      - Pipeline Step
       x-bnch-rate-limit-tier: 4
   /pipeline-step/{pipeline_step_id}:
     get:
@@ -136,7 +112,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: Get PipelineStep by ID
       tags:
-      - PipelineStep
+      - Pipeline Step
       x-bnch-rate-limit-tier: 5
   /pipeline-step/{pipeline_step_id}/input-step-datas/items:
     get:
@@ -175,7 +151,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: List PipelineStepData items
       tags:
-      - PipelineStep
+      - Pipeline Step
       x-bnch-rate-limit-tier: 4
   /pipeline-step/{pipeline_step_id}/output-step-datas/items:
     get:
@@ -214,10 +190,121 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: List PipelineStepData items
       tags:
-      - PipelineStep
+      - Pipeline Step
       x-bnch-rate-limit-tier: 4
 components:
   schemas:
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PipelineStepPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PipelineStep'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    PipelineRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    PipelineStepData:
+      description: 'Represents actual data attached to an input or output slot of a PipelineStep during execution.
+
+        Each PipelineStepData corresponds to a defined data shape (input or output) on the step''s
+
+        configuration and holds references to the raw data (see `RawStepData`) that fills that slot.
+
+        The name field identifies which data shape this instance fills. Multiple raw data items can
+
+        be attached when the data shape allows multiple values (isMulti). PipelineStepData enables
+
+        data flow between pipeline steps by tracking data lineage and provenance through the
+
+        provenanceUri field.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        parentStep:
+          $ref: '#/components/schemas/PipelineStepRef'
+        rawDatas:
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of Chart, DataFrame, ScratchFile, ScratchPlate
+          type: array
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     PipelineStep:
       description: 'Represents a single operation node within a Pipeline''s directed acyclic graph (DAG). Each
 
@@ -397,84 +484,13 @@ components:
         stepVersion:
           type: integer
       type: object
-    PipelineStepPaginatedList:
+    PipelineStepDataUnpaginatedList:
       additionalProperties: false
       properties:
         items:
           items:
-            $ref: '#/components/schemas/PipelineStep'
+            $ref: '#/components/schemas/PipelineStepData'
           type: array
-        nextToken:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    PipelineStepData:
-      description: 'Represents actual data attached to an input or output slot of a PipelineStep during execution.
-
-        Each PipelineStepData corresponds to a defined data shape (input or output) on the step''s
-
-        configuration and holds references to the raw data (see `RawStepData`) that fills that slot.
-
-        The name field identifies which data shape this instance fills. Multiple raw data items can
-
-        be attached when the data shape allows multiple values (isMulti). PipelineStepData enables
-
-        data flow between pipeline steps by tracking data lineage and provenance through the
-
-        provenanceUri field.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        parentStep:
-          $ref: '#/components/schemas/PipelineStepRef'
-        rawDatas:
-          items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of Chart, DataFrame, ScratchFile, ScratchPlate
-          type: array
-      type: object
-    PipelineRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
       type: object
     PipelineStepRef:
       properties:
@@ -484,57 +500,20 @@ components:
           format: api_id
           type: string
       type: object
-    PipelineStepDataUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/PipelineStepData'
-          type: array
-      type: object
-    ObjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
   parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
       in: query
-      name: pageSize
+      name: returning
       schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -545,12 +524,54 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.lte
+      name: createdAt.lte
       schema:
         format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
         type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
@@ -562,96 +583,51 @@ components:
           type: string
         maxItems: 100
         type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -5,58 +5,14 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Procedure Run Plan API
   version: 2.0.0
-  description: 'A draft experiment plan that can be promoted to a `ProcedureRun` for execution. Scientists use
-
-    run plans to configure experimental conditions, parameter values, and replicates before
-
-    starting an actual experiment. Belongs to a `Study` and references a procedure template via
-
-    either `templateProcedureFlowchartVersion` (for legacy flowcharts) or
-
-    `procedureFlowchartConfigVersionProxy` (for new-style workflow flowcharts). Contains
-
-    `ProcedureRunPlanCondition` objects that define the different experimental configurations to
-
-    test. The `dataEntryMode` (see `ProcedureRunDataEntryMode`) specifies whether each
-
-    condition-replicate will have its own data entry worksheet or share a single worksheet. The
-
-    `confirmationMethodByParamVersionId` allows overriding default confirmation methods for
-
-    specific parameters. Upon promotion, the run plan becomes a `ProcedureRun` with corresponding
-
-    `ProcedureRunCondition` and `ProcedureRunConditionReplicate` objects. Also known as a "draft
-
-    experiment" in the Benchling UI.'
+  description: A draft experiment plan that can be promoted to a `ProcedureRun` for execution.
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: 'A draft experiment plan that can be promoted to a `ProcedureRun` for execution. Scientists use
-
-    run plans to configure experimental conditions, parameter values, and replicates before
-
-    starting an actual experiment. Belongs to a `Study` and references a procedure template via
-
-    either `templateProcedureFlowchartVersion` (for legacy flowcharts) or
-
-    `procedureFlowchartConfigVersionProxy` (for new-style workflow flowcharts). Contains
-
-    `ProcedureRunPlanCondition` objects that define the different experimental configurations to
-
-    test. The `dataEntryMode` (see `ProcedureRunDataEntryMode`) specifies whether each
-
-    condition-replicate will have its own data entry worksheet or share a single worksheet. The
-
-    `confirmationMethodByParamVersionId` allows overriding default confirmation methods for
-
-    specific parameters. Upon promotion, the run plan becomes a `ProcedureRun` with corresponding
-
-    `ProcedureRunCondition` and `ProcedureRunConditionReplicate` objects. Also known as a "draft
-
-    experiment" in the Benchling UI.'
+- description: A draft experiment plan that can be promoted to a `ProcedureRun` for execution.
   name: ProcedureRunPlan
   x-bnch-organization: Benchling
 paths:
@@ -539,7 +495,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-      summary: Turn procedure run plans into active procedure runs. Plans must not already be converted. Returns an async task — poll the task endpoint for completion and the created procedure run IDs
+      summary: Turn procedure run plans into active procedure runs.
       tags:
       - ProcedureRunPlan
       x-bnch-rate-limit-tier: 4
@@ -597,6 +553,390 @@ paths:
       x-bnch-rate-limit-tier: 5
 components:
   schemas:
+    CreateProcedureRunPlanInput:
+      additionalProperties: false
+      example:
+        confirmationMethodByParamVersionId:
+        - confirmationMethod: TABLE
+          paramVersionId: schver_Rm4nTvWz
+        dataEntryMode: INDIVIDUAL_CONDITION_REPLICATES
+        description: Dose-response run plan
+        studyId: stdy_9CYiCggY
+        workflowFlowchartConfigVersionId: wffccv_Lk3mQpXn
+      properties:
+        confirmationMethodByParamVersionId:
+          description: Override the default confirmation method for specific procedure parameters. Each entry maps a parameter version ID to a confirmation method (TABLE or PLATE_MAP). Omit or pass an empty array to use the default confirmation methods.
+          items:
+            $ref: '#/components/schemas/ConfirmationMethodByParamVersionIdInput'
+          type: array
+        dataEntryMode:
+          description: Controls how data entry worksheets are created upon promotion. `INDIVIDUAL_CONDITION_REPLICATES` creates one worksheet per condition-replicate. `ALL_CONDITION_REPLICATES_TOGETHER` creates a single shared worksheet (not supported for assay run plans). Defaults to `INDIVIDUAL_CONDITION_REPLICATES` if omitted.
+          enum:
+          - INDIVIDUAL_CONDITION_REPLICATES
+          - ALL_CONDITION_REPLICATES_TOGETHER
+          type: string
+        description:
+          description: A human-readable description of the run plan. Must not exceed 255 characters.
+          type: string
+        studyId:
+          description: 'The ID of the study this run plan belongs to. Format: `stdy_XXXXXXXX`.'
+          type: string
+        workflowFlowchartConfigVersionId:
+          description: 'The ID of the workflow flowchart config version that defines the procedure template for this run plan. Format: `wffccv_XXXXXXXX`. Set to null to create a run plan with no linked procedure.'
+          type:
+          - 'null'
+          - string
+      required:
+      - description
+      - studyId
+      - dataEntryMode
+      - workflowFlowchartConfigVersionId
+      - confirmationMethodByParamVersionId
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    PromoteProcedureRunPlanOutput:
+      description: Output returned when promoting procedure run plans to active procedure runs.
+      properties:
+        creates:
+          items:
+            $ref: '#/components/schemas/PromotedProcedureRunItem'
+          type: array
+      type: object
+    PromoteProcedureRunPlanInput:
+      additionalProperties: false
+      example:
+        procedureRunPlanIds:
+        - prp_Xk9mLpQr
+        - prp_Yw3tRsLm
+      properties:
+        procedureRunPlanIds:
+          description: 'IDs of the run plans to promote. Format: `prp_XXXXXXXX`.'
+          items:
+            type: string
+          type: array
+      required:
+      - procedureRunPlanIds
+      type: object
+    ProcedureRunPlanConditionUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureRunPlanCondition'
+          type: array
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureRunPlanPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureRunPlan'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ProcedureRunPlanConditionReplicate:
+      description: 'Represents a planned replicate within a `ProcedureRunPlanCondition`. Scientists often run the
+
+        same experimental condition multiple times to obtain statistically significant results—each
+
+        repetition is a replicate. The `replicateNumber` provides a one-indexed identifier (e.g.,
+
+        replicate 1, 2, 3). The `sourcePmeiIds` field supports unit operation linking by storing source
+
+        `ProcedureMethodExecutionInstance` IDs from other procedure runs. Upon promotion of the parent
+
+        `ProcedureRunPlan`, each ProcedureRunPlanConditionReplicate becomes a `ProcedureRunConditionReplicate` in the
+
+        resulting procedure run.'
+      properties:
+        __typename:
+          type: string
+        replicateNumber:
+          description: The replicate number.
+          type: integer
+        sourcePmeiIds:
+          description: 'Source PMEI IDs for this replicate.
+
+            Support unit operation linking to future-pmeis when executing the draft procedure run.'
+          items:
+            type: string
+          type: array
+      type: object
+    ProcedureRunRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    MethodParametersPlan:
+      description: 'Contains the planned parameter values for a single unit operation (method) within a
+
+        `ProcedureRunPlanCondition`. Links to a `ProcedureMethodDefinitionVersion` via
+
+        `templateMethodVersion` to identify which method these values apply to. Parameter values are
+
+        organized by category: `dataParameterValues` for data fields like numbers or text,
+
+        `materialInputValues` for sample or reagent inputs, and `equipmentValues` for equipment
+
+        assignments. When the parent `ProcedureRunPlan` is promoted to a `ProcedureRun`, these planned
+
+        values become the starting values in the resulting `ProcedureMethodExecutionInstance`.'
+      properties:
+        __typename:
+          type: string
+        dataParameterValues:
+          description: Planned values for data parameters keyed by parameter identifiers.
+          items:
+            $ref: '#/components/schemas/DataParameterValuePlan'
+          type: array
+        equipmentValues:
+          description: Planned values for equipment keyed by equipment identifiers.
+          items:
+            $ref: '#/components/schemas/EquipmentValuePlan'
+          type: array
+        materialInputValues:
+          description: Planned values for material inputs keyed by input identifiers.
+          items:
+            $ref: '#/components/schemas/MaterialInputValuePlan'
+          type: array
+      type: object
+    ConfirmationMethodByParamVersionIdInput:
+      additionalProperties: false
+      properties:
+        confirmationMethod:
+          enum:
+          - TABLE
+          - PLATE_MAP
+          type: string
+        paramVersionId:
+          type: string
+      required:
+      - paramVersionId
+      - confirmationMethod
+      type: object
+    ProcedureFlowchartVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    UpdateProcedureRunPlanInput:
+      additionalProperties: false
+      example:
+        conditionOrder:
+        - conditionIds:
+          - prpc_Bm7nWsKt
+          - prpc_Zq2rPvJx
+          templateMethodVersionId: pcmdv_Hn5kRtYw
+        confirmationMethodByParamVersionId:
+        - confirmationMethod: TABLE
+          paramVersionId: schver_Rm4nTvWz
+        dataEntryMode: INDIVIDUAL_CONDITION_REPLICATES
+        description: Updated dose-response plan
+        workflowFlowchartConfigVersionId: wffccv_Lk3mQpXn
+      properties:
+        conditionOrder:
+          description: Reorder existing conditions per procedure method definition version (PMDV). For each PMDV included, **all** existing condition IDs for that PMDV in the plan must be present exactly once. The order of IDs in `conditionIds` determines the new display positions (0-indexed).
+          items:
+            $ref: '#/components/schemas/ConditionOrderForPmdvInput'
+          type: array
+        confirmationMethodByParamVersionId:
+          description: Replace the confirmation method overrides for specific procedure parameters. Pass an empty array to clear all overrides.
+          items:
+            $ref: '#/components/schemas/ConfirmationMethodByParamVersionIdInput'
+          type: array
+        dataEntryMode:
+          description: Controls how data entry worksheets are created upon promotion. `INDIVIDUAL_CONDITION_REPLICATES` creates one worksheet per condition-replicate. `ALL_CONDITION_REPLICATES_TOGETHER` creates a single shared worksheet (not supported for assay run plans).
+          enum:
+          - INDIVIDUAL_CONDITION_REPLICATES
+          - ALL_CONDITION_REPLICATES_TOGETHER
+          type: string
+        description:
+          description: A human-readable description of the run plan. Must not exceed 255 characters.
+          type: string
+        workflowFlowchartConfigVersionId:
+          description: 'The ID of the workflow flowchart config version to switch to. Format: `wffccv_XXXXXXXX`. When changed, existing conditions should be updated to reference method versions in the new flowchart. Set to null to clear the linked procedure flowchart version.'
+          type:
+          - 'null'
+          - string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    ProcedureFlowchartConfigVersionProxyRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ConfirmationMethodByParamVersionId:
+      description: 'Associates a procedure parameter version with its confirmation method, keyed by the parameter
+
+        version ID. Used in `ProcedureRunPlan` to look up how a specific version of a parameter''s
+
+        values should be confirmed—either via TABLE (structured table entry) or PLATE_MAP (plate-based
+
+        layout).'
+      properties:
+        __typename:
+          type: string
+        confirmationMethod:
+          enum:
+          - TABLE
+          - PLATE_MAP
+          type: string
+        paramVersionId:
+          type: string
+      type: object
+    MaterialInputValuePlan:
+      description: 'A pre-filled value for a material input within a `MethodParametersPlan`. The `materialInputId`
+
+        references the `ProcedureParameterVersion` for the material input this value applies to. The
+
+        `value` field contains the planned material specification in JSON format, typically including
+
+        sample references and quantities. Used during experiment planning to pre-assign samples,
+
+        reagents, or other materials that will be used when the procedure run is executed.'
+      properties:
+        __typename:
+          type: string
+        materialInputId:
+          type: string
+        value:
+          type: object
+      type: object
+    UpdateProcedureRunPlanInputWithPathParams:
+      additionalProperties: false
+      example:
+        conditionOrder:
+        - conditionIds:
+          - prpc_Bm7nWsKt
+          - prpc_Zq2rPvJx
+          templateMethodVersionId: pcmdv_Hn5kRtYw
+        confirmationMethodByParamVersionId:
+        - confirmationMethod: TABLE
+          paramVersionId: schver_Rm4nTvWz
+        dataEntryMode: INDIVIDUAL_CONDITION_REPLICATES
+        description: Updated dose-response plan
+        id: prp_Xk9mLpQr
+        workflowFlowchartConfigVersionId: wffccv_Lk3mQpXn
+      properties:
+        conditionOrder:
+          description: Reorder existing conditions per procedure method definition version (PMDV). For each PMDV included, **all** existing condition IDs for that PMDV in the plan must be present exactly once. The order of IDs in `conditionIds` determines the new display positions (0-indexed).
+          items:
+            $ref: '#/components/schemas/ConditionOrderForPmdvInput'
+          type: array
+        confirmationMethodByParamVersionId:
+          description: Replace the confirmation method overrides for specific procedure parameters. Pass an empty array to clear all overrides.
+          items:
+            $ref: '#/components/schemas/ConfirmationMethodByParamVersionIdInput'
+          type: array
+        dataEntryMode:
+          description: Controls how data entry worksheets are created upon promotion. `INDIVIDUAL_CONDITION_REPLICATES` creates one worksheet per condition-replicate. `ALL_CONDITION_REPLICATES_TOGETHER` creates a single shared worksheet (not supported for assay run plans).
+          enum:
+          - INDIVIDUAL_CONDITION_REPLICATES
+          - ALL_CONDITION_REPLICATES_TOGETHER
+          type: string
+        description:
+          description: A human-readable description of the run plan. Must not exceed 255 characters.
+          type: string
+        id:
+          type: string
+        workflowFlowchartConfigVersionId:
+          description: 'The ID of the workflow flowchart config version to switch to. Format: `wffccv_XXXXXXXX`. When changed, existing conditions should be updated to reference method versions in the new flowchart. Set to null to clear the linked procedure flowchart version.'
+          type:
+          - 'null'
+          - string
+      required:
+      - id
+      type: object
+    StudyRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureMethodDefinitionVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     EquipmentValuePlan:
       description: 'A pre-filled value for an equipment parameter within a `MethodParametersPlan`. The
 
@@ -683,315 +1023,7 @@ components:
           - $ref: '#/components/schemas/ProcedureFlowchartVersionRef'
           - type: 'null'
       type: object
-    PromoteProcedureRunPlanInput:
-      additionalProperties: false
-      example:
-        procedureRunPlanIds:
-        - prp_Xk9mLpQr
-        - prp_Yw3tRsLm
-      properties:
-        procedureRunPlanIds:
-          description: 'IDs of the run plans to promote. Format: `prp_XXXXXXXX`.'
-          items:
-            type: string
-          type: array
-      required:
-      - procedureRunPlanIds
-      type: object
-    ConfirmationMethodByParamVersionId:
-      description: 'Associates a procedure parameter version with its confirmation method, keyed by the parameter
-
-        version ID. Used in `ProcedureRunPlan` to look up how a specific version of a parameter''s
-
-        values should be confirmed—either via TABLE (structured table entry) or PLATE_MAP (plate-based
-
-        layout).'
-      properties:
-        __typename:
-          type: string
-        confirmationMethod:
-          enum:
-          - TABLE
-          - PLATE_MAP
-          type: string
-        paramVersionId:
-          type: string
-      type: object
-    ProcedureRunRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureRunPlanConditionReplicate:
-      description: 'Represents a planned replicate within a `ProcedureRunPlanCondition`. Scientists often run the
-
-        same experimental condition multiple times to obtain statistically significant results—each
-
-        repetition is a replicate. The `replicateNumber` provides a one-indexed identifier (e.g.,
-
-        replicate 1, 2, 3). The `sourcePmeiIds` field supports unit operation linking by storing source
-
-        `ProcedureMethodExecutionInstance` IDs from other procedure runs. Upon promotion of the parent
-
-        `ProcedureRunPlan`, each ProcedureRunPlanConditionReplicate becomes a `ProcedureRunConditionReplicate` in the
-
-        resulting procedure run.'
-      properties:
-        __typename:
-          type: string
-        replicateNumber:
-          description: The replicate number.
-          type: integer
-        sourcePmeiIds:
-          description: 'Source PMEI IDs for this replicate.
-
-            Support unit operation linking to future-pmeis when executing the draft procedure run.'
-          items:
-            type: string
-          type: array
-      type: object
-    DataParameterValuePlan:
-      description: 'A pre-filled value for a data parameter within a `MethodParametersPlan`. The `parameterId`
-
-        references the `ProcedureParameterVersion` this value applies to. The `value` field contains
-
-        the planned data in JSON format, which may be a number, string, or structured value depending
-
-        on the parameter''s data type configuration. Used during experiment planning to specify default
-
-        values that will populate the parameter when the procedure run is created.'
-      properties:
-        __typename:
-          type: string
-        parameterId:
-          type: string
-        value:
-          type: object
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ProcedureMethodDefinitionVersionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    UpdateProcedureRunPlanInputWithPathParams:
-      additionalProperties: false
-      example:
-        conditionOrder:
-        - conditionIds:
-          - prpc_Bm7nWsKt
-          - prpc_Zq2rPvJx
-          templateMethodVersionId: pcmdv_Hn5kRtYw
-        confirmationMethodByParamVersionId:
-        - confirmationMethod: TABLE
-          paramVersionId: schver_Rm4nTvWz
-        dataEntryMode: INDIVIDUAL_CONDITION_REPLICATES
-        description: Updated dose-response plan
-        id: prp_Xk9mLpQr
-        workflowFlowchartConfigVersionId: wffccv_Lk3mQpXn
-      properties:
-        conditionOrder:
-          description: Reorder existing conditions per procedure method definition version (PMDV). For each PMDV included, **all** existing condition IDs for that PMDV in the plan must be present exactly once. The order of IDs in `conditionIds` determines the new display positions (0-indexed).
-          items:
-            $ref: '#/components/schemas/ConditionOrderForPmdvInput'
-          type: array
-        confirmationMethodByParamVersionId:
-          description: Replace the confirmation method overrides for specific procedure parameters. Pass an empty array to clear all overrides.
-          items:
-            $ref: '#/components/schemas/ConfirmationMethodByParamVersionIdInput'
-          type: array
-        dataEntryMode:
-          description: Controls how data entry worksheets are created upon promotion. `INDIVIDUAL_CONDITION_REPLICATES` creates one worksheet per condition-replicate. `ALL_CONDITION_REPLICATES_TOGETHER` creates a single shared worksheet (not supported for assay run plans).
-          enum:
-          - INDIVIDUAL_CONDITION_REPLICATES
-          - ALL_CONDITION_REPLICATES_TOGETHER
-          type: string
-        description:
-          description: A human-readable description of the run plan. Must not exceed 255 characters.
-          type: string
-        id:
-          type: string
-        workflowFlowchartConfigVersionId:
-          description: 'The ID of the workflow flowchart config version to switch to. Format: `wffccv_XXXXXXXX`. When changed, existing conditions should be updated to reference method versions in the new flowchart. Set to null to clear the linked procedure flowchart version.'
-          type:
-          - 'null'
-          - string
-      required:
-      - id
-      type: object
-    CreateProcedureRunPlanInput:
-      additionalProperties: false
-      example:
-        confirmationMethodByParamVersionId:
-        - confirmationMethod: TABLE
-          paramVersionId: schver_Rm4nTvWz
-        dataEntryMode: INDIVIDUAL_CONDITION_REPLICATES
-        description: Dose-response run plan
-        studyId: stdy_9CYiCggY
-        workflowFlowchartConfigVersionId: wffccv_Lk3mQpXn
-      properties:
-        confirmationMethodByParamVersionId:
-          description: Override the default confirmation method for specific procedure parameters. Each entry maps a parameter version ID to a confirmation method (TABLE or PLATE_MAP). Omit or pass an empty array to use the default confirmation methods.
-          items:
-            $ref: '#/components/schemas/ConfirmationMethodByParamVersionIdInput'
-          type: array
-        dataEntryMode:
-          description: Controls how data entry worksheets are created upon promotion. `INDIVIDUAL_CONDITION_REPLICATES` creates one worksheet per condition-replicate. `ALL_CONDITION_REPLICATES_TOGETHER` creates a single shared worksheet (not supported for assay run plans). Defaults to `INDIVIDUAL_CONDITION_REPLICATES` if omitted.
-          enum:
-          - INDIVIDUAL_CONDITION_REPLICATES
-          - ALL_CONDITION_REPLICATES_TOGETHER
-          type: string
-        description:
-          description: A human-readable description of the run plan. Must not exceed 255 characters.
-          type: string
-        studyId:
-          description: 'The ID of the study this run plan belongs to. Format: `stdy_XXXXXXXX`.'
-          type: string
-        workflowFlowchartConfigVersionId:
-          description: 'The ID of the workflow flowchart config version that defines the procedure template for this run plan. Format: `wffccv_XXXXXXXX`. Set to null to create a run plan with no linked procedure.'
-          type:
-          - 'null'
-          - string
-      required:
-      - description
-      - studyId
-      - dataEntryMode
-      - workflowFlowchartConfigVersionId
-      - confirmationMethodByParamVersionId
-      type: object
-    ProcedureRunPlanPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureRunPlan'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    PromotedProcedureRunItem:
-      description: A single procedure run created by promoting a procedure run plan.
-      properties:
-        __typename:
-          type: string
-        folderId:
-          type: string
-        id:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ConfirmationMethodByParamVersionIdInput:
-      additionalProperties: false
-      properties:
-        confirmationMethod:
-          enum:
-          - TABLE
-          - PLATE_MAP
-          type: string
-        paramVersionId:
-          type: string
-      required:
-      - paramVersionId
-      - confirmationMethod
-      type: object
-    ProcedureRunPlanConditionUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureRunPlanCondition'
-          type: array
-      type: object
-    MethodParametersPlan:
-      description: 'Contains the planned parameter values for a single unit operation (method) within a
-
-        `ProcedureRunPlanCondition`. Links to a `ProcedureMethodDefinitionVersion` via
-
-        `templateMethodVersion` to identify which method these values apply to. Parameter values are
-
-        organized by category: `dataParameterValues` for data fields like numbers or text,
-
-        `materialInputValues` for sample or reagent inputs, and `equipmentValues` for equipment
-
-        assignments. When the parent `ProcedureRunPlan` is promoted to a `ProcedureRun`, these planned
-
-        values become the starting values in the resulting `ProcedureMethodExecutionInstance`.'
-      properties:
-        __typename:
-          type: string
-        dataParameterValues:
-          description: Planned values for data parameters keyed by parameter identifiers.
-          items:
-            $ref: '#/components/schemas/DataParameterValuePlan'
-          type: array
-        equipmentValues:
-          description: Planned values for equipment keyed by equipment identifiers.
-          items:
-            $ref: '#/components/schemas/EquipmentValuePlan'
-          type: array
-        materialInputValues:
-          description: Planned values for material inputs keyed by input identifiers.
-          items:
-            $ref: '#/components/schemas/MaterialInputValuePlan'
-          type: array
-      type: object
-    StudyRef:
+    ProcedureRunPlanRef:
       properties:
         __typename:
           type: string
@@ -1011,6 +1043,26 @@ components:
       required:
       - templateMethodVersionId
       - conditionIds
+      type: object
+    PromotedProcedureRunItem:
+      description: A single procedure run created by promoting a procedure run plan.
+      properties:
+        __typename:
+          type: string
+        folderId:
+          type: string
+        id:
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
       type: object
     ProcedureRunPlanCondition:
       description: 'A planned experimental condition within a `ProcedureRunPlan`, representing how a procedure''s
@@ -1071,131 +1123,38 @@ components:
           $ref: '#/components/schemas/ProcedureMethodDefinitionVersionRef'
           description: The procedure method definition version (PMDV) this condition belongs to.
       type: object
-    PromoteProcedureRunPlanOutput:
-      description: Output returned when promoting procedure run plans to active procedure runs.
-      properties:
-        creates:
-          items:
-            $ref: '#/components/schemas/PromotedProcedureRunItem'
-          type: array
-      type: object
-    ProcedureRunPlanRef:
+    DataParameterValuePlan:
+      description: 'A pre-filled value for a data parameter within a `MethodParametersPlan`. The `parameterId`
+
+        references the `ProcedureParameterVersion` this value applies to. The `value` field contains
+
+        the planned data in JSON format, which may be a number, string, or structured value depending
+
+        on the parameter''s data type configuration. Used during experiment planning to specify default
+
+        values that will populate the parameter when the procedure run is created.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureFlowchartVersionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureFlowchartConfigVersionProxyRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    UpdateProcedureRunPlanInput:
-      additionalProperties: false
-      example:
-        conditionOrder:
-        - conditionIds:
-          - prpc_Bm7nWsKt
-          - prpc_Zq2rPvJx
-          templateMethodVersionId: pcmdv_Hn5kRtYw
-        confirmationMethodByParamVersionId:
-        - confirmationMethod: TABLE
-          paramVersionId: schver_Rm4nTvWz
-        dataEntryMode: INDIVIDUAL_CONDITION_REPLICATES
-        description: Updated dose-response plan
-        workflowFlowchartConfigVersionId: wffccv_Lk3mQpXn
-      properties:
-        conditionOrder:
-          description: Reorder existing conditions per procedure method definition version (PMDV). For each PMDV included, **all** existing condition IDs for that PMDV in the plan must be present exactly once. The order of IDs in `conditionIds` determines the new display positions (0-indexed).
-          items:
-            $ref: '#/components/schemas/ConditionOrderForPmdvInput'
-          type: array
-        confirmationMethodByParamVersionId:
-          description: Replace the confirmation method overrides for specific procedure parameters. Pass an empty array to clear all overrides.
-          items:
-            $ref: '#/components/schemas/ConfirmationMethodByParamVersionIdInput'
-          type: array
-        dataEntryMode:
-          description: Controls how data entry worksheets are created upon promotion. `INDIVIDUAL_CONDITION_REPLICATES` creates one worksheet per condition-replicate. `ALL_CONDITION_REPLICATES_TOGETHER` creates a single shared worksheet (not supported for assay run plans).
-          enum:
-          - INDIVIDUAL_CONDITION_REPLICATES
-          - ALL_CONDITION_REPLICATES_TOGETHER
-          type: string
-        description:
-          description: A human-readable description of the run plan. Must not exceed 255 characters.
-          type: string
-        workflowFlowchartConfigVersionId:
-          description: 'The ID of the workflow flowchart config version to switch to. Format: `wffccv_XXXXXXXX`. When changed, existing conditions should be updated to reference method versions in the new flowchart. Set to null to clear the linked procedure flowchart version.'
-          type:
-          - 'null'
-          - string
-      type: object
-    MaterialInputValuePlan:
-      description: 'A pre-filled value for a material input within a `MethodParametersPlan`. The `materialInputId`
-
-        references the `ProcedureParameterVersion` for the material input this value applies to. The
-
-        `value` field contains the planned material specification in JSON format, typically including
-
-        sample references and quantities. Used during experiment planning to pre-assign samples,
-
-        reagents, or other materials that will be used when the procedure run is executed.'
-      properties:
-        __typename:
-          type: string
-        materialInputId:
+        parameterId:
           type: string
         value:
           type: object
       type: object
   parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
       in: query
-      name: pageSize
+      name: returning
       schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -1206,32 +1165,13 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.lte
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
     modifiedAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
@@ -1249,20 +1189,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
@@ -1270,11 +1196,24 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
-      name: returning
+      name: omit
       schema:
         items:
           type: string
@@ -1285,44 +1224,61 @@ components:
       name: nextToken
       schema:
         type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
       in: query
-      name: createdAt.lte
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

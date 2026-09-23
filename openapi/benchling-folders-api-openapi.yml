@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Folders API
+  title: Benchling Folders API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: Folders are nested within projects to provide additional organization.
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,6 @@ tags:
 paths:
   /folders:
     get:
-      description: List folders
       operationId: listFolders
       parameters:
       - in: query
@@ -32,7 +29,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: 'Method by which to order search results. Valid sorts are modifiedAt (modified time, most recent first) and name (folder name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order.
 
@@ -51,7 +47,6 @@ paths:
           - name:asc
           - modifiedAt:desc
           - name:desc
-          nullable: false
           type: string
       - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived folders. Use "ANY_ARCHIVED" to filter for archived folders regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
 
@@ -125,7 +120,6 @@ paths:
       tags:
       - Folders
     post:
-      description: Create folder
       operationId: createFolder
       requestBody:
         content:
@@ -150,7 +144,6 @@ paths:
       - Folders
   /folders/{folder_id}:
     get:
-      description: Get a folder by ID
       operationId: getFolder
       parameters:
       - description: ID of folder to get
@@ -227,41 +220,18 @@ paths:
       - Folders
 components:
   schemas:
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    FoldersUnarchive:
+    FolderCreate:
       additionalProperties: false
       properties:
-        folderIds:
-          description: A list of folder IDs to unarchive.
-          items:
-            type: string
-          type: array
+        name:
+          description: The name of the new folder.
+          type: string
+        parentFolderId:
+          description: The ID of the parent folder.
+          type: string
       required:
-      - folderIds
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
+      - name
+      - parentFolderId
     FoldersArchive:
       additionalProperties: false
       properties:
@@ -283,27 +253,26 @@ components:
       - reason
       - folderIds
       type: object
-    FolderCreate:
-      additionalProperties: false
+    Folder:
       properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          readOnly: true
+        id:
+          readOnly: true
+          type: string
         name:
-          description: The name of the new folder.
           type: string
         parentFolderId:
-          description: The ID of the parent folder.
+          description: ID of the parent folder, if it exists
+          type:
+          - string
+          - 'null'
+        projectId:
+          description: ID of the containing project
+          readOnly: true
           type: string
-      required:
-      - name
-      - parentFolderId
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
     FoldersPaginatedList:
       properties:
         folders:
@@ -318,6 +287,30 @@ components:
         reason:
           example: Made in error
           type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     FoldersArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of folders along with any IDs of folder contents that were unarchived.
@@ -357,26 +350,26 @@ components:
             type: string
           type: array
       type: object
-    Folder:
+    FoldersUnarchive:
+      additionalProperties: false
       properties:
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-          readOnly: true
-        id:
-          readOnly: true
+        folderIds:
+          description: A list of folder IDs to unarchive.
+          items:
+            type: string
+          type: array
+      required:
+      - folderIds
+      type: object
+    BaseError:
+      properties:
+        message:
           type: string
-        name:
+        type:
           type: string
-        parentFolderId:
-          description: ID of the parent folder, if it exists
-          nullable: true
+        userMessage:
           type: string
-        projectId:
-          description: ID of the containing project
-          readOnly: true
-          type: string
+      type: object
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

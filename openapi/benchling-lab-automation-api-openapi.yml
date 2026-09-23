@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Lab Automation API
+  title: Benchling Lab Automation API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: Lab Automation endpoints support integration with lab instruments, and liquid handlers to create samples or results, and capture transfers between containers at scale.
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,6 @@ tags:
 paths:
   /automation-file-transforms/{transform_id}:
     get:
-      description: Get a Lab Automation Transform step
       operationId: getLabAutomationTransform
       parameters:
       - in: path
@@ -44,7 +41,6 @@ paths:
       tags:
       - Lab Automation
     patch:
-      description: Update a Lab Automation Transform step
       operationId: updateLabAutomationTransform
       parameters:
       - in: path
@@ -75,7 +71,6 @@ paths:
       - Lab Automation
   /automation-input-generators/{input_generator_id}:
     get:
-      description: Get an Automation Input Generator
       operationId: getAutomationInputGenerator
       parameters:
       - in: path
@@ -100,7 +95,6 @@ paths:
       tags:
       - Lab Automation
     patch:
-      description: Update an Automation Input Generator
       operationId: updateAutomationInputGenerator
       parameters:
       - in: path
@@ -131,7 +125,6 @@ paths:
       - Lab Automation
   /automation-input-generators/{input_generator_id}:generate-input:
     post:
-      description: Generate Input with an Automation Input Generator
       operationId: generateInputWithAutomationInputGenerator
       parameters:
       - in: path
@@ -233,7 +226,6 @@ paths:
       tags:
       - Lab Automation
     post:
-      description: Create Automation Output Processor
       operationId: createAutomationOutputProcessor
       requestBody:
         content:
@@ -258,7 +250,6 @@ paths:
       - Lab Automation
   /automation-output-processors/{output_processor_id}:
     get:
-      description: Get an Automation Output Processor
       operationId: getAutomationOutputProcessor
       parameters:
       - in: path
@@ -283,7 +274,6 @@ paths:
       tags:
       - Lab Automation
     patch:
-      description: Update an Automation Output Processor
       operationId: updateAutomationOutputProcessor
       parameters:
       - in: path
@@ -314,7 +304,6 @@ paths:
       - Lab Automation
   /automation-output-processors/{output_processor_id}:process-output:
     post:
-      description: Process Output with an Automation Output Processor
       operationId: processOutputWithAutomationOutputProcessor
       parameters:
       - in: path
@@ -347,7 +336,6 @@ paths:
       - Lab Automation
   /automation-output-processors:archive:
     post:
-      description: Archive Automation Output Processors and linked Results
       operationId: archiveAutomationOutputProcessors
       requestBody:
         content:
@@ -372,7 +360,6 @@ paths:
       - Lab Automation
   /automation-output-processors:unarchive:
     post:
-      description: Unarchive Automation Output Processors and linked Results
       operationId: unarchiveAutomationOutputProcessors
       requestBody:
         content:
@@ -397,17 +384,104 @@ paths:
       - Lab Automation
 components:
   schemas:
-    LabAutomationTransformUpdate:
+    AutomationInputGeneratorUpdate:
       additionalProperties: false
       properties:
-        blobId:
+        fileId:
+          description: The ID of the file (blob) associated with the input generator. Set to `null` to remove an existing file from the generator.
+          example: null
+          type:
+          - string
+          - 'null'
+      type: object
+    AutomationInputGenerator:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Input Generator in the API.
+            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          createdAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          id:
+            example: aif_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+            type: array
+        type: object
+    AutomationOutputProcessorCreate:
+      additionalProperties: false
+      properties:
+        assayRunId:
+          type: string
+        automationFileConfigName:
+          type: string
+        completeWithErrors:
+          description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
+          type: boolean
+        fileId:
           description: The ID of a blob link or the API ID of a file to process.
           example: cd624536-c6ba-41b9-b802-9461689e2ea3 or file_65Cevxgm
           type: string
-        errors:
-          items:
-            $ref: '#/components/schemas/LabAutomationBenchlingAppError'
-          type: array
+        folderId:
+          description: The API ID of the folder to set for the automation output file. Folder items created by the correpsonding output processor will be created in this folder.
+          type: string
+        locationId:
+          description: The API ID of the location to set for the automation output file. Storable items created by the correpsonding output processor will be created at this location.
+          type: string
+        timezone:
+          description: The timezone to set for the automation output file. Used as the timezone for the timestamp fields if not set in the timestamp.
+          type: string
+      required:
+      - fileId
+      - automationFileConfigName
+      - assayRunId
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    AutomationProgressStats:
+      description: Processing progress information.
+      properties:
+        rowsFailed:
+          type: integer
+        rowsSucceeded:
+          type: integer
+        rowsUnprocessed:
+          type: integer
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
       type: object
     LabAutomationTransform:
       properties:
@@ -418,27 +492,31 @@ components:
           type: string
         blobId:
           format: uuid
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         customTransformId:
           format: uuid
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         errors:
           $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
         id:
           type: string
         inputGeneratorId:
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         modifiedAt:
           description: DateTime the transform was last modified.
           format: date-time
           readOnly: true
           type: string
         outputProcessorId:
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         status:
           enum:
           - NOT_STARTED
@@ -446,6 +524,58 @@ components:
           - FAILED
           - SUCCEEDED
           type: string
+      type: object
+    LabAutomationBenchlingAppError:
+      properties:
+        message:
+          type: string
+      type: object
+    AutomationOutputProcessorsArchive:
+      additionalProperties: false
+      properties:
+        automationOutputProcessorIds:
+          description: Array of automation output processor IDs
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'The reason that the output processors are being archived. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Expended
+          - Shipped
+          - Contaminated
+          - Expired
+          - Missing
+          - Other
+          type: string
+      required:
+      - automationOutputProcessorIds
+      type: object
+    AutomationOutputProcessorArchivalChange:
+      description: IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of any linked Results that were archived / unarchived.
+      properties:
+        automationOutputProcessorIds:
+          items:
+            type: string
+          type: array
+        resultIds:
+          items:
+            type: string
+          type: array
+      type: object
+    AutomationOutputProcessorUpdate:
+      additionalProperties: false
+      properties:
+        fileId:
+          description: The ID of a blob link or the API ID of a file to process.
+          example: cd624536-c6ba-41b9-b802-9461689e2ea3 or file_65Cevxgm
+          type: string
+      required:
+      - fileId
       type: object
     Blob:
       properties:
@@ -479,134 +609,6 @@ components:
           - ABORTED
           type: string
       type: object
-    AutomationOutputProcessorsPaginatedList:
-      description: A paginated list of automation output processors which have an attached file.
-      properties:
-        automationOutputProcessors:
-          items:
-            $ref: '#/components/schemas/AutomationOutputProcessor'
-          type: array
-        nextToken:
-          example: Im5ldyB0ZXN0Ig==
-          type: string
-      type: object
-    AutomationOutputProcessor:
-      allOf:
-      - $ref: '#/components/schemas/AutomationFile'
-      - properties:
-          apiURL:
-            description: The canonical url of the Automation Output Processor in the API.
-            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
-            format: uri
-            readOnly: true
-            type: string
-          archiveRecord:
-            allOf:
-            - $ref: '#/components/schemas/ArchiveRecord'
-            nullable: true
-          completeWithErrors:
-            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
-            type: boolean
-          createdAt:
-            description: DateTime the Automation Output Processor was created
-            format: date-time
-            type: string
-          errorFile:
-            allOf:
-            - $ref: '#/components/schemas/Blob'
-            nullable: true
-          id:
-            example: aop_C3wGA9HF
-            type: string
-          modifiedAt:
-            description: DateTime the Automation Output Processor was last modified
-            format: date-time
-            type: string
-          progressStats:
-            $ref: '#/components/schemas/AutomationProgressStats'
-          transforms:
-            items:
-              allOf:
-              - $ref: '#/components/schemas/LabAutomationTransform'
-              nullable: true
-            type: array
-        type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    AutomationOutputProcessorArchivalChange:
-      description: IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of any linked Results that were archived / unarchived.
-      properties:
-        automationOutputProcessorIds:
-          items:
-            type: string
-          type: array
-        resultIds:
-          items:
-            type: string
-          type: array
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    AutomationOutputProcessorCreate:
-      additionalProperties: false
-      properties:
-        assayRunId:
-          type: string
-        automationFileConfigName:
-          type: string
-        completeWithErrors:
-          description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
-          type: boolean
-        fileId:
-          description: The ID of a blob link or the API ID of a file to process.
-          example: cd624536-c6ba-41b9-b802-9461689e2ea3 or file_65Cevxgm
-          type: string
-        folderId:
-          description: The API ID of the folder to set for the automation output file. Folder items created by the correpsonding output processor will be created in this folder.
-          type: string
-        locationId:
-          description: The API ID of the location to set for the automation output file. Storable items created by the correpsonding output processor will be created at this location.
-          type: string
-        timezone:
-          description: The timezone to set for the automation output file. Used as the timezone for the timestamp fields if not set in the timestamp.
-          type: string
-      required:
-      - fileId
-      - automationFileConfigName
-      - assayRunId
-      type: object
-    AutomationProgressStats:
-      description: Processing progress information.
-      properties:
-        rowsFailed:
-          type: integer
-        rowsSucceeded:
-          type: integer
-        rowsUnprocessed:
-          type: integer
-      type: object
     AsyncTaskLink:
       properties:
         taskId:
@@ -622,45 +624,6 @@ components:
             type: object
           type: array
       type: object
-    AutomationOutputProcessorsUnarchive:
-      additionalProperties: false
-      properties:
-        automationOutputProcessorIds:
-          description: Array of automation output processor IDs
-          items:
-            type: string
-          type: array
-      required:
-      - automationOutputProcessorIds
-      type: object
-    AutomationOutputProcessorUpdate:
-      additionalProperties: false
-      properties:
-        fileId:
-          description: The ID of a blob link or the API ID of a file to process.
-          example: cd624536-c6ba-41b9-b802-9461689e2ea3 or file_65Cevxgm
-          type: string
-      required:
-      - fileId
-      type: object
-    LabAutomationBenchlingAppError:
-      properties:
-        message:
-          type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
     AutomationFile:
       properties:
         assayRunId:
@@ -675,7 +638,6 @@ components:
         file:
           allOf:
           - $ref: '#/components/schemas/Blob'
-          nullable: true
         id:
           type: string
         status:
@@ -686,7 +648,57 @@ components:
           - RUNNING
           type: string
       type: object
-    AutomationOutputProcessorsArchive:
+    LabAutomationTransformUpdate:
+      additionalProperties: false
+      properties:
+        blobId:
+          description: The ID of a blob link or the API ID of a file to process.
+          example: cd624536-c6ba-41b9-b802-9461689e2ea3 or file_65Cevxgm
+          type: string
+        errors:
+          items:
+            $ref: '#/components/schemas/LabAutomationBenchlingAppError'
+          type: array
+      type: object
+    AutomationOutputProcessor:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Output Processor in the API.
+            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+          completeWithErrors:
+            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
+            type: boolean
+          createdAt:
+            description: DateTime the Automation Output Processor was created
+            format: date-time
+            type: string
+          errorFile:
+            allOf:
+            - $ref: '#/components/schemas/Blob'
+          id:
+            example: aop_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Output Processor was last modified
+            format: date-time
+            type: string
+          progressStats:
+            $ref: '#/components/schemas/AutomationProgressStats'
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+            type: array
+        type: object
+    AutomationOutputProcessorsUnarchive:
       additionalProperties: false
       properties:
         automationOutputProcessorIds:
@@ -694,60 +706,35 @@ components:
           items:
             type: string
           type: array
-        reason:
-          description: 'The reason that the output processors are being archived. Accepted reasons may differ based on tenant configuration.
-
-            '
-          enum:
-          - Made in error
-          - Retired
-          - Expended
-          - Shipped
-          - Contaminated
-          - Expired
-          - Missing
-          - Other
-          type: string
       required:
       - automationOutputProcessorIds
       type: object
-    AutomationInputGenerator:
-      allOf:
-      - $ref: '#/components/schemas/AutomationFile'
-      - properties:
-          apiURL:
-            description: The canonical url of the Automation Input Generator in the API.
-            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
-            format: uri
-            readOnly: true
-            type: string
-          createdAt:
-            description: DateTime the Automation Input Generator was last modified
-            format: date-time
-            readOnly: true
-            type: string
-          id:
-            example: aif_C3wGA9HF
-            type: string
-          modifiedAt:
-            description: DateTime the Automation Input Generator was last modified
-            format: date-time
-            readOnly: true
-            type: string
-          transforms:
-            items:
-              allOf:
-              - $ref: '#/components/schemas/LabAutomationTransform'
-              nullable: true
-            type: array
-        type: object
-    AutomationInputGeneratorUpdate:
-      additionalProperties: false
+    ArchiveRecord:
       properties:
-        fileId:
-          description: The ID of the file (blob) associated with the input generator. Set to `null` to remove an existing file from the generator.
-          example: null
-          nullable: true
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    AutomationOutputProcessorsPaginatedList:
+      description: A paginated list of automation output processors which have an attached file.
+      properties:
+        automationOutputProcessors:
+          items:
+            $ref: '#/components/schemas/AutomationOutputProcessor'
+          type: array
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
           type: string
       type: object
   securitySchemes:

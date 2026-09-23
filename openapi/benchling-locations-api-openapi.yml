@@ -1,32 +1,28 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Locations API
+  title: Benchling Locations API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+  description: 'Manage locations objects.
 
-    '
+
+    Like all inventory, every Location has a barcode that is unique across the registry.'
 servers:
 - url: /api/v2
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: '
-
-    Manage locations objects.
+- description: 'Manage locations objects.
 
 
-    Like all inventory, every Location has a barcode that is unique across the registry.
-
-    '
+    Like all inventory, every Location has a barcode that is unique across the registry.'
   name: Locations
 paths:
   /locations:
     get:
-      description: List locations
       operationId: listLocations
       parameters:
       - description: Number of results to return.
@@ -35,7 +31,6 @@ paths:
         schema:
           default: 50
           maximum: 100
-          nullable: false
           type: integer
       - description: Token for pagination
         in: query
@@ -62,7 +57,6 @@ paths:
           - createdAt
           - createdAt:asc
           - createdAt:desc
-          nullable: false
           type: string
       - description: ID of a schema. Restricts results to those of the specified schema.
         in: query
@@ -202,7 +196,6 @@ paths:
       tags:
       - Locations
     post:
-      description: Create a location
       operationId: createLocation
       requestBody:
         content:
@@ -227,7 +220,6 @@ paths:
       - Locations
   /locations/{location_id}:
     get:
-      description: Get a location by ID
       operationId: getLocation
       parameters:
       - description: ID of location to get
@@ -255,7 +247,6 @@ paths:
       tags:
       - Locations
     patch:
-      description: Update a location
       operationId: updateLocation
       parameters:
       - description: ID of the location to update
@@ -299,7 +290,6 @@ paths:
       - Locations
   /locations:archive:
     post:
-      description: Archive locations
       operationId: archiveLocations
       requestBody:
         content:
@@ -330,7 +320,6 @@ paths:
       - Locations
   /locations:bulk-get:
     get:
-      description: BulkGet locations
       operationId: bulkGetLocations
       parameters:
       - description: Comma-separated list of location IDs.
@@ -368,7 +357,6 @@ paths:
       - Locations
   /locations:unarchive:
     post:
-      description: Unarchive locations
       operationId: unarchiveLocations
       requestBody:
         content:
@@ -393,84 +381,95 @@ paths:
       - Locations
 components:
   schemas:
-    ForbiddenRestrictedSampleError:
+    NotFoundError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
-              invalidIds:
-                items:
-                  type: string
-                type: array
+              invalidId:
+                type: string
               type:
                 enum:
                 - invalid_request_error
                 type: string
-          - example:
-              invalidIds:
-              - Q6uhNZvw
-              - con_OwmERWGE
-              - con_zuDFhNvz
-              message: You're not a restricted sample user for some items.
-              type: invalid_request_error
-              userMessage: You're not a restricted sample user for some items.
       type: object
-    LocationsBulkGet:
+    BaseError:
       properties:
-        locations:
-          items:
-            $ref: '#/components/schemas/Location'
-          type: array
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    LocationUpdate:
+      additionalProperties: false
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    LocationCreate:
+      additionalProperties: false
+      properties:
+        barcode:
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - name
+      - schemaId
       type: object
     Fields:
       additionalProperties:
         $ref: '#/components/schemas/Field'
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    LocationsPaginatedList:
-      properties:
-        locations:
-          items:
-            $ref: '#/components/schemas/Location'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    LocationsUnarchive:
-      additionalProperties: false
-      properties:
-        locationIds:
-          description: Array of location IDs
-          items:
-            type: string
-          type: array
-      required:
-      - locationIds
       type: object
     Location:
       properties:
         archiveRecord:
           allOf:
           - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
         availableCapacity:
           description: 'The number of available positions in this location. Null if *totalCapacity* is not set.
 
             '
-          nullable: true
           readOnly: true
-          type: integer
+          type:
+          - integer
+          - 'null'
         barcode:
           type: string
         createdAt:
@@ -489,46 +488,66 @@ components:
           description: 'The number of plates, boxes, and containers currently in this location. Null if *totalCapacity* is not set.
 
             '
-          nullable: true
           readOnly: true
-          type: integer
+          type:
+          - integer
+          - 'null'
         parentStorageId:
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         schema:
           allOf:
           - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
         totalCapacity:
           description: 'The total capacity of this location (i.e. how many plates, boxes, and containers it can store). If null, capacity is not limited.
 
             '
-          nullable: true
           readOnly: true
-          type: integer
+          type:
+          - integer
+          - 'null'
         webURL:
           type: string
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    BaseError:
+    ForbiddenError:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
       type: object
-    ArchiveRecord:
+    LocationsArchive:
+      additionalProperties: false
       properties:
+        locationIds:
+          description: Array of location IDs
+          items:
+            type: string
+          type: array
         reason:
-          example: Made in error
+          description: 'Reason that locations are being archived.
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Other
           type: string
+        shouldRemoveBarcodes:
+          description: 'Remove barcodes. Removing barcodes from archived inventory that contain items will also remove barcodes from the contained items.
+
+            '
+          type: boolean
+      required:
+      - locationIds
+      - reason
       type: object
     FieldType:
       enum:
@@ -559,41 +578,22 @@ components:
       - date
       - json
       type: string
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    ForbiddenError:
-      properties:
-        error:
-          properties:
-            invalidId:
-              type: string
-            message:
-              type: string
-            type:
-              type: string
-            userMessage:
-              type: string
-          type: object
-      type: object
     Field:
       properties:
         displayValue:
-          nullable: true
           readOnly: true
-          type: string
+          type:
+          - string
+          - 'null'
         isMulti:
           readOnly: true
           type: boolean
         textValue:
           example: Amp
-          nullable: true
           readOnly: true
-          type: string
+          type:
+          - string
+          - 'null'
         type:
           allOf:
           - $ref: '#/components/schemas/FieldType'
@@ -604,7 +604,6 @@ components:
             For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
 
             '
-          nullable: true
           oneOf:
           - type: string
           - type: boolean
@@ -616,80 +615,12 @@ components:
       required:
       - value
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    LocationsArchive:
-      additionalProperties: false
-      properties:
-        locationIds:
-          description: Array of location IDs
-          items:
-            type: string
-          type: array
-        reason:
-          description: 'Reason that locations are being archived.
-
-            '
-          enum:
-          - Made in error
-          - Retired
-          - Other
-          type: string
-        shouldRemoveBarcodes:
-          description: 'Remove barcodes. Removing barcodes from archived inventory that contain items will also remove barcodes from the contained items.
-
-            '
-          type: boolean
-      required:
-      - locationIds
-      - reason
-      type: object
-    LocationCreate:
-      additionalProperties: false
-      properties:
-        barcode:
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        name:
-          type: string
-        parentStorageId:
-          type: string
-        schemaId:
-          type: string
-      required:
-      - name
-      - schemaId
-      type: object
-    LocationUpdate:
-      additionalProperties: false
-      properties:
-        fields:
-          $ref: '#/components/schemas/Fields'
-        name:
-          type: string
-        parentStorageId:
-          type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
       type: object
     LocationsArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of locations along with any IDs of locations, boxes, plates, containers that were archived.
@@ -713,12 +644,72 @@ components:
             type: string
           type: array
       type: object
-    SchemaSummary:
+    ForbiddenRestrictedSampleError:
       properties:
-        id:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidIds:
+                items:
+                  type: string
+                type: array
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+          - example:
+              invalidIds:
+              - Q6uhNZvw
+              - con_OwmERWGE
+              - con_zuDFhNvz
+              message: You're not a restricted sample user for some items.
+              type: invalid_request_error
+              userMessage: You're not a restricted sample user for some items.
+      type: object
+    LocationsPaginatedList:
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/Location'
+          type: array
+        nextToken:
           type: string
-        name:
+      type: object
+    LocationsBulkGet:
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/Location'
+          type: array
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
           type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    LocationsUnarchive:
+      additionalProperties: false
+      properties:
+        locationIds:
+          description: Array of location IDs
+          items:
+            type: string
+          type: array
+      required:
+      - locationIds
       type: object
   securitySchemes:
     basicApiKeyAuth:

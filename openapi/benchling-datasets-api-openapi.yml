@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Datasets API
+  title: Benchling Datasets API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: Similar to Data frames, datasets in Benchling represent tabular data that is not schematized. Datasets are saved to folders within Benchling with additional metadata, making them accessible and searchable within Benchling. Each dataset actually contains a data frame, and a data frame is required to create a dataset.
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,6 @@ tags:
 paths:
   /datasets:
     get:
-      description: List datasets
       operationId: listDatasets
       parameters:
       - $ref: '#/components/parameters/listingPageSize'
@@ -100,7 +97,6 @@ paths:
       - Datasets
   /datasets/{dataset_id}:
     get:
-      description: Get a dataset
       operationId: getDataset
       parameters:
       - description: The ID of the dataset
@@ -127,7 +123,6 @@ paths:
       tags:
       - Datasets
     patch:
-      description: Update a dataset
       operationId: updateDataset
       parameters:
       - description: The ID of the dataset
@@ -160,7 +155,6 @@ paths:
       - Datasets
   /datasets:archive:
     post:
-      description: Archive datasets
       operationId: archiveDatasets
       requestBody:
         content:
@@ -205,34 +199,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/BadRequestError'
           description: Bad Request
-      summary: Unarchive datasets.
+      summary: Unarchive datasets
       tags:
       - Datasets
 components:
   parameters:
-    listingPageSize:
-      description: Number of results to return.
+    listingNextToken:
+      example: Im5ldyB0ZXN0Ig==
       in: query
-      name: pageSize
+      name: nextToken
       schema:
-        default: 50
-        maximum: 100
-        minimum: 0
-        nullable: false
-        type: integer
-    folderIdFilter:
-      description: ID of a folder. Restricts results to those in the folder.
-      in: query
-      name: folderId
-      schema:
-        example: lib_a0SApq3z
         type: string
-    originFilter:
-      description: Comma-separated list of item IDs. Restricts results to those whose origin parent is any of the specified items.
+    mentionedInFilter:
+      description: 'Comma-separated list of entry IDs. Restricts results to items mentioned in those entries.
+
+        '
       in: query
-      name: originIds
+      name: mentionedIn
       schema:
-        example: cxn_a0SApq3z,ana_jdf8BV24
+        example: etr_1X1AlQPD, etr_tv7m7B78
         type: string
     modifiedAtFilter:
       description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
@@ -251,70 +236,6 @@ components:
       in: query
       name: modifiedAt
       schema:
-        type: string
-    listingNextToken:
-      example: Im5ldyB0ZXN0Ig==
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    mentionedInFilter:
-      description: 'Comma-separated list of entry IDs. Restricts results to items mentioned in those entries.
-
-        '
-      in: query
-      name: mentionedIn
-      schema:
-        example: etr_1X1AlQPD, etr_tv7m7B78
-        type: string
-    nameFilter:
-      description: Restricts results to those with the specified name.
-      in: query
-      name: name
-      schema:
-        type: string
-    createdAtFilter:
-      description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
-
-        '
-      examples:
-        and-range:
-          summary: Filter for all models created within a certain range using the AND operator.
-          value: '> 2022-03-01 AND < 2022-04-01'
-        full-rfc-3339-format:
-          summary: Filter for created models using the full RFC 3339 format
-          value: '> 2020-12-31T21:07:14-05:00'
-        greater-than-example:
-          summary: Filter for all models created after a certain date
-          value: '> 2022-03-01'
-      in: query
-      name: createdAt
-      schema:
-        type: string
-    creatorIdsFilter:
-      description: Comma separated list of user IDs.
-      in: query
-      name: creatorIds
-      schema:
-        example: ent_a0SApq3z
-        type: string
-    namesAnyOfFilter:
-      description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
-
-        '
-      in: query
-      name: names.anyOf
-      schema:
-        example: MyName1,MyName2
-        type: string
-    namesAnyOfCaseSensitiveFilter:
-      description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
-
-        '
-      in: query
-      name: names.anyOf.caseSensitive
-      schema:
-        example: MyName1,MyName2
         type: string
     archiveReasonFilter:
       description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
@@ -345,6 +266,37 @@ components:
       name: nameIncludes
       schema:
         type: string
+    creatorIdsFilter:
+      description: Comma separated list of user IDs.
+      in: query
+      name: creatorIds
+      schema:
+        example: ent_a0SApq3z
+        type: string
+    namesAnyOfCaseSensitiveFilter:
+      description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case sensitive.
+
+        '
+      in: query
+      name: names.anyOf.caseSensitive
+      schema:
+        example: MyName1,MyName2
+        type: string
+    nameFilter:
+      description: Restricts results to those with the specified name.
+      in: query
+      name: name
+      schema:
+        type: string
+    listingPageSize:
+      description: Number of results to return.
+      in: query
+      name: pageSize
+      schema:
+        default: 50
+        maximum: 100
+        minimum: 0
+        type: integer
     listingSortNameModifiedCreated:
       description: 'Method by which to order search results. Valid sorts are modifiedAt (modified time, most recent first) createdAt (creation time, most recent first) and name (item name, alphabetical). Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
 
@@ -363,78 +315,49 @@ components:
         - modifiedAt:desc
         - name:desc
         - createdAt:desc
-        nullable: false
+        type: string
+    createdAtFilter:
+      description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those created in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
+
+        '
+      examples:
+        and-range:
+          summary: Filter for all models created within a certain range using the AND operator.
+          value: '> 2022-03-01 AND < 2022-04-01'
+        full-rfc-3339-format:
+          summary: Filter for created models using the full RFC 3339 format
+          value: '> 2020-12-31T21:07:14-05:00'
+        greater-than-example:
+          summary: Filter for all models created after a certain date
+          value: '> 2022-03-01'
+      in: query
+      name: createdAt
+      schema:
+        type: string
+    namesAnyOfFilter:
+      description: 'Comma-separated list of names. Maximum of 100. Restricts results to those that match any of the specified names, case insensitive.  Warning - this filter can be non-performant due to case insensitivity.
+
+        '
+      in: query
+      name: names.anyOf
+      schema:
+        example: MyName1,MyName2
+        type: string
+    originFilter:
+      description: Comma-separated list of item IDs. Restricts results to those whose origin parent is any of the specified items.
+      in: query
+      name: originIds
+      schema:
+        example: cxn_a0SApq3z,ana_jdf8BV24
+        type: string
+    folderIdFilter:
+      description: ID of a folder. Restricts results to those in the folder.
+      in: query
+      name: folderId
+      schema:
+        example: lib_a0SApq3z
         type: string
   schemas:
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    Dataset:
-      allOf:
-      - properties:
-          archiveRecord:
-            allOf:
-            - $ref: '#/components/schemas/ArchiveRecord'
-            description: 'ArchiveRecord Resource if the dataset is archived. This is null if the dataset is not archived.
-
-              '
-            nullable: true
-          createdAt:
-            description: Date and time the dataset was created
-            example: 2023-04-23 01:30:50.970926+00:00
-            format: date-time
-            readOnly: true
-            type: string
-          creator:
-            allOf:
-            - $ref: '#/components/schemas/UserSummary'
-            - description: UserSummary of the user who created the dataset
-            - readOnly: true
-          customFields:
-            allOf:
-            - $ref: '#/components/schemas/CustomFields'
-            description: Custom field values of the dataset
-          dataFrameId:
-            description: ID of the data frame to link to this dataset
-            example: dset_LlDFupKyErxx
-            nullable: false
-            type: string
-          displayId:
-            description: User-friendly ID of the dataset
-            readOnly: true
-            type: string
-          folderId:
-            description: ID of the folder that contains the dataset
-            example: lib_bf0636
-            nullable: false
-            type: string
-          id:
-            example: dataset_LlDFupKyErxx
-            type: string
-          modifiedAt:
-            description: Date and time the dataset was last modified
-            example: 2023-04-23 01:30:50.970926+00:00
-            format: date-time
-            readOnly: true
-            type: string
-          name:
-            description: The user-facing name for this Dataset.
-            example: 09-14-2022 01:16:20 PM well plate
-            type: string
-        type: object
     DatasetsPaginatedList:
       properties:
         datasets:
@@ -444,14 +367,44 @@ components:
         nextToken:
           type: string
       type: object
-    ListingError:
-      allOf:
-      - $ref: '#/components/schemas/BadRequestError'
+    DatasetsArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
+
+        '
       properties:
-        invalidIds:
+        datasetIds:
           items:
             type: string
           type: array
+      type: object
+    DatasetCreate:
+      properties:
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom field values to set on the file
+        dataFrameId:
+          description: ID of the data frame that
+          example: dset_LlDFupKyErxx
+          type: string
+        folderId:
+          description: ID of the folder that contains the file
+          example: lib_bf0636
+          type: string
+        name:
+          description: Display name for the file
+          example: IC50 Chart
+          type: string
+        study_ids:
+          description: 'The study IDs that the dataset is associated with. If provided, the dataset will be associated with the provided studies. If not provided, the dataset will not be associated with any studies.
+
+            '
+          items:
+            type: string
+          type:
+          - array
+          - 'null'
       type: object
     BaseError:
       properties:
@@ -462,11 +415,14 @@ components:
         userMessage:
           type: string
       type: object
-    ArchiveRecord:
+    ListingError:
+      allOf:
+      - $ref: '#/components/schemas/BadRequestError'
       properties:
-        reason:
-          example: Made in error
-          type: string
+        invalidIds:
+          items:
+            type: string
+          type: array
       type: object
     UserSummary:
       allOf:
@@ -490,6 +446,20 @@ components:
           example: My Dataset
           type: string
       type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
     DatasetsUnarchive:
       additionalProperties: false
       description: 'The request body for unarchiving Datasets.
@@ -504,62 +474,12 @@ components:
       required:
       - datasetIds
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    DatasetsArchivalChange:
-      additionalProperties: false
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
-
-        '
-      properties:
-        datasetIds:
-          items:
-            type: string
-          type: array
-      type: object
     CustomFields:
       additionalProperties:
         $ref: '#/components/schemas/CustomField'
       example:
         Legacy ID:
           value: STR100
-      type: object
-    DatasetCreate:
-      properties:
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom field values to set on the file
-        dataFrameId:
-          description: ID of the data frame that
-          example: dset_LlDFupKyErxx
-          nullable: false
-          type: string
-        folderId:
-          description: ID of the folder that contains the file
-          example: lib_bf0636
-          nullable: false
-          type: string
-        name:
-          description: Display name for the file
-          example: IC50 Chart
-          nullable: false
-          type: string
-        study_ids:
-          description: 'The study IDs that the dataset is associated with. If provided, the dataset will be associated with the provided studies. If not provided, the dataset will not be associated with any studies.
-
-            '
-          items:
-            type: string
-          nullable: true
-          type: array
       type: object
     DatasetsArchive:
       additionalProperties: false
@@ -584,6 +504,73 @@ components:
       required:
       - reason
       - datasetIds
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    Dataset:
+      allOf:
+      - properties:
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+            description: 'ArchiveRecord Resource if the dataset is archived. This is null if the dataset is not archived.
+
+              '
+          createdAt:
+            description: Date and time the dataset was created
+            example: 2023-04-23 01:30:50.970926+00:00
+            format: date-time
+            readOnly: true
+            type: string
+          creator:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - description: UserSummary of the user who created the dataset
+            - readOnly: true
+          customFields:
+            allOf:
+            - $ref: '#/components/schemas/CustomFields'
+            description: Custom field values of the dataset
+          dataFrameId:
+            description: ID of the data frame to link to this dataset
+            example: dset_LlDFupKyErxx
+            type: string
+          displayId:
+            description: User-friendly ID of the dataset
+            readOnly: true
+            type: string
+          folderId:
+            description: ID of the folder that contains the dataset
+            example: lib_bf0636
+            type: string
+          id:
+            example: dataset_LlDFupKyErxx
+            type: string
+          modifiedAt:
+            description: Date and time the dataset was last modified
+            example: 2023-04-23 01:30:50.970926+00:00
+            format: date-time
+            readOnly: true
+            type: string
+          name:
+            description: The user-facing name for this Dataset.
+            example: 09-14-2022 01:16:20 PM well plate
+            type: string
+        type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

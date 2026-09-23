@@ -5,38 +5,14 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Event Subscription API
   version: 2.0.0
-  description: 'Configures delivery of Benchling events to external systems via AWS EventBridge. Event
-
-    subscriptions enable real-time integration by streaming events (such as entity creation,
-
-    updates, or workflow state changes) to a customer''s AWS EventBridge event bus. The
-
-    subscription includes the destination AWS ARN (see `destinationAddress`), routing metadata,
-
-    and lifecycle management through expiration (see `expiresAt`) and pause controls. Paused
-
-    subscriptions stop emitting events but retain their configuration for later resumption.
-
-    Event subscriptions are typically managed through Benchling Apps (see `BenchlingApp`).'
+  description: Configures delivery of Benchling events to external systems via AWS EventBridge.
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: 'Configures delivery of Benchling events to external systems via AWS EventBridge. Event
-
-    subscriptions enable real-time integration by streaming events (such as entity creation,
-
-    updates, or workflow state changes) to a customer''s AWS EventBridge event bus. The
-
-    subscription includes the destination AWS ARN (see `destinationAddress`), routing metadata,
-
-    and lifecycle management through expiration (see `expiresAt`) and pause controls. Paused
-
-    subscriptions stop emitting events but retain their configuration for later resumption.
-
-    Event subscriptions are typically managed through Benchling Apps (see `BenchlingApp`).'
+- description: Configures delivery of Benchling events to external systems via AWS EventBridge.
   name: EventSubscription
   x-bnch-organization: Benchling
 paths:
@@ -133,7 +109,143 @@ paths:
       - EventSubscription
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    EventSubscriptionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EventSubscription'
+          type: array
+        nextToken:
+          type: string
+      type: object
     EventSubscription:
       description: 'Configures delivery of Benchling events to external systems via AWS EventBridge. Event
 
@@ -206,42 +318,6 @@ components:
           - 'null'
           - boolean
       type: object
-    EventSubscriptionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/EventSubscription'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
     GeneralError:
       properties:
         detail:
@@ -266,106 +342,6 @@ components:
       - status
       - instance
       type: object
-  parameters:
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

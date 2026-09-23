@@ -7,21 +7,7 @@ info:
   version: 2.0.0
   description: 'A Result represents a single row of experimental measurement data in Benchling''s lab
 
-    automation system. Results conform to a ResultSchema that defines their field structure,
-
-    enabling standardized capture of assay outputs such as absorbance readings, Ct values,
-
-    concentrations, or other measured quantities. Results are typically created through
-
-    lab automation output processors (see AutomationOutputProcessor), structured result
-
-    tables in notebook entries (via the entry field), or programmatically via the API.
-
-    Each result belongs to a Project for access control and can be archived when no longer
-
-    needed. Results can be linked to entities, samples, and runs through schema field values,
-
-    enabling traceability from raw measurements back to source materials.'
+    automation system.'
 servers:
 - url: /api/v3
 security:
@@ -30,21 +16,7 @@ security:
 tags:
 - description: 'A Result represents a single row of experimental measurement data in Benchling''s lab
 
-    automation system. Results conform to a ResultSchema that defines their field structure,
-
-    enabling standardized capture of assay outputs such as absorbance readings, Ct values,
-
-    concentrations, or other measured quantities. Results are typically created through
-
-    lab automation output processors (see AutomationOutputProcessor), structured result
-
-    tables in notebook entries (via the entry field), or programmatically via the API.
-
-    Each result belongs to a Project for access control and can be archived when no longer
-
-    needed. Results can be linked to entities, samples, and runs through schema field values,
-
-    enabling traceability from raw measurements back to source materials.'
+    automation system.'
   name: Result
   x-bnch-core-type: Result
   x-bnch-organization: Benchling
@@ -420,15 +392,48 @@ paths:
       x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    FieldValueInput:
-      additionalProperties: false
+    ObjectRef:
       properties:
-        value:
-          $ref: '#/components/schemas/AnyType'
-      required:
-      - value
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
-    AnyType: {}
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ResultSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     UpdateResultInput:
       additionalProperties: false
       properties:
@@ -441,72 +446,29 @@ components:
             $ref: '#/components/schemas/FieldValueInput'
           type: object
       type: object
-    DateValue:
-      description: A type that represents date values.
+    GeneralError:
       properties:
-        __typename:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
           type: string
-        value:
-          description: The date value.
-          format: date
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
           type: string
-      type: object
-    Result:
-      allOf:
-      - $ref: '#/components/schemas/IResult'
-      - description: 'A Result represents a single row of experimental measurement data in Benchling''s lab
-
-          automation system. Results conform to a ResultSchema that defines their field structure,
-
-          enabling standardized capture of assay outputs such as absorbance readings, Ct values,
-
-          concentrations, or other measured quantities. Results are typically created through
-
-          lab automation output processors (see AutomationOutputProcessor), structured result
-
-          tables in notebook entries (via the entry field), or programmatically via the API.
-
-          Each result belongs to a Project for access control and can be archived when no longer
-
-          needed. Results can be linked to entities, samples, and runs through schema field values,
-
-          enabling traceability from raw measurements back to source materials.'
-        properties:
-          __typename:
-            type: string
-          creator:
-            description: User who created the request
-            oneOf:
-            - $ref: '#/components/schemas/PrincipalRef'
-            - type: 'null'
-          entry:
-            description: Entry that this result is attached to
-            oneOf:
-            - $ref: '#/components/schemas/DocumentLikeRef'
-            - type: 'null'
-          schemaFields:
-            oneOf:
-            - items:
-                $ref: '#/components/schemas/SchemaFieldValue'
-              type: array
-            - type: 'null'
-        type: object
-    BooleanValue:
-      description: A type that represents boolean values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The boolean value.
-          type: boolean
-      type: object
-    ProjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     ObjectLinkValue:
       description: A type that represents links to other objects.
@@ -517,23 +479,128 @@ components:
           $ref: '#/components/schemas/ObjectRef'
           description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
       type: object
-    CreateResultInput:
+    FieldValueInput:
       additionalProperties: false
       properties:
-        projectId:
-          type: string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          type: string
-        tableHandleId:
-          type: string
+        value:
+          $ref: '#/components/schemas/AnyType'
       required:
-      - schemaId
-      - schemaFields
-      - projectId
+      - value
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    AnyType: {}
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    BooleanValue:
+      description: A type that represents boolean values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The boolean value.
+          type: boolean
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              propertyName: __typename
+          type: array
+      type: object
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
+    DocumentLikeRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     SchemaFieldValue:
       description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
@@ -575,176 +642,6 @@ components:
               propertyName: __typename
           - type: 'null'
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
-          type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
-          type:
-          - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
-          type:
-          - 'null'
-          - string
-      type: object
-    UpdateResultInputWithPathParams:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        id:
-          type: string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-      required:
-      - id
-      type: object
-    ResultSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
-      properties:
-        __typename:
-          type: string
-        value:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
-            discriminator:
-              propertyName: __typename
-          type: array
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    ResultPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Result'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DocumentLikeRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
-          type: string
-      type: object
-    ObjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    TextValue:
-      description: A type that represents text (string) values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    JsonValue:
-      description: A type that represents JSON values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The JSON value.
-          type: object
-      type: object
     TextAndUrlValue:
       description: A type that represents text (string) values with an associated URL.
       properties:
@@ -757,14 +654,72 @@ components:
           description: The text value. It may or may not be an empty string.
           type: string
       type: object
-    IntegerValue:
-      description: A type that represents integer values.
+    CreateResultInput:
+      additionalProperties: false
+      properties:
+        projectId:
+          type: string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          type: string
+        tableHandleId:
+          type: string
+      required:
+      - schemaId
+      - schemaFields
+      - projectId
+      type: object
+    Result:
+      allOf:
+      - $ref: '#/components/schemas/IResult'
+      - description: 'A Result represents a single row of experimental measurement data in Benchling''s lab
+
+          automation system. Results conform to a ResultSchema that defines their field structure,
+
+          enabling standardized capture of assay outputs such as absorbance readings, Ct values,
+
+          concentrations, or other measured quantities. Results are typically created through
+
+          lab automation output processors (see AutomationOutputProcessor), structured result
+
+          tables in notebook entries (via the entry field), or programmatically via the API.
+
+          Each result belongs to a Project for access control and can be archived when no longer
+
+          needed. Results can be linked to entities, samples, and runs through schema field values,
+
+          enabling traceability from raw measurements back to source materials.'
+        properties:
+          __typename:
+            type: string
+          creator:
+            description: User who created the request
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          entry:
+            description: Entry that this result is attached to
+            oneOf:
+            - $ref: '#/components/schemas/DocumentLikeRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    TextValue:
+      description: A type that represents text (string) values.
       properties:
         __typename:
           type: string
         value:
-          description: The integer value.
-          type: integer
+          description: The text value. It may or may not be an empty string.
+          type: string
       type: object
     SchemaFieldDefinitionRef:
       properties:
@@ -774,41 +729,23 @@ components:
           format: api_id
           type: string
       type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
+    ProjectRef:
       properties:
         __typename:
           type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
-          items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
-          type: array
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
+        id:
+          format: api_id
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
           type: string
       required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
+      - fileId
       type: object
     IResult:
       properties:
@@ -846,17 +783,55 @@ components:
           - $ref: '#/components/schemas/ResultSchemaRef'
           - type: 'null'
       type: object
+    ResultPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Result'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    UpdateResultInputWithPathParams:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        id:
+          type: string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+      required:
+      - id
+      type: object
   parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
       in: query
-      name: pageSize
+      name: returning
       schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -867,44 +842,25 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.lte
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
+    schema.eq:
+      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
       in: query
-      name: id.anyOf
+      name: schema.eq
       schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
+        type: string
     modifiedAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
       name: modifiedAt.lt
       schema:
         format: datetime
-        type: string
-    project.eq:
-      description: ID of a project. Restricts results to those in the project.
-      in: query
-      name: project.eq
-      schema:
         type: string
     creator.anyOf:
       description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
@@ -916,33 +872,23 @@ components:
           type: string
         maxItems: 100
         type: array
-    entry.eq:
-      description: Single entry ID. Restricts results to those in the specified entry.
-      in: query
-      name: entry.eq
-      schema:
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    schema.anyOf:
-      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: schema.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
       name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    project.eq:
+      description: ID of a project. Restricts results to those in the project.
+      in: query
+      name: project.eq
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -956,29 +902,45 @@ components:
           type: string
         maxItems: 10
         type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
-      name: returning
+      name: omit
       schema:
         items:
           type: string
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
         type: array
     nextToken:
       description: Token for pagination
       in: query
       name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    schema.anyOf:
+      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: schema.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    entry.eq:
+      description: Single entry ID. Restricts results to those in the specified entry.
+      in: query
+      name: entry.eq
       schema:
         type: string
     entry.anyOf:
@@ -991,57 +953,67 @@ components:
           type: string
         maxItems: 100
         type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.gte
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
-    schema.eq:
-      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: schema.eq
-      schema:
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

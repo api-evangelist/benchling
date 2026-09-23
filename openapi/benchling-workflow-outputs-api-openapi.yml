@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Workflow Outputs API
+  title: Benchling Workflow Outputs API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: Workflow outputs are outputs of a workflow task
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,6 @@ tags:
 paths:
   /workflow-outputs:
     get:
-      description: List workflow outputs
       operationId: listWorkflowOutputs
       parameters:
       - description: Comma separated list of workflow output IDs
@@ -145,7 +142,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: Comma-separated list of Workflow Output Display IDs.
         in: query
@@ -190,7 +186,6 @@ paths:
       tags:
       - Workflow Outputs
     post:
-      description: Create a new workflow output
       operationId: createWorkflowOutput
       requestBody:
         content:
@@ -215,7 +210,6 @@ paths:
       - Workflow Outputs
   /workflow-outputs/{workflow_output_id}:
     get:
-      description: Get a workflow output
       operationId: getWorkflowOutput
       parameters:
       - description: The ID of the workflow task output
@@ -242,7 +236,6 @@ paths:
       tags:
       - Workflow Outputs
     patch:
-      description: Update a workflow output
       operationId: updateWorkflowOutput
       parameters:
       - description: The ID of the workflow output
@@ -282,7 +275,6 @@ paths:
       - Workflow Outputs
   /workflow-outputs:archive:
     post:
-      description: Archive one or more workflow outputs
       operationId: archiveWorkflowOutputs
       requestBody:
         content:
@@ -307,7 +299,6 @@ paths:
       - Workflow Outputs
   /workflow-outputs:bulk-create:
     post:
-      description: Bulk create new workflow outputs
       operationId: bulkCreateWorkflowOutputs
       requestBody:
         content:
@@ -332,7 +323,6 @@ paths:
       - Workflow Outputs
   /workflow-outputs:bulk-update:
     post:
-      description: Bulk update workflow outputs
       operationId: bulkUpdateWorkflowOutputs
       requestBody:
         content:
@@ -357,7 +347,6 @@ paths:
       - Workflow Outputs
   /workflow-outputs:unarchive:
     post:
-      description: Unarchive one or more workflow outputs
       operationId: unarchiveWorkflowOutputs
       requestBody:
         content:
@@ -382,20 +371,97 @@ paths:
       - Workflow Outputs
 components:
   schemas:
-    WorkflowTaskSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task
-          type: string
-        id:
-          description: The ID of the workflow task
-          example: wftask_OnnsW08k
-          readOnly: true
-          type: string
     WorkflowOutputWriteBase:
       properties:
         fields:
           $ref: '#/components/schemas/Fields'
+    WorkflowOutputsBulkCreateRequest:
+      properties:
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutputBulkCreate'
+          maxItems: 100
+          type: array
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowOutputsArchive:
+      properties:
+        reason:
+          $ref: '#/components/schemas/WorkflowOutputArchiveReason'
+        workflowOutputIds:
+          items:
+            example: wfout_5cJLQKVF
+            type: string
+          type: array
+      required:
+      - workflowOutputIds
+      - reason
+      type: object
+    WorkflowOutputCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+      - properties:
+          workflowTaskId:
+            description: The ID of the workflow task this output belogns to
+            example: wftask_OnnsW08k
+            type: string
+        required:
+        - workflowTaskId
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+    WorkflowOutputsUnarchive:
+      properties:
+        workflowOutputIds:
+          items:
+            type: string
+          type: array
+      required:
+      - workflowOutputIds
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    WorkflowOutputUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
     WorkflowOutputArchiveReason:
       description: 'The reason for archiving the provided workflow outputs. Accepted reasons may differ based on tenant configuration.
 
@@ -405,30 +471,6 @@ components:
       - Retired
       - Other
       type: string
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    CreationOrigin:
-      properties:
-        application:
-          nullable: true
-          readOnly: true
-          type: string
-        originId:
-          nullable: true
-          readOnly: true
-          type: string
-        originModalUuid:
-          format: uuid
-          nullable: true
-          readOnly: true
-          type: string
-        originType:
-          nullable: true
-          readOnly: true
-          type: string
-      type: object
     WorkflowOutputsPaginatedList:
       properties:
         nextToken:
@@ -439,24 +481,99 @@ components:
             $ref: '#/components/schemas/WorkflowOutput'
           type: array
       type: object
-    WorkflowOutputsBulkCreateRequest:
+    WorkflowOutputSummary:
       properties:
-        workflowOutputs:
-          items:
-            $ref: '#/components/schemas/WorkflowOutputBulkCreate'
-          maxItems: 100
-          type: array
-      type: object
-    BadRequestError:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    WorkflowTaskSummary:
       properties:
-        error:
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    WorkflowOutputBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+      - properties:
+          workflowOutputId:
+            description: The ID of the workflow output
+            example: wfout_5cJLQKVF
+            type: string
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
           allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
       type: object
     WorkflowOutput:
       allOf:
@@ -465,11 +582,9 @@ components:
           archiveRecord:
             allOf:
             - $ref: '#/components/schemas/ArchiveRecord'
-            nullable: true
           createdAt:
             description: The ISO formatted date and time that the task was created
             example: '2020-08-01T00:00:00.000Z'
-            nullable: false
             type: string
           creationOrigin:
             $ref: '#/components/schemas/CreationOrigin'
@@ -478,7 +593,6 @@ components:
           modifiedAt:
             description: The ISO formatted date and time that the task was last modified
             example: '2020-08-01T00:00:00.000Z'
-            nullable: false
             type: string
           nextOutputs:
             description: The outputs in the flowchart which are generated by this output.
@@ -516,29 +630,17 @@ components:
         schemaField.Experiment: MyExperiment
         schemaField.Started On: <= 2023-05-23T00:00:00Z
       type: object
-    BaseError:
+    WorkflowOutputsBulkUpdateRequest:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutputBulkUpdate'
+          maxItems: 100
+          type: array
       type: object
-    WorkflowOutputBulkUpdate:
+    WorkflowOutputBulkCreate:
       allOf:
-      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
-      - properties:
-          workflowOutputId:
-            description: The ID of the workflow output
-            example: wfout_5cJLQKVF
-            type: string
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
+      - $ref: '#/components/schemas/WorkflowOutputCreate'
     WorkflowOutputsArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type
 
@@ -550,158 +652,47 @@ components:
             type: string
           type: array
       type: object
-    WorkflowOutputsUnarchive:
+    CreationOrigin:
       properties:
-        workflowOutputIds:
-          items:
-            type: string
-          type: array
-      required:
-      - workflowOutputIds
+        application:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originModalUuid:
+          format: uuid
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originType:
+          readOnly: true
+          type:
+          - string
+          - 'null'
       type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
-    WorkflowOutputsBulkUpdateRequest:
+    ArchiveRecord:
       properties:
-        workflowOutputs:
-          items:
-            $ref: '#/components/schemas/WorkflowOutputBulkUpdate'
-          maxItems: 100
-          type: array
-      type: object
-    Field:
-      properties:
-        displayValue:
-          nullable: true
-          readOnly: true
-          type: string
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          nullable: true
-          readOnly: true
-          type: string
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          nullable: true
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    WorkflowOutputSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow output
-          example: wfout_5cJLQKVF
-          readOnly: true
-          type: string
-    WorkflowOutputCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
-      - properties:
-          workflowTaskId:
-            description: The ID of the workflow task this output belogns to
-            example: wftask_OnnsW08k
-            type: string
-        required:
-        - workflowTaskId
-    WorkflowOutputUpdate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
-    AsyncTaskLink:
-      properties:
-        taskId:
+        reason:
+          example: Made in error
           type: string
       type: object
-    WorkflowTaskGroupSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow task group
-          example: prs_giVNQcTL
-          readOnly: true
-          type: string
-        name:
-          description: The name of the workflow task group
-          type: string
-    NotFoundError:
+    BadRequestError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
-              invalidId:
-                type: string
               type:
                 enum:
                 - invalid_request_error
                 type: string
       type: object
-    WorkflowOutputsArchive:
-      properties:
-        reason:
-          $ref: '#/components/schemas/WorkflowOutputArchiveReason'
-        workflowOutputIds:
-          items:
-            example: wfout_5cJLQKVF
-            type: string
-          type: array
-      required:
-      - workflowOutputIds
-      - reason
-      type: object
-    WorkflowOutputBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputCreate'
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

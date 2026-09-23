@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Organizations API
+  title: Benchling Organizations API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: View organization objects.
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,11 @@ tags:
 paths:
   /organizations:
     get:
-      description: "Returns all organizations that the caller has permission to view. The following roles have view permission:\n  - tenant admins\n  - members of the organization\n"
+      description: 'Returns all organizations that the caller has permission to view. The following roles have view permission:
+
+        - tenant admins
+
+        - members of the organization'
       operationId: listOrganizations
       parameters:
       - description: 'Comma-separated list of ids. Matches all of the provided IDs, or returns a 400 error that includes a list of which IDs are invalid.
@@ -89,7 +91,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: Token for pagination
         in: query
@@ -113,7 +114,6 @@ paths:
           - name
           - name:asc
           - name:desc
-          nullable: false
           type: string
       responses:
         '200':
@@ -133,7 +133,11 @@ paths:
       - Organizations
   /organizations/{organization_id}:
     get:
-      description: "Returns an organization by ID if the caller has permission to view. The following roles have view permission:\n  - tenant admins\n  - members of the organization\n"
+      description: 'Returns an organization by ID if the caller has permission to view. The following roles have view permission:
+
+        - tenant admins
+
+        - members of the organization'
       operationId: getOrganization
       parameters:
       - description: ID of organization to get
@@ -160,9 +164,7 @@ paths:
       - Organizations
   /organizations/{organization_id}/memberships:
     get:
-      description: 'Returns all organization memberships in the given organization
-
-        '
+      description: Returns all organization memberships in the given organization
       operationId: listOrganizationMemberships
       parameters:
       - description: Number of results to return.
@@ -171,7 +173,6 @@ paths:
         schema:
           default: 50
           maximum: 100
-          nullable: false
           type: integer
       - description: Token for pagination
         in: query
@@ -202,15 +203,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
           description: Not Found
-      summary: 'List organization memberships
-
-        '
+      summary: List organization memberships
       tags:
       - Organizations
     post:
-      description: 'Create organization membership for the given user, role, and organization
-
-        '
+      description: Create organization membership for the given user, role, and organization
       operationId: createOrganizationMembership
       parameters:
       - in: path
@@ -248,16 +245,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
           description: Not Found
-      summary: 'Create organization membership
-
-        '
+      summary: Create organization membership
       tags:
       - Organizations
   /organizations/{organization_id}/memberships/{user_id}:
     delete:
-      description: 'Delete a single organization membership
-
-        '
+      description: Delete a single organization membership
       operationId: deleteOrganizationMembership
       parameters:
       - in: path
@@ -285,15 +278,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
           description: Not Found
-      summary: 'Delete organization membership by user ID and organization ID
-
-        '
+      summary: Delete organization membership by user ID and organization ID
       tags:
       - Organizations
     get:
-      description: 'Returns organization membership in the given organization for the given user
-
-        '
+      description: Returns organization membership in the given organization for the given user
       operationId: getOrganizationMembership
       parameters:
       - in: path
@@ -319,15 +308,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
           description: Not Found
-      summary: 'Get organization membership
-
-        '
+      summary: Get organization membership
       tags:
       - Organizations
     patch:
-      description: 'Update a single organization membership
-
-        '
+      description: Update a single organization membership
       operationId: updateOrganizationMembership
       parameters:
       - in: path
@@ -370,9 +355,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFoundError'
           description: Not Found
-      summary: 'Update organization membership by user ID and organization ID
-
-        '
+      summary: Update organization membership by user ID and organization ID
       tags:
       - Organizations
 components:
@@ -384,17 +367,56 @@ components:
           handle: lpasteur
           id: ent_a0SApq3z
           name: Louis Pasteur
-    BadRequestError:
+    MembershipCreate:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        role:
+          enum:
+          - ADMIN
+          - MEMBER
+          example: ADMIN
+          type: string
+        userId:
+          example: ent_a0SApq3z
+          type: string
+    OrganizationsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          organizations:
+            items:
+              $ref: '#/components/schemas/Organization'
+            type: array
       type: object
+    MembershipsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          memberships:
+            items:
+              $ref: '#/components/schemas/Membership'
+            type: array
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    Membership:
+      properties:
+        role:
+          enum:
+          - ADMIN
+          - MEMBER
+          type: string
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    Pagination:
+      properties:
+        nextToken:
+          type: string
     ForbiddenError:
       properties:
         error:
@@ -409,15 +431,13 @@ components:
               type: string
           type: object
       type: object
-    OrganizationsPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          organizations:
-            items:
-              $ref: '#/components/schemas/Organization'
-            type: array
-      type: object
+    MembershipUpdate:
+      properties:
+        role:
+          enum:
+          - ADMIN
+          - MEMBER
+          type: string
     NotFoundError:
       properties:
         error:
@@ -431,23 +451,16 @@ components:
                 - invalid_request_error
                 type: string
       type: object
-    Organization:
+    BadRequestError:
       properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     BaseError:
       properties:
@@ -458,45 +471,15 @@ components:
         userMessage:
           type: string
       type: object
-    Pagination:
+    Organization:
       properties:
-        nextToken:
+        handle:
           type: string
-    Membership:
-      properties:
-        role:
-          enum:
-          - ADMIN
-          - MEMBER
+        id:
           type: string
-        user:
-          $ref: '#/components/schemas/UserSummary'
-    MembershipCreate:
-      properties:
-        role:
-          enum:
-          - ADMIN
-          - MEMBER
-          example: ADMIN
+        name:
           type: string
-        userId:
-          example: ent_a0SApq3z
-          type: string
-    MembershipsPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          memberships:
-            items:
-              $ref: '#/components/schemas/Membership'
-            type: array
-    MembershipUpdate:
-      properties:
-        role:
-          enum:
-          - ADMIN
-          - MEMBER
-          type: string
+      type: object
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

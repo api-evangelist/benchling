@@ -126,18 +126,56 @@ paths:
       x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
       name: pageSize
       schema:
         type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: createdAt.gte
+      name: omit
       schema:
-        format: datetime
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
         type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
@@ -149,123 +187,14 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: createdAt.gt
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   schemas:
-    ProteinFormatChainPosition:
-      description: 'Defines each instance of a polypeptide chain within a `ProteinFormat`, specifying the chain type and
-
-        its constituent domains. Each chain position has a unique ref identifier and lists the domain positions
-
-        (see `ProteinFormatDomainPosition`) that compose it in order from N-terminus to C-terminus.
-
-        For example, a heavy chain position might reference domain positions [VH, CH1, Hinge, CH2, CH3].'
-      properties:
-        __typename:
-          type: string
-        domainPositions:
-          description: A list of all the domain positions that make up the chain position, in order
-          items:
-            $ref: '#/components/schemas/ProteinFormatDomainPosition'
-          type: array
-        ref:
-          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
-
-            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
-          type: integer
-        type:
-          description: Type of the chain.
-          enum:
-          - HEAVY
-          - LIGHT
-          - NONE
-          - ALPHA
-          - BETA
-          - JOINING
-          type: string
-      type: object
-    ProteinFormatRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -291,6 +220,42 @@ components:
       - detail
       - status
       - instance
+      type: object
+    ProteinChain:
+      description: 'Represents a polypeptide chain within an `Protein`, containing the domain composition. Each chain has a
+
+        computed label derived from the format.'
+      properties:
+        __typename:
+          type: string
+        chainPositions:
+          description: 'Each chain position of this chain in the protein. If a chain has multiplicity > 1, each chain position
+
+            will be listed here.'
+          items:
+            $ref: '#/components/schemas/ProteinFormatChainPosition'
+          type: array
+        domains:
+          description: Each domain on the chain, ordered according to the format.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the chain.
+        label:
+          description: Unique label for the chain, computed from the format.
+          type: string
+        type:
+          description: The type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
       type: object
     ProteinVersion:
       description: 'A historical snapshot of an `Protein` at a specific point in time, preserving the complete
@@ -341,6 +306,46 @@ components:
           - $ref: '#/components/schemas/ProteinVersionRef'
           - type: 'null'
       type: object
+    ProteinVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinFormatChainPosition:
+      description: 'Defines each instance of a polypeptide chain within a `ProteinFormat`, specifying the chain type and
+
+        its constituent domains. Each chain position has a unique ref identifier and lists the domain positions
+
+        (see `ProteinFormatDomainPosition`) that compose it in order from N-terminus to C-terminus.
+
+        For example, a heavy chain position might reference domain positions [VH, CH1, Hinge, CH2, CH3].'
+      properties:
+        __typename:
+          type: string
+        domainPositions:
+          description: A list of all the domain positions that make up the chain position, in order
+          items:
+            $ref: '#/components/schemas/ProteinFormatDomainPosition'
+          type: array
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
     ProteinDomain:
       description: 'Represents a domain within an `Protein`, containing the actual amino acid sequence for a specific label.
 
@@ -389,13 +394,29 @@ components:
           - ELEMENT
           type: string
       type: object
-    AaSequenceRef:
+    GeneralError:
       properties:
-        __typename:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
           type: string
-        id:
-          format: api_id
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
           type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     ProteinVersionPaginatedList:
       additionalProperties: false
@@ -407,6 +428,14 @@ components:
         nextToken:
           type: string
       type: object
+    ProteinFormatRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     PrincipalRef:
       properties:
         __typename:
@@ -415,7 +444,7 @@ components:
           format: api_id
           type: string
       type: object
-    ProteinVersionRef:
+    AaSequenceRef:
       properties:
         __typename:
           type: string
@@ -470,66 +499,37 @@ components:
           - ELEMENT
           type: string
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ProteinChain:
-      description: 'Represents a polypeptide chain within an `Protein`, containing the domain composition. Each chain has a
-
-        computed label derived from the format.'
-      properties:
-        __typename:
-          type: string
-        chainPositions:
-          description: 'Each chain position of this chain in the protein. If a chain has multiplicity > 1, each chain position
-
-            will be listed here.'
-          items:
-            $ref: '#/components/schemas/ProteinFormatChainPosition'
-          type: array
-        domains:
-          description: Each domain on the chain, ordered according to the format.
-          items:
-            $ref: '#/components/schemas/ProteinDomain'
-          type: array
-        entity:
-          $ref: '#/components/schemas/AaSequenceRef'
-          description: The amino acid sequence entity associated with the chain.
-        label:
-          description: Unique label for the chain, computed from the format.
-          type: string
-        type:
-          description: The type of the chain.
-          enum:
-          - HEAVY
-          - LIGHT
-          - NONE
-          - ALPHA
-          - BETA
-          - JOINING
-          type: string
-      type: object
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

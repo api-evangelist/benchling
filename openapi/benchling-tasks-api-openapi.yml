@@ -1,35 +1,29 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
+  title: Benchling Tasks API
+  version: 2.0.0
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Tasks API
-  version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: 'Operations tagged Tasks across 2 of this provider''s published API definitions: benchling-openapi.yaml, benchling-v3-openapi.yaml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: /api/v2
+- url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: '
-
-    Endpoints that perform expensive computations launch long-running tasks. These endpoints return the task ID (a UUID) in the response body.
+- description: 'Endpoints that perform expensive computations launch long-running tasks. These endpoints return the task ID (a UUID) in the response body.
 
 
-    After launching a task, periodically invoke the [Get a task](#/Tasks/getTask) endpoint with the task UUID (e.g., every 10 seconds), until the status is no longer RUNNING.
+    After launching a task, periodically invoke the Get a task endpoint with the task UUID (e.g., every 10 seconds), until the status is no longer RUNNING.
 
 
-    You can access a task for up to 30 minutes after its completion, after which its data will no longer be available.
-
-    '
+    You can access a task for up to 30 minutes after its completion, after which its data will no longer be available.'
   name: Tasks
 paths:
   /tasks/{task_id}:
     get:
-      description: Get a task by id
       operationId: getTask
       parameters:
       - description: UUID of the task
@@ -155,36 +149,531 @@ paths:
       summary: Get a task by id
       tags:
       - Tasks
+    servers:
+    - url: /api/v2
+  /tasks/agents/{task_id}:
+    get:
+      operationId: AgentTask.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              example:
+                agent: benchling_deep_research_v1
+                artifacts:
+                - downloadUrl: https://example.s3.amazonaws.com/result.png?signature=...
+                  filename: result.png
+                  id: efl_1234
+                  mediaType: image/png
+                  type: file
+                chatId: chtsess_1234
+                content:
+                - content_type: text/markdown
+                  text: These are the findings...
+                status: COMPLETED
+                taskId: atsk_1234
+              schema:
+                additionalProperties: false
+                properties:
+                  agent:
+                    description: Present when the task was created with an explicit legacy agent. Omitted for the default unified-agent path.
+                    enum:
+                    - benchling_deep_research_v1
+                    - benchling_ask_v1
+                    - benchling_ai_v1
+                    type: string
+                  artifacts:
+                    description: 'Generated image files represented by file blocks in a completed agent
+
+                      response. Omitted while the task is in progress or when the response has no
+
+                      available generated images. Files that are missing or unavailable because of
+
+                      antivirus scanning are omitted.
+
+                      '
+                    items:
+                      additionalProperties: false
+                      properties:
+                        downloadUrl:
+                          description: 'Short-lived presigned URL valid for at most 60 seconds after generation,
+
+                            Request the agent task status again to obtain a fresh URL.
+
+                            '
+                          format: uri
+                          type: string
+                        filename:
+                          type: string
+                        id:
+                          type: string
+                        mediaType:
+                          type: string
+                        type:
+                          enum:
+                          - file
+                          type: string
+                      required:
+                      - type
+                      - id
+                      - filename
+                      - mediaType
+                      - downloadUrl
+                      type: object
+                    type: array
+                  chatId:
+                    type: string
+                  content:
+                    items:
+                      oneOf:
+                      - additionalProperties: false
+                        properties:
+                          content_type:
+                            description: MIME type of the content.
+                            enum:
+                            - text/markdown
+                            type: string
+                          text:
+                            type: string
+                        required:
+                        - text
+                        - content_type
+                        type: object
+                    type: array
+                  status:
+                    description: Current task status.
+                    enum:
+                    - NOT_STARTED
+                    - ACTIVE
+                    - COMPLETED
+                    - FAILED
+                    type: string
+                  taskId:
+                    type: string
+                required:
+                - taskId
+                - chatId
+                - status
+                - content
+                type: object
+          description: Task status and contents
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get an agent task
+      tags:
+      - Tasks
+      x-bnch-rate-limit-tier: 5
+    servers:
+    - url: /api/v3
+  /tasks/bulk-export/{task_id}:
+    get:
+      description: 'Get the current status of a bulk export task. The response includes information about the task''s progress
+
+        and when it completes, provides a URL to download the exported data file.'
+      operationId: BulkExport.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    enum:
+                    - SUCCESS
+                    - FAILED
+                    - IN_PROGRESS
+                    example: SUCCESS
+                    type: string
+                  statusByModel:
+                    additionalProperties:
+                      properties:
+                        failureReason:
+                          example: INTERNAL_ERROR
+                          nullable: true
+                          type: string
+                        status:
+                          enum:
+                          - SUCCESS
+                          - FAILED
+                          - IN_PROGRESS
+                          example: SUCCESS
+                          type: string
+                        totalRecordsExported:
+                          example: 123
+                          nullable: true
+                          type: integer
+                      required:
+                      - status
+                      type: object
+                    type: object
+                  taskId:
+                    example: atsk_123
+                    type: string
+                required:
+                - taskId
+                - status
+                - statusByModel
+                type: object
+          description: Job status details
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get bulk export task status
+      tags:
+      - Tasks
+      x-bnch-rate-limit-tier: 5
+    servers:
+    - url: /api/v3
+  /tasks/bulk-export/{task_id}/successful-results:
+    get:
+      description: Get the successful results of a completed bulk export task. The response includes a URL to download the exported data file.
+      operationId: BulkExportResults.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  manifestFilePreSignedUrls:
+                    additionalProperties:
+                      example: https://s3.amazonaws.com/bucket/modelA?signature=...
+                      format: uri
+                      type: string
+                    type: object
+                  taskId:
+                    example: atsk_123
+                    type: string
+                required:
+                - taskId
+                - manifestFilePreSignedUrls
+                type: object
+          description: Job run result
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get bulk export task result
+      tags:
+      - Tasks
+      x-bnch-rate-limit-tier: 5
+    servers:
+    - url: /api/v3
+  /tasks/bulk/{task_id}:
+    get:
+      description: 'Get the current status of a bulk task. The response includes information about the task''s progress
+
+        and status. On SUCCESS, you can retrieve the successful payload for the bulk task from
+
+        /tasks/bulk/{task_id}/successful-results. On FAILED, you can additionally retrieve
+
+        errors from /tasks/bulk/{task_id}/errors.'
+      operationId: BulkTask.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  progress:
+                    properties:
+                      numberProcessed:
+                        example: 4000
+                        type: integer
+                      totalRecords:
+                        example: 10000
+                        type: integer
+                    required:
+                    - totalRecords
+                    - numberProcessed
+                    type: object
+                  result:
+                    properties:
+                      errorCount:
+                        example: 0
+                        type: integer
+                      successCount:
+                        example: 0
+                        type: integer
+                    required:
+                    - successCount
+                    - errorCount
+                    type: object
+                  status:
+                    enum:
+                    - NOT_STARTED
+                    - IN_PROGRESS
+                    - COMPLETED
+                    - FAILED
+                    example: COMPLETED
+                    type: string
+                  taskId:
+                    example: atsk_123
+                    type: string
+                required:
+                - taskId
+                - status
+                - progress
+                - result
+                type: object
+          description: Job status details
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get bulk task status
+      tags:
+      - Tasks
+      x-bnch-rate-limit-tier: 5
+    servers:
+    - url: /api/v3
+  /tasks/bulk/{task_id}/errors:
+    get:
+      description: 'Get information about objects with errors of a bulk task. The response will include the
+
+        request id, error message, and error code associated with each input object in jsonl format.'
+      operationId: BulkErrors.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    description: A pre-signed S3 URL for downloading the errors. Null if no errors or if errors are still processing.
+                    example: https://bucket.s3.amazonaws.com/atsk_123/download?X-Amz-Signature=abc123
+                    oneOf:
+                    - type: 'null'
+                    - format: uri
+                      type: string
+                  message:
+                    description: A message providing additional context when errors is null.
+                    example: No errors found for this bulk task.
+                    type: string
+                  taskId:
+                    example: atsk_123
+                    type: string
+                required:
+                - taskId
+                - errors
+                type: object
+          description: Errors details
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                required:
+                - message
+                type: object
+          description: Still in progress
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get bulk task errors
+      tags:
+      - Tasks
+      x-bnch-rate-limit-tier: 5
+    servers:
+    - url: /api/v3
+  /tasks/bulk/{task_id}/successful-results:
+    get:
+      description: 'Get a temporary url to a file containing the result of each bulk task. The file will contain at minimum the
+
+        respective request id for each result. The file is in jsonl format.'
+      operationId: BulkSuccessfulResults.Get
+      parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  items:
+                    description: 'A pre-signed S3 URL for downloading the IDs. The file is a csv with
+
+                      the headers "request_id, id".
+
+                      '
+                    example: https://bucket.s3.amazonaws.com/atsk_123/download?X-Amz-Signature=abc123
+                    format: uri
+                    type: string
+                  listingUri:
+                    description: A URL linking to the listing endpoint for the downloaded item type.
+                    example: https://tenant.com/api/v3/custom-entity/items
+                    format: uri
+                    type: string
+                  taskId:
+                    example: atsk_123
+                    type: string
+                required:
+                - taskId
+                - items
+                - listingUri
+                type: object
+          description: Successful results details
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                required:
+                - message
+                type: object
+          description: Still in progress
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get bulk task results
+      tags:
+      - Tasks
+      x-bnch-rate-limit-tier: 5
+    servers:
+    - url: /api/v3
 components:
   schemas:
-    Primer:
-      properties:
-        bases:
-          readOnly: true
-          type: string
-        bindPosition:
-          readOnly: true
-          type: integer
-        color:
-          readOnly: true
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        name:
-          readOnly: true
-          type: string
-        oligoId:
-          type: string
-        overhangLength:
-          readOnly: true
-          type: integer
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          type: integer
+    BulkCreateContainersAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              containers:
+                items:
+                  $ref: '#/components/schemas/Container'
+                type: array
+            type: object
+        type: object
+      type: object
+    TransfersAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              destinationContainers:
+                items:
+                  $ref: '#/components/schemas/Container'
+                type: array
+            type: object
+        type: object
       type: object
     DeprecatedContainerVolumeForResponse:
       allOf:
@@ -192,6 +681,328 @@ components:
       - description: 'The deprecated "volume" type key in API responses can also contain non-volume quantities for back-compatibility purposes. Use the "quantity" type key instead.
 
           '
+    IngredientMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - mg
+      - g
+      - kg
+      - ug
+      - Units
+      - Cells
+      - mol
+      - mmol
+      - umol
+      example: mL
+      type:
+      - string
+      - 'null'
+    AutomationProgressStats:
+      description: Processing progress information.
+      properties:
+        rowsFailed:
+          type: integer
+        rowsSucceeded:
+          type: integer
+        rowsUnprocessed:
+          type: integer
+      type: object
+    RnaSequence:
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        alignmentIds:
+          description: API IDs of Nucleotide Alignments involving the RNA sequence
+          items:
+            type: string
+          type: array
+        annotations:
+          items:
+            $ref: '#/components/schemas/RnaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the RNA Sequence in the API.
+          example: https://benchling.com/api/v2/rna-sequences/seq_asZya4lk
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          type: string
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        customNotation:
+          description: Representation of the RNA Sequence in the custom notation specified in the request. Null if no notation was specified.
+          type:
+          - string
+          - 'null'
+        customNotationName:
+          description: Name of the custom notation specified in the request. Null if no notation was specified.
+          type:
+          - string
+          - 'null'
+        entityRegistryId:
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          type:
+          - string
+          - 'null'
+        helm:
+          description: Representation of the RNA Sequence in HELM syntax, including any chemical modifications.
+          example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
+          type:
+          - string
+          - 'null'
+        id:
+          type: string
+        isCircular:
+          example: false
+          type: boolean
+        length:
+          type: integer
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/RnaSequencePart'
+          type: array
+        primers:
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        translations:
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    BulkCreateDnaSequencesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              dnaSequences:
+                items:
+                  $ref: '#/components/schemas/DnaSequence'
+                type: array
+            type: object
+        type: object
+      type: object
+    AutofillTranslationsAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response: {}
+        type: object
+      type: object
+    DnaSequence:
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        annotations:
+          items:
+            $ref: '#/components/schemas/DnaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the DNA Sequence in the API.
+          example: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          type: string
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        dnaAlignmentIds:
+          description: API IDs of Nucleotide Alignments involving the RNA sequence
+          items:
+            type: string
+          type: array
+        entityRegistryId:
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          type:
+          - string
+          - 'null'
+        id:
+          type: string
+        isCircular:
+          type: boolean
+        length:
+          type: integer
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/DnaSequencePart'
+          type: array
+        primers:
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        transcriptions:
+          items:
+            $ref: '#/components/schemas/DnaSequenceTranscription'
+          type: array
+        translations:
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    SampleRestrictionStatus:
+      enum:
+      - RESTRICTED
+      - UNRESTRICTED
+      - NOT_APPLICABLE
+      type: string
+    AlignedNucleotideSequence:
+      properties:
+        bases:
+          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+          type: string
+        dnaSequenceId:
+          deprecated: true
+          example: seq_MYmsnS1u
+          type:
+          - string
+          - 'null'
+        name:
+          example: Gene001
+          type: string
+        pairwiseIdentity:
+          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
+
+            '
+          example: 0.505
+          format: float
+          type: number
+        sequenceId:
+          example: seq_MYmsnS1u
+          type:
+          - string
+          - 'null'
+        trimEnd:
+          example: 60
+          type: integer
+        trimStart:
+          example: 0
+          type: integer
+      type: object
+    BulkUpdateContainersAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              containers:
+                items:
+                  $ref: '#/components/schemas/Container'
+                type: array
+            type: object
+        type: object
+      type: object
+    RnaOligoWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/RnaOligo'
+      - properties:
+          entityType:
+            enum:
+            - rna_oligo
+            type: string
+        type: object
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
     ExperimentalWellRole:
       properties:
         group:
@@ -204,37 +1015,56 @@ components:
           - BLANK
           type: string
         subrole:
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
-    ArchiveRecord:
+    BulkRegisterEntitiesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response: {}
+        type: object
+      type: object
+    Feature:
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          id:
+            description: The id of the feature
+            example: feat_4YVqX98z
+            type: string
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      description: A feature from a feature library
+      type: object
+    CustomEntitySummary:
       properties:
-        reason:
-          example: Made in error
+        entityType:
+          enum:
+          - custom_entity
+          type: string
+        id:
+          example: bfi_xCUXNVyG
+          type: string
+        type:
+          deprecated: true
           type: string
       type: object
-    BulkUpdateAaSequencesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
+    LabAutomationBenchlingAppErrors:
+      properties:
+        topLevelErrors:
+          items:
             properties:
-              AaSequences:
-                items:
-                  $ref: '#/components/schemas/AaSequence'
-                type: array
+              errorMessage:
+                type: string
             type: object
-        type: object
-      type: object
-    CreateNucleotideTemplateAlignmentAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            $ref: '#/components/schemas/NucleotideAlignment'
-        type: object
+          type: array
       type: object
     FieldType:
       enum:
@@ -265,55 +1095,95 @@ components:
       - date
       - json
       type: string
-    MixtureWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/Mixture'
-      - properties:
-          entityType:
-            enum:
-            - mixture
-            type: string
-        type: object
-      type: object
-    NucleotideAlignmentSummary:
+    Oligo:
+      discriminator:
+        mapping:
+          DNA: DnaOligo
+          RNA: RnaOligo
+        propertyName: nucleotideType
       properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
         apiURL:
-          description: The canonical url of the Alignment in the API.
-          example: https://benchling.com/api/v2/alignments/seqanl_6ZVdX98t
+          description: The canonical url of the Oligo in the API.
           format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          description: Base pairs of the Oligo.
+          example: ACTTTTT
           type: string
         createdAt:
-          description: DateTime the Alignment was created
+          description: DateTime the Oligo was created.
           format: date-time
+          readOnly: true
           type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Oligo.
+        entityRegistryId:
+          description: Registry ID of the Oligo if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Oligo.
+          type:
+          - string
+          - 'null'
         id:
-          example: seqanl_6ZVdX98t
+          description: ID of the Oligo.
+          example: seq_bhuDUw9D
           type: string
+        length:
+          description: Number of bases in the Oligo.
+          type: integer
         modifiedAt:
-          description: DateTime the Alignment was last modified
+          description: DateTime the Oligo was last modified.
           format: date-time
+          readOnly: true
           type: string
         name:
+          description: Name of the Oligo.
           type: string
-        referenceSequenceId:
-          description: The ID of the template or consensus Sequence associated with the Alignment
-          example: seq_MYmsnS1u
+        nucleotideType:
+          description: Nucleotide type of the Oligo.
+          enum:
+          - DNA
+          - RNA
           type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the Oligo is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
         webURL:
-          description: The Benchling web UI url to view the Alignment
+          description: URL of the Oligo.
+          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
           format: uri
-          type: string
-      type: object
-    ContainerLabels:
-      properties:
-        barcode:
-          example: VIAL001
-          type: string
-        id:
-          example: cnt_12345
-          type: string
-        name:
-          example: My Container
+          readOnly: true
           type: string
       type: object
     AutofillPartsAsyncTask:
@@ -324,61 +1194,31 @@ components:
           response: {}
         type: object
       type: object
-    AaSequenceSummary:
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
       properties:
-        entityType:
-          enum:
-          - aa_sequence
-          type: string
-        id:
-          example: prtn_ObbdtGhC
-          type: string
-        type:
-          deprecated: true
-          type: string
-      type: object
-    DnaSequenceTranscription:
-      properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          description: Linked RNA sequence ID.
-          example: seq_VfVOART1
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          maximum: 1
-          minimum: -1
-          type: integer
-      type: object
-    FeatureBase:
-      properties:
-        color:
-          description: The color of the annotations generated by the feature. Must be a valid hex string
-          example: '#F58A5E'
-          type: string
-        featureLibraryId:
-          description: The id of the feature library the feature belongs to
-          example: featlib_19kd9aDq
-          type: string
-        featureType:
-          description: 'The type of feature, like gene, promoter, etc. Note: This is an arbitrary string, not an enum
-
-            '
-          nullable: true
-          type: string
         name:
-          description: The name of the feature
+          description: Name of the custom field
           type: string
-        pattern:
-          description: The pattern used for matching during auto-annotation.
+        value:
+          description: Value of the custom field
           type: string
       type: object
-    BulkUpdateRnaOligosAsyncTask:
+    BulkUpdateAaSequencesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              AaSequences:
+                items:
+                  $ref: '#/components/schemas/AaSequence'
+                type: array
+            type: object
+        type: object
+      type: object
+    BulkCreateRnaOligosAsyncTask:
       allOf:
       - $ref: '#/components/schemas/AsyncTask'
       - additionalProperties: false
@@ -392,13 +1232,278 @@ components:
             type: object
         type: object
       type: object
+    MixtureMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - g
+      - kg
+      - mg
+      - ug
+      - Units
+      example: L
+      type:
+      - string
+      - 'null'
+    Molecule:
+      additionalProperties: false
+      properties:
+        aliases:
+          description: Array of aliases.
+          items:
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Molecule in the API.
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        canonicalizedSmiles:
+          description: The canonicalized chemical structure in SMILES format.
+          example: Nc1nc(=O)n([H])cc1C1CC1
+          type: string
+        createdAt:
+          description: DateTime the Molecule was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Molecule.
+        entityRegistryId:
+          description: Registry ID of the Molecule if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Molecule.
+          type:
+          - string
+          - 'null'
+        id:
+          description: ID of the Molecule.
+          example: mol_bhuDUw9D
+          type: string
+        modifiedAt:
+          description: DateTime the Molecule was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the Molecule.
+          type: string
+        originalSmiles:
+          description: The original chemical structure supplied by the user in SMILES format. Null if the user did not originally supply SMILES.
+          example: Nc1nc(=O)n([H])cc1C1CC1
+          type:
+          - string
+          - 'null'
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the Molecule is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        webURL:
+          description: URL of the Molecule.
+          example: https://benchling.com/benchling/f/lib_R8KcsjhW-molecules/mol_xCUXNVyG-molecule1/edit
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    Ingredient:
+      properties:
+        amount:
+          description: 'The amount value of this ingredient in its mixture, in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4). One ingredient on this mixture can have an amount value of `"QS"`.
+
+            '
+          example: '12'
+          type:
+          - string
+          - 'null'
+        catalogIdentifier:
+          example: DION_004
+          type:
+          - string
+          - 'null'
+        componentEntity:
+          allOf:
+          - $ref: '#/components/schemas/EntityLabels'
+          - description: The entity that uniquely identifies this component.
+        componentLotContainer:
+          allOf:
+          - $ref: '#/components/schemas/ContainerLabels'
+          description: The container representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
+        componentLotEntity:
+          allOf:
+          - $ref: '#/components/schemas/EntityLabels'
+          description: The entity representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
+        componentLotText:
+          description: Text representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "text" format.
+          example: DION_004-source_001
+          type:
+          - string
+          - 'null'
+        hasParent:
+          type: boolean
+        notes:
+          type:
+          - string
+          - 'null'
+        targetAmount:
+          description: The target amount for this ingredient such that this ingredient's proportion in its mixture would preserve the equivalent ingredient's proportion in the parent mixture. Pair with `units`.
+          example: '123'
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        units:
+          $ref: '#/components/schemas/IngredientMeasurementUnits'
+      type: object
+    Container:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          readOnly: true
+        barcode:
+          type:
+          - string
+          - 'null'
+        checkoutRecord:
+          allOf:
+          - $ref: '#/components/schemas/CheckoutRecord'
+          readOnly: true
+        contents:
+          items:
+            $ref: '#/components/schemas/ContainerContent'
+          readOnly: true
+          type: array
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          readOnly: true
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          example: con_ZBL9QQWD
+          readOnly: true
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parentStorageId:
+          type:
+          - string
+          - 'null'
+        parentStorageSchema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          readOnly: true
+        projectId:
+          type:
+          - string
+          - 'null'
+        quantity:
+          $ref: '#/components/schemas/ContainerQuantity'
+        restrictedSampleParties:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - $ref: '#/components/schemas/TeamSummary'
+          type: array
+        restrictionStatus:
+          allOf:
+          - $ref: '#/components/schemas/SampleRestrictionStatus'
+        role:
+          allOf:
+          - $ref: '#/components/schemas/ExperimentalWellRole'
+        sampleOwners:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - $ref: '#/components/schemas/TeamSummary'
+          type: array
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          readOnly: true
+        volume:
+          $ref: '#/components/schemas/DeprecatedContainerVolumeForResponse'
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    AOPProcessOutputAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            $ref: '#/components/schemas/AutomationOutputProcessor'
+        type: object
+      type: object
+    BulkUpdateDnaOligosAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              dnaOligos:
+                items:
+                  $ref: '#/components/schemas/DnaOligo'
+                type: array
+            type: object
+        type: object
+      type: object
+    BulkUpdateCustomEntitiesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              customEntities:
+                items:
+                  $ref: '#/components/schemas/CustomEntity'
+                type: array
+            type: object
+        type: object
+      type: object
     Batch:
       additionalProperties: false
       properties:
         archiveRecord:
           allOf:
           - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
         createdAt:
           description: DateTime at which the the result was created
           format: date-time
@@ -436,862 +1541,8 @@ components:
         schema:
           allOf:
           - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
           readOnly: true
           title: SchemaProperty
-        webURL:
-          readOnly: true
-          type: string
-      type: object
-    RnaSequenceWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/RnaSequence'
-      - properties:
-          entityType:
-            enum:
-            - rna_sequence
-            type: string
-        type: object
-      type: object
-    BulkCreateRnaSequencesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              rnaSequences:
-                items:
-                  $ref: '#/components/schemas/RnaSequence'
-                type: array
-            type: object
-        type: object
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    AutofillTranscriptionsAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response: {}
-        type: object
-      type: object
-    MixtureMeasurementUnits:
-      enum:
-      - nL
-      - uL
-      - mL
-      - L
-      - g
-      - kg
-      - mg
-      - ug
-      - Units
-      example: L
-      nullable: true
-      type: string
-    Container:
-      properties:
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-          readOnly: true
-        barcode:
-          nullable: true
-          type: string
-        checkoutRecord:
-          allOf:
-          - $ref: '#/components/schemas/CheckoutRecord'
-          readOnly: true
-        contents:
-          items:
-            $ref: '#/components/schemas/ContainerContent'
-          readOnly: true
-          type: array
-        createdAt:
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          allOf:
-          - $ref: '#/components/schemas/UserSummary'
-          readOnly: true
-        fields:
-          $ref: '#/components/schemas/Fields'
-        id:
-          example: con_ZBL9QQWD
-          readOnly: true
-          type: string
-        modifiedAt:
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          type: string
-        parentStorageId:
-          nullable: true
-          type: string
-        parentStorageSchema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-          readOnly: true
-        projectId:
-          nullable: true
-          type: string
-        quantity:
-          $ref: '#/components/schemas/ContainerQuantity'
-        restrictedSampleParties:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/UserSummary'
-            - $ref: '#/components/schemas/TeamSummary'
-          type: array
-        restrictionStatus:
-          allOf:
-          - $ref: '#/components/schemas/SampleRestrictionStatus'
-        role:
-          allOf:
-          - $ref: '#/components/schemas/ExperimentalWellRole'
-          nullable: true
-        sampleOwners:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/UserSummary'
-            - $ref: '#/components/schemas/TeamSummary'
-          type: array
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-          readOnly: true
-        volume:
-          $ref: '#/components/schemas/DeprecatedContainerVolumeForResponse'
-        webURL:
-          readOnly: true
-          type: string
-      type: object
-    BulkUpdateCustomEntitiesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              customEntities:
-                items:
-                  $ref: '#/components/schemas/CustomEntity'
-                type: array
-            type: object
-        type: object
-      type: object
-    AaSequence:
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        aminoAcids:
-          description: Amino acids of the AA sequence.
-          example: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
-          type: string
-        annotations:
-          description: Array of annotation objects on the AA sequence.
-          items:
-            $ref: '#/components/schemas/AaAnnotation'
-          type: array
-        apiURL:
-          description: The canonical url of the AA Sequence in the API.
-          example: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        createdAt:
-          description: DateTime the AA sequence was created.
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the AA sequence.
-        entityRegistryId:
-          description: Registry ID of the AA sequence if registered.
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the AA sequence.
-          nullable: true
-          type: string
-        id:
-          description: ID of the AA sequence.
-          example: prtn_ObbdtGhC
-          type: string
-        length:
-          description: Number of amino acids in the AA sequence.
-          type: integer
-        modifiedAt:
-          description: DateTime the AA sequence was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          description: Name of the AA sequence.
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          description: Registry the AA sequence is registered in.
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
-        webURL:
-          description: URL of the AA sequence.
-          example: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
-          format: uri
-          readOnly: true
-          type: string
-      type: object
-    CustomEntity:
-      properties:
-        aliases:
-          items:
-            example: sBN000
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Custom Entity in the API.
-          example: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        createdAt:
-          example: '2017-04-18T05:54:56.247545+00:00'
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          allOf:
-          - $ref: '#/components/schemas/UserSummary'
-          - readOnly: true
-        customFields:
-          $ref: '#/components/schemas/CustomFields'
-        entityRegistryId:
-          example: sBN000
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          example: lib_R8KcsjhW
-          nullable: true
-          type: string
-        id:
-          example: bfi_xCUXNVyG
-          type: string
-        modifiedAt:
-          example: '2017-04-18T05:55:48.685345+00:00'
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          example: sBN000
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          example: src_NetYd96a
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          example:
-            id: ts_EM122lfJ
-            name: Strain
-          nullable: true
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
-        webURL:
-          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
-          readOnly: true
-          type: string
-      type: object
-    RnaOligoWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/RnaOligo'
-      - properties:
-          entityType:
-            enum:
-            - rna_oligo
-            type: string
-        type: object
-      type: object
-    TeamSummary:
-      allOf:
-      - type: object
-      - properties:
-          id:
-            type: string
-          name:
-            type: string
-      - example:
-          id: team_5cjIguqc
-          name: Elion's Team
-    AaSequenceWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/AaSequence'
-      - properties:
-          entityType:
-            enum:
-            - aa_sequence
-            type: string
-        type: object
-      type: object
-    Blob:
-      properties:
-        id:
-          description: The universally unique identifier (UUID) for the blob.
-          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
-          format: uuid
-          type: string
-        mimeType:
-          description: eg. application/jpeg
-          example: text/csv
-          maxLength: 100
-          type: string
-        name:
-          description: Name of the blob
-          example: MyInstrumentInputFile.csv
-          maxLength: 1000
-          type: string
-        type:
-          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
-
-            '
-          enum:
-          - RAW_FILE
-          - VISUALIZATION
-          type: string
-        uploadStatus:
-          enum:
-          - IN_PROGRESS
-          - COMPLETE
-          - ABORTED
-          type: string
-      type: object
-    RnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 1
-            type: integer
-        type: object
-    CustomEntityWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/CustomEntity'
-      - properties:
-          entityType:
-            enum:
-            - custom_entity
-            type: string
-        type: object
-      type: object
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    AutomationOutputProcessor:
-      allOf:
-      - $ref: '#/components/schemas/AutomationFile'
-      - properties:
-          apiURL:
-            description: The canonical url of the Automation Output Processor in the API.
-            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
-            format: uri
-            readOnly: true
-            type: string
-          archiveRecord:
-            allOf:
-            - $ref: '#/components/schemas/ArchiveRecord'
-            nullable: true
-          completeWithErrors:
-            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
-            type: boolean
-          createdAt:
-            description: DateTime the Automation Output Processor was created
-            format: date-time
-            type: string
-          errorFile:
-            allOf:
-            - $ref: '#/components/schemas/Blob'
-            nullable: true
-          id:
-            example: aop_C3wGA9HF
-            type: string
-          modifiedAt:
-            description: DateTime the Automation Output Processor was last modified
-            format: date-time
-            type: string
-          progressStats:
-            $ref: '#/components/schemas/AutomationProgressStats'
-          transforms:
-            items:
-              allOf:
-              - $ref: '#/components/schemas/LabAutomationTransform'
-              nullable: true
-            type: array
-        type: object
-    EntityOrInaccessibleResource:
-      oneOf:
-      - $ref: '#/components/schemas/Entity'
-      - $ref: '#/components/schemas/InaccessibleResource'
-      type: object
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
-      properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    Entity:
-      discriminator:
-        mapping:
-          aa_sequence: '#/components/schemas/AaSequenceWithEntityType'
-          custom_entity: '#/components/schemas/CustomEntityWithEntityType'
-          dna_oligo: '#/components/schemas/DnaOligoWithEntityType'
-          dna_sequence: '#/components/schemas/DnaSequenceWithEntityType'
-          mixture: '#/components/schemas/MixtureWithEntityType'
-          molecule: '#/components/schemas/MoleculeWithEntityType'
-          rna_oligo: '#/components/schemas/RnaOligoWithEntityType'
-          rna_sequence: '#/components/schemas/RnaSequenceWithEntityType'
-        propertyName: entityType
-      oneOf:
-      - $ref: '#/components/schemas/DnaSequenceWithEntityType'
-      - $ref: '#/components/schemas/RnaSequenceWithEntityType'
-      - $ref: '#/components/schemas/AaSequenceWithEntityType'
-      - $ref: '#/components/schemas/MixtureWithEntityType'
-      - $ref: '#/components/schemas/DnaOligoWithEntityType'
-      - $ref: '#/components/schemas/RnaOligoWithEntityType'
-      - $ref: '#/components/schemas/MoleculeWithEntityType'
-      - $ref: '#/components/schemas/CustomEntityWithEntityType'
-      type: object
-    AaAnnotation:
-      properties:
-        color:
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the AA sequence is always represented as 0.
-          type: integer
-        id:
-          example: prtnann_o7zMPG0P
-          type: string
-        name:
-          maxLength: 255
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        type:
-          example: Site
-          maxLength: 255
-          type: string
-      type: object
-    SampleRestrictionStatus:
-      enum:
-      - RESTRICTED
-      - UNRESTRICTED
-      - NOT_APPLICABLE
-      type: string
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
-          type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-      type: object
-    IngredientMeasurementUnits:
-      enum:
-      - nL
-      - uL
-      - mL
-      - L
-      - mg
-      - g
-      - kg
-      - ug
-      - Units
-      - Cells
-      - mol
-      - mmol
-      - umol
-      example: mL
-      nullable: true
-      type: string
-    AOPProcessOutputAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            $ref: '#/components/schemas/AutomationOutputProcessor'
-        type: object
-      type: object
-    CreateTemplateAlignmentAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            $ref: '#/components/schemas/DnaAlignment'
-        type: object
-      type: object
-    BulkCreateFeaturesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              features:
-                items:
-                  $ref: '#/components/schemas/Feature'
-                type: array
-            type: object
-        type: object
-      type: object
-    CustomEntitySummary:
-      properties:
-        entityType:
-          enum:
-          - custom_entity
-          type: string
-        id:
-          example: bfi_xCUXNVyG
-          type: string
-        type:
-          deprecated: true
-          type: string
-      type: object
-    Feature:
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      - properties:
-          id:
-            description: The id of the feature
-            example: feat_4YVqX98z
-            type: string
-          matchType:
-            description: The match type of the feature. Used to determine how auto-annotate matches are made.
-            enum:
-            - nucleotide
-            - protein
-            type: string
-      description: A feature from a feature library
-      type: object
-    BulkRegisterEntitiesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response: {}
-        type: object
-      type: object
-    RnaSequence:
-      properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        alignmentIds:
-          description: API IDs of Nucleotide Alignments involving the RNA sequence
-          items:
-            type: string
-          type: array
-        annotations:
-          items:
-            $ref: '#/components/schemas/RnaAnnotation'
-          type: array
-        apiURL:
-          description: The canonical url of the RNA Sequence in the API.
-          example: https://benchling.com/api/v2/rna-sequences/seq_asZya4lk
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        bases:
-          type: string
-        createdAt:
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          $ref: '#/components/schemas/CustomFields'
-        customNotation:
-          description: Representation of the RNA Sequence in the custom notation specified in the request. Null if no notation was specified.
-          nullable: true
-          type: string
-        customNotationName:
-          description: Name of the custom notation specified in the request. Null if no notation was specified.
-          nullable: true
-          type: string
-        entityRegistryId:
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          nullable: true
-          type: string
-        helm:
-          description: Representation of the RNA Sequence in HELM syntax, including any chemical modifications.
-          example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
-          nullable: true
-          type: string
-        id:
-          type: string
-        isCircular:
-          example: false
-          type: boolean
-        length:
-          type: integer
-        modifiedAt:
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          type: string
-        parts:
-          items:
-            $ref: '#/components/schemas/RnaSequencePart'
-          type: array
-        primers:
-          items:
-            $ref: '#/components/schemas/Primer'
-          type: array
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-        translations:
-          items:
-            $ref: '#/components/schemas/Translation'
-          type: array
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
-        webURL:
-          readOnly: true
-          type: string
-      type: object
-    RnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 0
-            type: integer
-          type:
-            type: string
-        type: object
-    ContainerContent:
-      properties:
-        batch:
-          allOf:
-          - $ref: '#/components/schemas/BatchOrInaccessibleResource'
-          nullable: true
-        concentration:
-          $ref: '#/components/schemas/Measurement'
-        entity:
-          allOf:
-          - $ref: '#/components/schemas/EntityOrInaccessibleResource'
-          nullable: true
-      type: object
-    DnaSequence:
-      properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        annotations:
-          items:
-            $ref: '#/components/schemas/DnaAnnotation'
-          type: array
-        apiURL:
-          description: The canonical url of the DNA Sequence in the API.
-          example: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        bases:
-          type: string
-        createdAt:
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          $ref: '#/components/schemas/CustomFields'
-        dnaAlignmentIds:
-          description: API IDs of Nucleotide Alignments involving the RNA sequence
-          items:
-            type: string
-          type: array
-        entityRegistryId:
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          nullable: true
-          type: string
-        id:
-          type: string
-        isCircular:
-          type: boolean
-        length:
-          type: integer
-        modifiedAt:
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          type: string
-        parts:
-          items:
-            $ref: '#/components/schemas/DnaSequencePart'
-          type: array
-        primers:
-          items:
-            $ref: '#/components/schemas/Primer'
-          type: array
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-        transcriptions:
-          items:
-            $ref: '#/components/schemas/DnaSequenceTranscription'
-          type: array
-        translations:
-          items:
-            $ref: '#/components/schemas/Translation'
-          type: array
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
         webURL:
           readOnly: true
           type: string
@@ -1304,8 +1555,9 @@ components:
         dnaSequenceId:
           deprecated: true
           example: seq_MYmsnS1u
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         name:
           example: Gene001
           type: string
@@ -1318,8 +1570,9 @@ components:
           type: number
         sequenceId:
           example: seq_MYmsnS1u
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         trimEnd:
           example: 60
           type: integer
@@ -1327,119 +1580,78 @@ components:
           example: 0
           type: integer
       type: object
-    SchemaSummary:
+    Measurement:
       properties:
-        id:
-          type: string
-        name:
-          type: string
+        units:
+          description: Can only be null if value is also null
+          type:
+          - string
+          - 'null'
+        value:
+          description: Can only be null if units is also null
+          type:
+          - number
+          - 'null'
+      required:
+      - value
+      - units
       type: object
-    Molecule:
-      additionalProperties: false
-      properties:
-        aliases:
-          description: Array of aliases.
-          items:
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Molecule in the API.
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        canonicalizedSmiles:
-          description: The canonicalized chemical structure in SMILES format.
-          example: Nc1nc(=O)n([H])cc1C1CC1
-          type: string
-        createdAt:
-          description: DateTime the Molecule was created.
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the Molecule.
-        entityRegistryId:
-          description: Registry ID of the Molecule if registered.
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the Molecule.
-          nullable: true
-          type: string
-        id:
-          description: ID of the Molecule.
-          example: mol_bhuDUw9D
-          type: string
-        modifiedAt:
-          description: DateTime the Molecule was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          description: Name of the Molecule.
-          type: string
-        originalSmiles:
-          description: The original chemical structure supplied by the user in SMILES format. Null if the user did not originally supply SMILES.
-          example: Nc1nc(=O)n([H])cc1C1CC1
-          nullable: true
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          description: Registry the Molecule is registered in.
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-        webURL:
-          description: URL of the Molecule.
-          example: https://benchling.com/benchling/f/lib_R8KcsjhW-molecules/mol_xCUXNVyG-molecule1/edit
-          format: uri
-          readOnly: true
-          type: string
-      type: object
-    BulkCreateAaSequencesAsyncTask:
+    MixtureWithEntityType:
       allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              aaSequences:
-                items:
-                  $ref: '#/components/schemas/AaSequence'
-                type: array
-            type: object
-        type: object
-      type: object
-    DnaSequenceWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/DnaSequence'
+      - $ref: '#/components/schemas/Mixture'
       - properties:
           entityType:
             enum:
-            - dna_sequence
+            - mixture
             type: string
         type: object
+      type: object
+    LabAutomationTransform:
+      properties:
+        apiURL:
+          description: The canonical url of the transform in the API.
+          format: uri
+          readOnly: true
+          type: string
+        blobId:
+          format: uuid
+          type:
+          - string
+          - 'null'
+        customTransformId:
+          format: uuid
+          type:
+          - string
+          - 'null'
+        errors:
+          $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
+        id:
+          type: string
+        inputGeneratorId:
+          type:
+          - string
+          - 'null'
+        modifiedAt:
+          description: DateTime the transform was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        outputProcessorId:
+          type:
+          - string
+          - 'null'
+        status:
+          enum:
+          - NOT_STARTED
+          - RUNNING
+          - FAILED
+          - SUCCEEDED
+          type: string
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
       type: object
     ContainerQuantity:
       description: Quantity of a container, well, or transfer. Supports mass, volume, and other quantities.
@@ -1479,69 +1691,25 @@ components:
           - units
           - null
           example: mL
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
         value:
           example: 10
-          nullable: true
-          type: number
+          type:
+          - number
+          - 'null'
       type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    BulkCreateDnaSequencesAsyncTask:
+    RnaSequencePart:
       allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              dnaSequences:
-                items:
-                  $ref: '#/components/schemas/DnaSequence'
-                type: array
-            type: object
-        type: object
-      type: object
-    NucleotideAlignment:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideAlignmentSummary'
+      - $ref: '#/components/schemas/NucleotideSequencePart'
       - properties:
-          alignedSequences:
-            items:
-              $ref: '#/components/schemas/AlignedNucleotideSequence'
-            type: array
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 1
+            type: integer
         type: object
-      type: object
-    BulkCreateRnaOligosAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              rnaOligos:
-                items:
-                  $ref: '#/components/schemas/RnaOligo'
-                type: array
-            type: object
-        type: object
-      type: object
-    Measurement:
-      properties:
-        units:
-          description: Can only be null if value is also null
-          nullable: true
-          type: string
-        value:
-          description: Can only be null if units is also null
-          nullable: true
-          type: number
-      required:
-      - value
-      - units
-      type: object
     NucleotideSequencePart:
       properties:
         end:
@@ -1554,442 +1722,6 @@ components:
           description: 0-based inclusive start index.
           type: integer
       type: object
-    DnaOligoWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/DnaOligo'
-      - properties:
-          entityType:
-            enum:
-            - dna_oligo
-            type: string
-        type: object
-      type: object
-    ExportsAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            additionalProperties: false
-            properties:
-              downloadURL:
-                format: uri
-                type: string
-            type: object
-        type: object
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    RnaOligo:
-      allOf:
-      - $ref: '#/components/schemas/Oligo'
-      - properties:
-          annotations:
-            description: Annotations on the Oligo.
-            items:
-              $ref: '#/components/schemas/RnaAnnotation'
-            type: array
-          apiURL:
-            example: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9D
-            type: string
-          bases:
-            example: ACUUUUU
-            type: string
-          customNotation:
-            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
-          customNotationName:
-            description: Name of the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
-          helm:
-            description: Representation of the oligo in HELM syntax, including any chemical modifications
-            example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
-            type: string
-          nucleotideType:
-            example: RNA
-            type: string
-    FindMatchingRegionsAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              aaSequenceMatches:
-                items:
-                  properties:
-                    matchingAASequenceIds:
-                      items:
-                        type: string
-                      type: array
-                    targetAASequenceId:
-                      type: string
-                  type: object
-                type: array
-            type: object
-        type: object
-      type: object
-    BulkCreateContainersAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              containers:
-                items:
-                  $ref: '#/components/schemas/Container'
-                type: array
-            type: object
-        type: object
-      type: object
-    AIGGenerateInputAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            $ref: '#/components/schemas/AutomationInputGenerator'
-        type: object
-      type: object
-    MoleculeWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/Molecule'
-      - properties:
-          entityType:
-            enum:
-            - molecule
-            type: string
-        type: object
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    DnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: -1
-            type: integer
-        type: object
-    CheckoutRecord:
-      description: '
-
-        *assignee field* is set if status is "RESERVED" or "CHECKED_OUT", or null if status is "AVAILABLE".
-
-
-        *comment field* is set when container was last reserved, checked out, or checked into.
-
-
-        *modifiedAt field* is the date and time when container was last checked out, checked in, or reserved
-
-        '
-      properties:
-        assignee:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/UserSummary'
-          - $ref: '#/components/schemas/TeamSummary'
-        comment:
-          type: string
-        modifiedAt:
-          format: date-time
-          type: string
-        status:
-          enum:
-          - AVAILABLE
-          - RESERVED
-          - CHECKED_OUT
-          type: string
-      type: object
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
-    AlignedNucleotideSequence:
-      properties:
-        bases:
-          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-          type: string
-        dnaSequenceId:
-          deprecated: true
-          example: seq_MYmsnS1u
-          nullable: true
-          type: string
-        name:
-          example: Gene001
-          type: string
-        pairwiseIdentity:
-          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
-
-            '
-          example: 0.505
-          format: float
-          type: number
-        sequenceId:
-          example: seq_MYmsnS1u
-          nullable: true
-          type: string
-        trimEnd:
-          example: 60
-          type: integer
-        trimStart:
-          example: 0
-          type: integer
-      type: object
-    AutomationFile:
-      properties:
-        assayRunId:
-          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
-          type: string
-        automationFileConfig:
-          properties:
-            name:
-              example: MyInstrumentName
-              type: string
-          type: object
-        file:
-          allOf:
-          - $ref: '#/components/schemas/Blob'
-          nullable: true
-        id:
-          type: string
-        status:
-          enum:
-          - SUCCEEDED
-          - FAILED
-          - NOT_STARTED
-          - RUNNING
-          type: string
-      type: object
-    AutomationInputGenerator:
-      allOf:
-      - $ref: '#/components/schemas/AutomationFile'
-      - properties:
-          apiURL:
-            description: The canonical url of the Automation Input Generator in the API.
-            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
-            format: uri
-            readOnly: true
-            type: string
-          createdAt:
-            description: DateTime the Automation Input Generator was last modified
-            format: date-time
-            readOnly: true
-            type: string
-          id:
-            example: aif_C3wGA9HF
-            type: string
-          modifiedAt:
-            description: DateTime the Automation Input Generator was last modified
-            format: date-time
-            readOnly: true
-            type: string
-          transforms:
-            items:
-              allOf:
-              - $ref: '#/components/schemas/LabAutomationTransform'
-              nullable: true
-            type: array
-        type: object
-    InaccessibleResource:
-      additionalProperties: false
-      properties:
-        inaccessibleId:
-          type: string
-        resourceType:
-          enum:
-          - inaccessible_resource
-          type: string
-        type:
-          description: 'The type of this inaccessible item. Example values: "custom_entity", "container", "plate", "dna_sequence"
-
-            '
-          example: custom_entity
-          type: string
-      type: object
-    EntityLabels:
-      properties:
-        entityRegistryId:
-          example: REAG000
-          nullable: true
-          type: string
-        id:
-          example: bfi_12345
-          type: string
-        name:
-          example: Deionized Water
-          type: string
-      type: object
-    LabAutomationTransform:
-      properties:
-        apiURL:
-          description: The canonical url of the transform in the API.
-          format: uri
-          readOnly: true
-          type: string
-        blobId:
-          format: uuid
-          nullable: true
-          type: string
-        customTransformId:
-          format: uuid
-          nullable: true
-          type: string
-        errors:
-          $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
-        id:
-          type: string
-        inputGeneratorId:
-          nullable: true
-          type: string
-        modifiedAt:
-          description: DateTime the transform was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        outputProcessorId:
-          nullable: true
-          type: string
-        status:
-          enum:
-          - NOT_STARTED
-          - RUNNING
-          - FAILED
-          - SUCCEEDED
-          type: string
-      type: object
-    BulkUpdateDnaSequencesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              dnaSequences:
-                items:
-                  $ref: '#/components/schemas/DnaSequence'
-                type: array
-            type: object
-        type: object
-      type: object
-    FindMatchingRegionsDnaAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              dnaSequenceMatches:
-                items:
-                  properties:
-                    matchingDnaSequenceIds:
-                      items:
-                        type: string
-                      type: array
-                    targetDnaSequenceId:
-                      type: string
-                  type: object
-                type: array
-            type: object
-        type: object
-      type: object
-    CreateNucleotideConsensusAlignmentAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            $ref: '#/components/schemas/NucleotideAlignment'
-        type: object
-      type: object
-    BulkCreateDnaOligosAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              dnaOligos:
-                items:
-                  $ref: '#/components/schemas/DnaOligo'
-                type: array
-            type: object
-        type: object
-      type: object
-    AutofillTranslationsAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response: {}
-        type: object
-      type: object
-    DnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            maximum: 1
-            minimum: -1
-            type: integer
-          type:
-            type: string
-        type: object
-    DnaOligo:
-      allOf:
-      - $ref: '#/components/schemas/Oligo'
-      - properties:
-          annotations:
-            description: Annotations on the Oligo.
-            items:
-              $ref: '#/components/schemas/DnaAnnotation'
-            type: array
-          apiURL:
-            example: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
-            type: string
-          bases:
-            example: ACTTTTT
-            type: string
-          customNotation:
-            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
-          customNotationName:
-            description: Name of the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
-          helm:
-            description: Representation of the oligo in HELM syntax, including any chemical modifications
-            example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
-            type: string
     DnaAlignmentSummary:
       properties:
         apiURL:
@@ -2019,130 +1751,17 @@ components:
           format: uri
           type: string
       type: object
-    TransfersAsyncTask:
+    TeamSummary:
       allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              destinationContainers:
-                items:
-                  $ref: '#/components/schemas/Container'
-                type: array
-            type: object
-        type: object
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    Mixture:
-      properties:
-        aliases:
-          items:
-            example: FRM000
+      - type: object
+      - properties:
+          id:
             type: string
-          type: array
-        allowMeasuredIngredients:
-          description: Derived from the mixture's schema.
-          readOnly: true
-          type: boolean
-        amount:
-          description: The positive numerical amount value of this mixture in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4).
-          example: '123'
-          type: string
-        apiURL:
-          description: The canonical url of the Mixture in the API.
-          example: https://benchling.com/api/v2/mixtures/mxt_xCUXNVyG
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        createdAt:
-          example: '2017-04-18T05:54:56.247545+00:00'
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          allOf:
-          - $ref: '#/components/schemas/UserSummary'
-          - readOnly: true
-        customFields:
-          $ref: '#/components/schemas/CustomFields'
-        entityRegistryId:
-          example: FRM000
-          nullable: true
-          type: string
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: Mixtures can have up to one parent mixture field.
-        folderId:
-          example: lib_R8KcsjhW
-          nullable: true
-          type: string
-        id:
-          example: mxt_xCUXNVyG
-          type: string
-        ingredients:
-          description: List of ingredients on this mixture.
-          items:
-            $ref: '#/components/schemas/Ingredient'
-          type: array
-        modifiedAt:
-          example: '2017-04-18T05:55:48.685345+00:00'
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          example: FRM000
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          example: src_NetYd96a
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          example:
-            id: ts_EM122lfJ
-            name: Prep
-        units:
-          $ref: '#/components/schemas/MixtureMeasurementUnits'
-        webURL:
-          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/mxt-xCUXNVyG-sbn000/edit
-          readOnly: true
-          type: string
-      type: object
-    DnaSequenceSummary:
-      properties:
-        entityType:
-          enum:
-          - dna_sequence
-          type: string
-        id:
-          example: seq_ObbdtGhC
-          type: string
-        type:
-          deprecated: true
-          type: string
-      type: object
+          name:
+            type: string
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
     Translation:
       allOf:
       - $ref: '#/components/schemas/SequenceFeatureBase'
@@ -2202,20 +1821,277 @@ components:
             example: 1
             type: integer
         type: object
+    FeatureBase:
+      properties:
+        color:
+          description: The color of the annotations generated by the feature. Must be a valid hex string
+          example: '#F58A5E'
+          type: string
+        featureLibraryId:
+          description: The id of the feature library the feature belongs to
+          example: featlib_19kd9aDq
+          type: string
+        featureType:
+          description: 'The type of feature, like gene, promoter, etc. Note: This is an arbitrary string, not an enum
+
+            '
+          type:
+          - string
+          - 'null'
+        name:
+          description: The name of the feature
+          type: string
+        pattern:
+          description: The pattern used for matching during auto-annotation.
+          type: string
+      type: object
+    Primer:
+      properties:
+        bases:
+          readOnly: true
+          type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
+      type: object
+    CustomEntity:
+      properties:
+        aliases:
+          items:
+            example: sBN000
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Custom Entity in the API.
+          example: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: sBN000
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          example: lib_R8KcsjhW
+          type:
+          - string
+          - 'null'
+        id:
+          example: bfi_xCUXNVyG
+          type: string
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: sBN000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Strain
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    ContainerLabels:
+      properties:
+        barcode:
+          example: VIAL001
+          type: string
+        id:
+          example: cnt_12345
+          type: string
+        name:
+          example: My Container
+          type: string
+      type: object
+    AutomationFile:
+      properties:
+        assayRunId:
+          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          type: string
+        automationFileConfig:
+          properties:
+            name:
+              example: MyInstrumentName
+              type: string
+          type: object
+        file:
+          allOf:
+          - $ref: '#/components/schemas/Blob'
+        id:
+          type: string
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+          - NOT_STARTED
+          - RUNNING
+          type: string
+      type: object
+    AaSequence:
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        aminoAcids:
+          description: Amino acids of the AA sequence.
+          example: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
+          type: string
+        annotations:
+          description: Array of annotation objects on the AA sequence.
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the AA Sequence in the API.
+          example: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the AA sequence was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the AA sequence.
+        entityRegistryId:
+          description: Registry ID of the AA sequence if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the AA sequence.
+          type:
+          - string
+          - 'null'
+        id:
+          description: ID of the AA sequence.
+          example: prtn_ObbdtGhC
+          type: string
+        length:
+          description: Number of amino acids in the AA sequence.
+          type: integer
+        modifiedAt:
+          description: DateTime the AA sequence was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the AA sequence.
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the AA sequence is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          description: URL of the AA sequence.
+          example: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
+          format: uri
+          readOnly: true
+          type: string
+      type: object
     Field:
       properties:
         displayValue:
-          nullable: true
           readOnly: true
-          type: string
+          type:
+          - string
+          - 'null'
         isMulti:
           readOnly: true
           type: boolean
         textValue:
           example: Amp
-          nullable: true
           readOnly: true
-          type: string
+          type:
+          - string
+          - 'null'
         type:
           allOf:
           - $ref: '#/components/schemas/FieldType'
@@ -2226,7 +2102,6 @@ components:
             For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
 
             '
-          nullable: true
           oneOf:
           - type: string
           - type: boolean
@@ -2237,6 +2112,902 @@ components:
             type: array
       required:
       - value
+      type: object
+    FindMatchingRegionsAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              aaSequenceMatches:
+                items:
+                  properties:
+                    matchingAASequenceIds:
+                      items:
+                        type: string
+                      type: array
+                    targetAASequenceId:
+                      type: string
+                  type: object
+                type: array
+            type: object
+        type: object
+      type: object
+    MoleculeWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/Molecule'
+      - properties:
+          entityType:
+            enum:
+            - molecule
+            type: string
+        type: object
+      type: object
+    ExportsAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            additionalProperties: false
+            properties:
+              downloadURL:
+                format: uri
+                type: string
+            type: object
+        type: object
+      type: object
+    CreateNucleotideTemplateAlignmentAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            $ref: '#/components/schemas/NucleotideAlignment'
+        type: object
+      type: object
+    BulkCreateFeaturesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              features:
+                items:
+                  $ref: '#/components/schemas/Feature'
+                type: array
+            type: object
+        type: object
+      type: object
+    AaSequenceSummary:
+      properties:
+        entityType:
+          enum:
+          - aa_sequence
+          type: string
+        id:
+          example: prtn_ObbdtGhC
+          type: string
+        type:
+          deprecated: true
+          type: string
+      type: object
+    AaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/AaSequence'
+      - properties:
+          entityType:
+            enum:
+            - aa_sequence
+            type: string
+        type: object
+      type: object
+    DnaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/DnaSequence'
+      - properties:
+          entityType:
+            enum:
+            - dna_sequence
+            type: string
+        type: object
+      type: object
+    CreateNucleotideConsensusAlignmentAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            $ref: '#/components/schemas/NucleotideAlignment'
+        type: object
+      type: object
+    ContainerContent:
+      properties:
+        batch:
+          allOf:
+          - $ref: '#/components/schemas/BatchOrInaccessibleResource'
+        concentration:
+          $ref: '#/components/schemas/Measurement'
+        entity:
+          allOf:
+          - $ref: '#/components/schemas/EntityOrInaccessibleResource'
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    AIGGenerateInputAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            $ref: '#/components/schemas/AutomationInputGenerator'
+        type: object
+      type: object
+    RnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 0
+            type: integer
+          type:
+            type: string
+        type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    CustomEntityWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/CustomEntity'
+      - properties:
+          entityType:
+            enum:
+            - custom_entity
+            type: string
+        type: object
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    DnaAlignment:
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentSummary'
+      - properties:
+          alignedSequences:
+            items:
+              $ref: '#/components/schemas/AlignedSequence'
+            type: array
+        type: object
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    DnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/Oligo'
+      - properties:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/DnaAnnotation'
+            type: array
+          apiURL:
+            example: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
+            type: string
+          bases:
+            example: ACTTTTT
+            type: string
+          customNotation:
+            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          customNotationName:
+            description: Name of the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
+            type: string
+    FindMatchingRegionsDnaAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              dnaSequenceMatches:
+                items:
+                  properties:
+                    matchingDnaSequenceIds:
+                      items:
+                        type: string
+                      type: array
+                    targetDnaSequenceId:
+                      type: string
+                  type: object
+                type: array
+            type: object
+        type: object
+      type: object
+    EntityLabels:
+      properties:
+        entityRegistryId:
+          example: REAG000
+          type:
+          - string
+          - 'null'
+        id:
+          example: bfi_12345
+          type: string
+        name:
+          example: Deionized Water
+          type: string
+      type: object
+    BulkCreateCustomEntitiesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              customEntities:
+                items:
+                  $ref: '#/components/schemas/CustomEntity'
+                type: array
+            type: object
+        type: object
+      type: object
+    Blob:
+      properties:
+        id:
+          description: The universally unique identifier (UUID) for the blob.
+          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+          format: uuid
+          type: string
+        mimeType:
+          description: eg. application/jpeg
+          example: text/csv
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          example: MyInstrumentInputFile.csv
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - COMPLETE
+          - ABORTED
+          type: string
+      type: object
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    DnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            maximum: 1
+            minimum: -1
+            type: integer
+          type:
+            type: string
+        type: object
+    BatchOrInaccessibleResource:
+      oneOf:
+      - $ref: '#/components/schemas/Batch'
+      - $ref: '#/components/schemas/InaccessibleResource'
+    CreateTemplateAlignmentAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            $ref: '#/components/schemas/DnaAlignment'
+        type: object
+      type: object
+    AutomationOutputProcessor:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Output Processor in the API.
+            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+          completeWithErrors:
+            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
+            type: boolean
+          createdAt:
+            description: DateTime the Automation Output Processor was created
+            format: date-time
+            type: string
+          errorFile:
+            allOf:
+            - $ref: '#/components/schemas/Blob'
+          id:
+            example: aop_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Output Processor was last modified
+            format: date-time
+            type: string
+          progressStats:
+            $ref: '#/components/schemas/AutomationProgressStats'
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+            type: array
+        type: object
+    DnaSequenceSummary:
+      properties:
+        entityType:
+          enum:
+          - dna_sequence
+          type: string
+        id:
+          example: seq_ObbdtGhC
+          type: string
+        type:
+          deprecated: true
+          type: string
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    Mixture:
+      properties:
+        aliases:
+          items:
+            example: FRM000
+            type: string
+          type: array
+        allowMeasuredIngredients:
+          description: Derived from the mixture's schema.
+          readOnly: true
+          type: boolean
+        amount:
+          description: The positive numerical amount value of this mixture in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4).
+          example: '123'
+          type: string
+        apiURL:
+          description: The canonical url of the Mixture in the API.
+          example: https://benchling.com/api/v2/mixtures/mxt_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: FRM000
+          type:
+          - string
+          - 'null'
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: Mixtures can have up to one parent mixture field.
+        folderId:
+          example: lib_R8KcsjhW
+          type:
+          - string
+          - 'null'
+        id:
+          example: mxt_xCUXNVyG
+          type: string
+        ingredients:
+          description: List of ingredients on this mixture.
+          items:
+            $ref: '#/components/schemas/Ingredient'
+          type: array
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: FRM000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Prep
+        units:
+          $ref: '#/components/schemas/MixtureMeasurementUnits'
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/mxt-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    BulkCreateRnaSequencesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              rnaSequences:
+                items:
+                  $ref: '#/components/schemas/RnaSequence'
+                type: array
+            type: object
+        type: object
+      type: object
+    EntityOrInaccessibleResource:
+      oneOf:
+      - $ref: '#/components/schemas/Entity'
+      - $ref: '#/components/schemas/InaccessibleResource'
+      type: object
+    Entity:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/AaSequenceWithEntityType'
+          custom_entity: '#/components/schemas/CustomEntityWithEntityType'
+          dna_oligo: '#/components/schemas/DnaOligoWithEntityType'
+          dna_sequence: '#/components/schemas/DnaSequenceWithEntityType'
+          mixture: '#/components/schemas/MixtureWithEntityType'
+          molecule: '#/components/schemas/MoleculeWithEntityType'
+          rna_oligo: '#/components/schemas/RnaOligoWithEntityType'
+          rna_sequence: '#/components/schemas/RnaSequenceWithEntityType'
+        propertyName: entityType
+      oneOf:
+      - $ref: '#/components/schemas/DnaSequenceWithEntityType'
+      - $ref: '#/components/schemas/RnaSequenceWithEntityType'
+      - $ref: '#/components/schemas/AaSequenceWithEntityType'
+      - $ref: '#/components/schemas/MixtureWithEntityType'
+      - $ref: '#/components/schemas/DnaOligoWithEntityType'
+      - $ref: '#/components/schemas/RnaOligoWithEntityType'
+      - $ref: '#/components/schemas/MoleculeWithEntityType'
+      - $ref: '#/components/schemas/CustomEntityWithEntityType'
+      type: object
+    BulkCreateAaSequencesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              aaSequences:
+                items:
+                  $ref: '#/components/schemas/AaSequence'
+                type: array
+            type: object
+        type: object
+      type: object
+    RnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/Oligo'
+      - properties:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/RnaAnnotation'
+            type: array
+          apiURL:
+            example: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9D
+            type: string
+          bases:
+            example: ACUUUUU
+            type: string
+          customNotation:
+            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          customNotationName:
+            description: Name of the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
+            type: string
+          nucleotideType:
+            example: RNA
+            type: string
+    ExportAuditLogAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            additionalProperties: false
+            properties:
+              downloadURL:
+                format: uri
+                type: string
+            type: object
+        type: object
+      type: object
+    CheckoutRecord:
+      description: '
+
+        *assignee field* is set if status is "RESERVED" or "CHECKED_OUT", or null if status is "AVAILABLE".
+
+
+        *comment field* is set when container was last reserved, checked out, or checked into.
+
+
+        *modifiedAt field* is the date and time when container was last checked out, checked in, or reserved
+
+        '
+      properties:
+        assignee:
+          oneOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - $ref: '#/components/schemas/TeamSummary'
+        comment:
+          type: string
+        modifiedAt:
+          format: date-time
+          type: string
+        status:
+          enum:
+          - AVAILABLE
+          - RESERVED
+          - CHECKED_OUT
+          type: string
+      type: object
+    AutomationInputGenerator:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Input Generator in the API.
+            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          createdAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          id:
+            example: aif_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+            type: array
+        type: object
+    DnaSequenceTranscription:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          description: Linked RNA sequence ID.
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          maximum: 1
+          minimum: -1
+          type: integer
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    NucleotideAlignmentSummary:
+      properties:
+        apiURL:
+          description: The canonical url of the Alignment in the API.
+          example: https://benchling.com/api/v2/alignments/seqanl_6ZVdX98t
+          format: uri
+          type: string
+        createdAt:
+          description: DateTime the Alignment was created
+          format: date-time
+          type: string
+        id:
+          example: seqanl_6ZVdX98t
+          type: string
+        modifiedAt:
+          description: DateTime the Alignment was last modified
+          format: date-time
+          type: string
+        name:
+          type: string
+        referenceSequenceId:
+          description: The ID of the template or consensus Sequence associated with the Alignment
+          example: seq_MYmsnS1u
+          type: string
+        webURL:
+          description: The Benchling web UI url to view the Alignment
+          format: uri
+          type: string
+      type: object
+    AaAnnotation:
+      properties:
+        color:
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the AA sequence is always represented as 0.
+          type: integer
+        id:
+          example: prtnann_o7zMPG0P
+          type: string
+        name:
+          maxLength: 255
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        type:
+          example: Site
+          maxLength: 255
+          type: string
+      type: object
+    CreateConsensusAlignmentAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            $ref: '#/components/schemas/DnaAlignment'
+        type: object
+      type: object
+    NucleotideAlignment:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideAlignmentSummary'
+      - properties:
+          alignedSequences:
+            items:
+              $ref: '#/components/schemas/AlignedNucleotideSequence'
+            type: array
+        type: object
+      type: object
+    BulkUpdateRnaOligosAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              rnaOligos:
+                items:
+                  $ref: '#/components/schemas/RnaOligo'
+                type: array
+            type: object
+        type: object
+      type: object
+    DnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: -1
+            type: integer
+        type: object
+    AutofillTranscriptionsAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response: {}
+        type: object
+      type: object
+    DnaOligoWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/DnaOligo'
+      - properties:
+          entityType:
+            enum:
+            - dna_oligo
+            type: string
+        type: object
+      type: object
+    RnaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/RnaSequence'
+      - properties:
+          entityType:
+            enum:
+            - rna_sequence
+            type: string
+        type: object
+      type: object
+    BulkCreateDnaOligosAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              dnaOligos:
+                items:
+                  $ref: '#/components/schemas/DnaOligo'
+                type: array
+            type: object
+        type: object
+      type: object
+    BulkUpdateRnaSequencesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              rnaSequences:
+                items:
+                  $ref: '#/components/schemas/RnaSequence'
+                type: array
+            type: object
+        type: object
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    BulkUpdateDnaSequencesAsyncTask:
+      allOf:
+      - $ref: '#/components/schemas/AsyncTask'
+      - additionalProperties: false
+        properties:
+          response:
+            properties:
+              dnaSequences:
+                items:
+                  $ref: '#/components/schemas/DnaSequence'
+                type: array
+            type: object
+        type: object
+      type: object
+    InaccessibleResource:
+      additionalProperties: false
+      properties:
+        inaccessibleId:
+          type: string
+        resourceType:
+          enum:
+          - inaccessible_resource
+          type: string
+        type:
+          description: 'The type of this inaccessible item. Example values: "custom_entity", "container", "plate", "dna_sequence"
+
+            '
+          example: custom_entity
+          type: string
       type: object
     AsyncTask:
       properties:
@@ -2268,831 +3039,57 @@ components:
       required:
       - status
       type: object
-    AutomationProgressStats:
-      description: Processing progress information.
+    InternalServerError:
       properties:
-        rowsFailed:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
           type: integer
-        rowsSucceeded:
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
           type: integer
-        rowsUnprocessed:
-          type: integer
-      type: object
-    BatchOrInaccessibleResource:
-      oneOf:
-      - $ref: '#/components/schemas/Batch'
-      - $ref: '#/components/schemas/InaccessibleResource'
-    DnaAlignment:
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentSummary'
-      - properties:
-          alignedSequences:
-            items:
-              $ref: '#/components/schemas/AlignedSequence'
-            type: array
-        type: object
-      type: object
-    LabAutomationBenchlingAppErrors:
-      properties:
-        topLevelErrors:
-          items:
-            properties:
-              errorMessage:
-                type: string
-            type: object
-          type: array
-      type: object
-    Oligo:
-      discriminator:
-        mapping:
-          DNA: DnaOligo
-          RNA: RnaOligo
-        propertyName: nucleotideType
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Oligo in the API.
-          format: uri
-          readOnly: true
+        title:
+          type:
+          - 'null'
+          - string
+        type:
           type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        bases:
-          description: Base pairs of the Oligo.
-          example: ACTTTTT
-          type: string
-        createdAt:
-          description: DateTime the Oligo was created.
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the Oligo.
-        entityRegistryId:
-          description: Registry ID of the Oligo if registered.
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the Oligo.
-          nullable: true
-          type: string
-        id:
-          description: ID of the Oligo.
-          example: seq_bhuDUw9D
-          type: string
-        length:
-          description: Number of bases in the Oligo.
-          type: integer
-        modifiedAt:
-          description: DateTime the Oligo was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          description: Name of the Oligo.
-          type: string
-        nucleotideType:
-          description: Nucleotide type of the Oligo.
-          enum:
-          - DNA
-          - RNA
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          description: Registry the Oligo is registered in.
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-        webURL:
-          description: URL of the Oligo.
-          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
-          format: uri
-          readOnly: true
-          type: string
-      type: object
-    ExportAuditLogAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            additionalProperties: false
-            properties:
-              downloadURL:
-                format: uri
-                type: string
-            type: object
-        type: object
-      type: object
-    RegistrationOrigin:
-      properties:
-        originEntryId:
-          nullable: true
-          readOnly: true
-          type: string
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
-      type: object
-    BulkUpdateContainersAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              containers:
-                items:
-                  $ref: '#/components/schemas/Container'
-                type: array
-            type: object
-        type: object
-      type: object
-    BulkUpdateRnaSequencesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              rnaSequences:
-                items:
-                  $ref: '#/components/schemas/RnaSequence'
-                type: array
-            type: object
-        type: object
-      type: object
-    BulkUpdateDnaOligosAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              dnaOligos:
-                items:
-                  $ref: '#/components/schemas/DnaOligo'
-                type: array
-            type: object
-        type: object
-      type: object
-    CreateConsensusAlignmentAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            $ref: '#/components/schemas/DnaAlignment'
-        type: object
-      type: object
-    Ingredient:
-      properties:
-        amount:
-          description: 'The amount value of this ingredient in its mixture, in string format (to preserve full precision). Pair with `units`. Supports scientific notation (1.23e4). One ingredient on this mixture can have an amount value of `"QS"`.
-
-            '
-          example: '12'
-          nullable: true
-          type: string
-        catalogIdentifier:
-          example: DION_004
-          nullable: true
-          type: string
-        componentEntity:
-          allOf:
-          - $ref: '#/components/schemas/EntityLabels'
-          - description: The entity that uniquely identifies this component.
-        componentLotContainer:
-          allOf:
-          - $ref: '#/components/schemas/ContainerLabels'
-          description: The container representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
-          nullable: true
-        componentLotEntity:
-          allOf:
-          - $ref: '#/components/schemas/EntityLabels'
-          description: The entity representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "inventory" format.
-          nullable: true
-        componentLotText:
-          description: Text representing the component lot for this ingredient. This is only present if the mixture schema supports component lots in "text" format.
-          example: DION_004-source_001
-          nullable: true
-          type: string
-        hasParent:
-          type: boolean
-        notes:
-          nullable: true
-          type: string
-        targetAmount:
-          description: The target amount for this ingredient such that this ingredient's proportion in its mixture would preserve the equivalent ingredient's proportion in the parent mixture. Pair with `units`.
-          example: '123'
-          nullable: true
-          readOnly: true
-          type: string
-        units:
-          $ref: '#/components/schemas/IngredientMeasurementUnits'
-      type: object
-    BulkCreateCustomEntitiesAsyncTask:
-      allOf:
-      - $ref: '#/components/schemas/AsyncTask'
-      - additionalProperties: false
-        properties:
-          response:
-            properties:
-              customEntities:
-                items:
-                  $ref: '#/components/schemas/CustomEntity'
-                type: array
-            type: object
-        type: object
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
   examples:
-    AaSequencesFindMatchingRegionTaskResponse:
-      value:
-        response:
-          aaSequenceMatches:
-          - matchingAASequenceIds:
-            - prtn_TIIi7lto
-            - prtn_0qTaIIDE
-            targetAASequenceId: prtn_W1Qh8teE
-        status: SUCCEEDED
-    DnaCreateAlignmentTaskResponse:
-      value:
-        response:
-          alignedSequences:
-          - bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-            dnaSequenceId: seq_MYmsnS1u
-            name: Gene001
-            sequenceId: seq_MYmsnS1u
-            trimEnd: 60
-            trimStart: 0
-          apiURL: https://benchling.com/api/v2/dna-alignments/seqanl_6ZVdX98t
-          createdAt: '2021-07-13T12:59:51.903Z'
-          id: seqanl_6ZVdX98t
-          modifiedAt: '2021-07-13T12:59:51.903Z'
-          name: Example alignment
-          webURL: https://benchling.com/benchling/f/lib_Fy2C0HOl-example/seq_UpzwvUug-consensus/edit?alignment=seqanl_6ZVdX98t
-        status: SUCCEEDED
-    BulkOperateCustomEntitiesTaskResponse:
-      value:
-        response:
-          customEntities:
-          - aliases:
-            - sBN000
-            apiURL: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
-            archiveRecord:
-              reason: Made in error
-            authors:
-            - handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            createdAt: '2021-07-14T07:34:25.156Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            customFields:
-              Legacy ID:
-                value: STR100
-            entityRegistryId: sBN000
-            fields:
-              additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: dna_sequence_link
-                value:
-                - seq_jdf8BV24
-            folderId: lib_mrZWMrft
-            id: prtn_ObbdtGhC
-            modifiedAt: '2021-07-14T07:34:25.157Z'
-            name: sBN000
-            registrationOrigin:
-              originEntryId: etr_3wievUIJ
-              registeredAt: '2021-07-14T07:34:25.157Z'
-            registryId: src_NetYd96a
-            schema:
-              id: ts_DaiFhsNA
-              name: Example Schema
-            webURL: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
-        status: SUCCEEDED
-    BulkOperateAaSequencesTaskResponse:
-      value:
-        response:
-          aaSequences:
-          - aliases:
-            - Example alias
-            aminoAcids: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
-            annotations:
-            - color: '#85DAE9'
-              end: 10
-              id: prtnann_o7zMPG0P
-              name: Example annotation
-              start: 0
-            apiURL: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
-            archiveRecord:
-              reason: Made in error
-            createdAt: '2021-07-14T07:34:25.156Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            customFields:
-              Legacy ID:
-                value: STR100
-            entityRegistryId: sBN000
-            fields:
-              additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: dna_sequence_link
-                value:
-                - seq_jdf8BV24
-            folderId: lib_mrZWMrft
-            id: prtn_ObbdtGhC
-            length: 0
-            modifiedAt: '2021-07-14T07:34:25.157Z'
-            name: Example AA Sequence
-            registrationOrigin:
-              originEntryId: etr_3wievUIJ
-              registeredAt: '2021-07-14T07:34:25.157Z'
-            registryId: src_NetYd96a
-            schema:
-              id: ts_DaiFhsNA
-              name: Example Schema
-            webURL: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
-        status: SUCCEEDED
-    BulkOperateDnaSequencesTaskResponse:
-      value:
-        response:
-          dnaSequences:
-          - aliases:
-            - Example alias
-            annotations:
-            - color: '#85DAE9'
-              end: 10
-              name: Example annotation
-              start: 0
-              strand: 0
-              type: Example annotation type
-            apiURL: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
-            archiveRecord:
-              reason: Made in error
-            bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-            createdAt: '2021-07-13T13:16:44.315Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            customFields:
-              Legacy ID:
-                value: STR100
-            entityRegistryId: sBN000
-            fields:
-            - additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: dna_sequence_link
-                value:
-                - seq_jdf8BV24
-            folderId: lib_mrZWMrft
-            id: seq_asQya4lk
-            isCircular: true
-            length: 0
-            modifiedAt: '2021-07-13T13:16:44.315Z'
-            name: Example sequence
-            primers:
-            - bases: CATCG
-              bindPosition: 0
-              color: '#F58A5E'
-              end: 5
-              name: Example primer
-              oligoId: seq_HJyE332n
-              overhangLength: 0
-              start: 0
-              strand: -1
-            registrationOrigin:
-              originEntryId: ent_a0SApq3z
-              registeredAt: '2021-07-13T13:16:44.315Z'
-            registryId: src_ae40j3TZ
-            schema:
-              id: ts_n4l12nf0
-              name: Example schema
-            translations:
-            - aminoAcids: KK
-              end: 0
-              regions:
-              - end: 0
-                start: 0
-              start: 0
-              strand: 1
-            webURL: https://benchling.com/benchling/f/lib_zky83cLg-computed-fields/seq_mnY8u4bs-chain-1/edit
-        status: SUCCEEDED
-    TaskRunning:
-      value:
-        status: RUNNING
-    BulkOperateContainersTaskResponse:
-      value:
-        response:
-          containers:
-          - archiveRecord:
-              reason: Made in error
-            barcode: 201006-005
-            checkoutRecord:
-              assignee:
-                handle: lpasteur
-                id: ent_a0SApq3z
-                name: Louis Pasteur
-              comment: Example comment
-              modifiedAt: '2021-07-14T12:27:27.917Z'
-              status: AVAILABLE
-            contents:
-            - batch:
-                archiveRecord:
-                  reason: Made in error
-                createdAt: '2021-07-14T12:27:27.917Z'
-                creator:
-                  handle: lpasteur
-                  id: ent_a0SApq3z
-                  name: Louis Pasteur
-                entity:
-                  aliases:
-                  - Example alias
-                  annotations: []
-                  apiURL: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
-                  archiveRecord:
-                    reason: Made in error
-                  bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-                  createdAt: '2021-07-14T12:27:27.917Z'
-                  creator:
-                    handle: lpasteur
-                    id: ent_a0SApq3z
-                    name: Louis Pasteur
-                  customFields:
-                    Legacy ID:
-                      value: STR100
-                  entityRegistryId: sBN000
-                  fields:
-                    additionalProp1:
-                      displayValue: Amp
-                      isMulti: true
-                      textValue: Amp
-                      type: dna_sequence_link
-                      value:
-                      - seq_jdf8BV24
-                  folderId: lib_hBHqKbzE
-                  id: seq_bhuDUw9D
-                  isCircular: true
-                  length: 0
-                  modifiedAt: '2021-07-14T12:27:27.917Z'
-                  name: Example entity
-                  primers: []
-                  registrationOrigin:
-                    originEntryId: etr_3wievUIJ
-                    registeredAt: '2021-07-14T07:34:25.157Z'
-                  registryId: src_NetYd96a
-                  schema:
-                    id: ts_DaiFhsNA
-                    name: Example Schema
-                  translations: []
-                  webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-seqs/seq_bhuDUw9D-example-entity/edit
-                fields:
-                  additionalProp1:
-                    displayValue: Amp
-                    isMulti: true
-                    textValue: Amp
-                    type: dna_sequence_link
-                    value:
-                    - seq_jdf8BV24
-                id: bat_UOIr8IjL
-                modifiedAt: '2021-07-14T12:27:27.917Z'
-                name: Example Batch
-                schema:
-                  id: ts_DaiFhsNA
-                  name: Example Schema
-                webURL: https://benchling.com/benchling/f/lib_55UxcIps-registry/bfi_YtegMKkT-batch-test/edit
-              concentration:
-                units: uM
-                value: 5
-              entity:
-                aliases:
-                - Example alias
-                annotations: []
-                apiURL: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
-                archiveRecord:
-                  reason: Made in error
-                bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-                createdAt: '2021-07-14T12:27:27.917Z'
-                creator:
-                  handle: lpasteur
-                  id: ent_a0SApq3z
-                  name: Louis Pasteur
-                customFields:
-                  Legacy ID:
-                    value: STR100
-                entityRegistryId: sBN000
-                fields:
-                  additionalProp1:
-                    displayValue: Amp
-                    isMulti: true
-                    textValue: Amp
-                    type: dna_sequence_link
-                    value:
-                    - seq_jdf8BV24
-                folderId: lib_mrZWMrft
-                id: seq_bhuDUw9D
-                isCircular: true
-                length: 0
-                modifiedAt: '2021-07-14T12:27:27.917Z'
-                name: Example entity
-                primers: []
-                registrationOrigin:
-                  originEntryId: etr_3wievUIJ
-                  registeredAt: '2021-07-14T07:34:25.157Z'
-                registryId: src_NetYd96a
-                schema:
-                  id: ts_DaiFhsNA
-                  name: Example Schema
-                translations: []
-                webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-seqs/seq_bhuDUw9D-example-entity/edit
-            createdAt": '2021-07-14T12:27:27.917Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            fields:
-              additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: dna_sequence_link
-                value:
-                - seq_jdf8BV24
-            id: con_ZBL9QQWD
-            modifiedAt: '2021-07-14T12:27:27.917Z'
-            name: Example container
-            parentStorageId: loc_MmtNUQIA
-            parentStorageSchema:
-              id: locsch_ToRk7Elm
-              name: Building
-            projectId: src_1m4443Ek
-            quantity:
-              units: mL
-              value: 10
-            schema:
-              id: ts_DaiFhsNA
-              name: Example Schema
-            volume:
-              units: mL
-              value: 10
-            webURL: https://benchling.com/samples/containers/con_FzQ1stz9
-        status: SUCCEEDED
-    AuditLogTaskResponse:
-      value:
-        response:
-          downloadURL: https://benchling-temp.s3.amazonaws.com/exports/dHJgG40awwbze7a6jhaoShaqwGGpgyb1atUD4f16/entry_audit_log_etr_Fr35NTqk_doe_04Dec2024.csv?response-content-disposition=attachment&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=REDACTED_AWS_ACCESS_KEY_ID%2F20241204%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20241204T194928Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQo...&X-Amz-Signature=5ce237d862201e1bba540fac126852f4b1568cfa829d59618c80370a4fa58931
-        status: SUCCEEDED
-    EmptySuccessTaskResponse:
-      value:
-        response: {}
-        status: SUCCEEDED
-    BulkOperateRnaOligosTaskResponse:
-      value:
-        response:
-          rnaOligos:
-          - aliases:
-            - Example alias
-            apiURL: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9
-            archiveRecord:
-              reason: Made in error
-            bases: ACUUUUU
-            createdAt: '2021-07-13T21:00:49.245Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            customFields:
-              Legacy ID:
-                value: STR100
-            entityRegistryId: sBN000
-            fields:
-              additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: dna_sequence_link
-                value:
-                - seq_jdf8BV24
-            folderId: lib_mrZWMrft
-            id: seq_bhuDUw9D
-            length: 0
-            modifiedAt: '2021-07-13T21:00:49.245Z'
-            name: Example RNA Oligo
-            nucleotideType: DNA
-            registrationOrigin:
-              originEntryId: etr_3wievUIJ
-              registeredAt: '2021-07-13T21:00:49.245Z'
-            registryId: src_NetYd96a
-            schema:
-              id: ts_DaiFhsNA
-              name: Example Schema
-            webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
-        status: SUCCEEDED
-    ExportsTaskResponse:
-      value:
-        response:
-          downloadURL: https://benchling-temp.s3.amazonaws.com/benchling-temp/RShkPPS0dj1jsn1LKnbpl7mz421kne52Ndp8UJnB/capillary/export_items/etr_HzOyiNj8.zip?response-content-disposition=attachment&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=REDACTED_AWS_ACCESS_KEY_ID%2F20210714%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20210714T144850Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEB4aCXVzLWVhc3QtMSJSDNU1IHZ81FpESNaiQLue6l%2Bjz04FWk7fNUhMxiEbLYCt5LDNAiEAhNbTM9EdeAuxlj4svhS01NmwRJZTyF3Bjzr%2BhK22ACcq%2BQMIFxAAGrebNzE1ODk2NTYwNjgiDHKa3fq33iZwsM1KdCrWA8dnOWQ1%2FXsYrrbzk7cCID6qPA%2F3MQH%2F7FaQoMCUvXj06aeH6RhMD5WZyqoaISBr%2FP4FUua%2B%2FFSdAW8UoFpur0IvkSFTi472CA7hfGmgcjspBdsTCrOA8R1ofgscYwOvGcFreenw5l1VhXZDSeXLC9yLJXPBWFzeup8uRyNXQFIHFcmNHvsLiLMUTY0S5eEBc5Zn9SAaWOcm4OGjAurpUJqpTTPOAu5VZOT2d1K2XMy%2FoH7x01Xf0MRIEd0yfyOLK60dhngbaey39vw1wMfPOm3JBvOyVdhGg1WR2sRF1RG10t7dI7iIO2Y4Z3Yb9w%2FdQhlafF8Ss45YtRRv2RRtzfpwoWE846At1pWvhP0tA0I1bhtehd6Upk%2F0iLehO5JWUiYqz1oMfefdZa30JAS9UNdKNqqsX8%2FjhAR9Ff09xKzOD%2FXzqeZwTT0EWtG6hqerKX9%2B%2BULfjB%2F44t3FjL5pRXrxRDIy0uZVI3qhjoRot5Nf7Lm9edccJJ%2BaujnHOMd96mxEcB584VO6eb63I99geVmNO%2FGpuuBvMxf2oV4AN83BEKipJEM3K4OYFI5VASfcTx2V3nMILj8FMKATYEWPYns0KxMuEpQ0Nf7dSSEiFKIfQ1px5iEvMKfPu4cGOqUBUaO0C2gNEeOUs8Fy4ci2hsLw4MW7jVnT5jLEQd2BB44hZzqkMvmeOYeiTxQB%2FgBpqAC%2FfZRF2Am3nCyLaADQYGpRhpg0QFRkBH8ukSxqOx%2BwLvLAV537t5AfFLcqjar4C9a0DXO9hgWfF3yY6HISlZ4NE9VGXei1wqy7i5ZDcbP1%2FlfWqH6LspK2rMJGgAlJthf7De%2BlQ5yJmYW%2FH7KG5eC%2Fu2MV&X-Amz-Signature=b08cad199962bcdc6d0b4b5d2409e90b67a4484ae554ce843f537d1d471ea70d
-        status: SUCCEEDED
-    BulkOperateDnaOligosTaskResponse:
-      value:
-        response:
-          dnaOligos:
-          - aliases:
-            - Example alias
-            apiURL: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
-            archiveRecord:
-              reason: Made in error
-            bases: ACTTTTT
-            createdAt: '2021-07-13T21:00:49.245Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            customFields:
-              Legacy ID:
-                value: STR100
-            entityRegistryId: sBN000
-            fields:
-              additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: dna_sequence_link
-                value:
-                - seq_jdf8BV24
-            folderId: lib_mrZWMrft
-            id: seq_bhuDUw9D
-            length: 0
-            modifiedAt: '2021-07-13T21:00:49.245Z'
-            name: Example DNA Oligo
-            nucleotideType: DNA
-            registrationOrigin:
-              originEntryId: etr_3wievUIJ
-              registeredAt: '2021-07-13T21:00:49.245Z'
-            registryId: src_NetYd96a
-            schema:
-              id: ts_DaiFhsNA
-              name: Example Schema
-            webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
-        status: SUCCEEDED
-    BulkTaskFailed:
-      value:
-        errors:
-          index: 0
-          message: Invalid field value
-        message: Your request was invalid.
-        status: FAILED
-    TaskFailed:
-      value:
-        message: Alignment not found.
-        status: FAILED
-    BulkOperateRnaSequencesTaskResponse:
-      value:
-        response:
-          rnaSequences:
-          - aliases:
-            - Example alias
-            annotations:
-            - color: '#85DAE9'
-              end: 10
-              name: Example annotation
-              start: 0
-              strand: 0
-              type: Example annotation type
-            apiURL: https://benchling.com/api/v2/rna-sequences/seq_asQya4lk
-            archiveRecord:
-              reason: Made in error
-            bases: GUAGCAAAGANUAGUAGCCAGCUGUGAUAAAUGUCAGCUAAAAGGGGAAGCCAUG
-            createdAt: '2021-07-13T13:16:44.315Z'
-            creator:
-              handle: lpasteur
-              id: ent_a0SApq3z
-              name: Louis Pasteur
-            customFields:
-              Legacy ID:
-                value: STR100
-            entityRegistryId: sBN000
-            fields:
-            - additionalProp1:
-                displayValue: Amp
-                isMulti: true
-                textValue: Amp
-                type: rna_sequence_link
-                value: seq_jdf8BV24
-            folderId: lib_mrZWMrft
-            id: seq_asQya4lk
-            isCircular: false
-            length: 55
-            modifiedAt: '2021-07-13T13:16:44.315Z'
-            name: Example rna sequence
-            primers:
-            - bases: CAUCG
-              bindPosition: 0
-              color: '#F58A5E'
-              end: 5
-              name: Example primer
-              oligoId: seq_HJyE332n
-              overhangLength: 0
-              start: 0
-              strand: 1
-            registrationOrigin:
-              originEntryId: ent_a0SApq3z
-              registeredAt: '2021-07-13T13:16:44.315Z'
-            registryId: src_ae40j3TZ
-            schema:
-              id: ts_n4l12nf0
-              name: Example schema
-            translations:
-            - aminoAcids: KK
-              end: 0
-              regions:
-              - end: 0
-                start: 0
-              start: 0
-              strand: 1
-            webURL: https://benchling.com/benchling/f/lib_zky83cLg-example/seq_mnY8u4bs-chain-1/edit
-        status: SUCCEEDED
-    AOPProcessOutputTaskResponse:
-      value:
-        response:
-          apiURL: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
-          archiveRecord:
-            reason: Made in error
-          assayRunId: 588aca02-1a20-4b94-a40f-b3f3a0081749
-          automationFileConfig:
-            name: MyInstrumentName
-          file:
-            id: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
-            mimeType: text/csv
-            name: MyInstrumentInputFile.csv
-            type: RAW_FILE
-            uploadStatus: IN_PROGRESS
-          id: aop_C3wGA9HF
-          status: SUCCEEDED
-        status: SUCCEEDED
-    BulkOperateFeaturesTaskResponse:
-      value:
-        response:
-          features:
-          - color: '#75C6A9'
-            featureLibraryId: featlib_cWYhFmxq
-            featureType: promoter
-            id: feat_XhYjGBpFoZ4wVary
-            matchType: nucleotide
-            name: lacZalpha promoter
-            pattern: ggagtactgtcctccgagcggagtactgtcctccgagcggagtactgtcctccgagcggagtactgtcctccgagcggagttctgtcctccga
-        status: SUCCEEDED
-    AIGGenerateInputTaskResponse:
-      value:
-        response:
-          apiURL: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
-          assayRunId: 588aca02-1a20-4b94-a40f-b3f3a0081749
-          automationFileConfig:
-            name: MyInstrumentName
-          file:
-            id: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
-            mimeType: text/csv
-            name: MyInstrumentInputFile.csv
-            type: RAW_FILE
-            uploadStatus: IN_PROGRESS
-          id: aif_C3wGA9HF
-          status: SUCCEEDED
-        status: SUCCEEDED
     TransfersTaskResponse:
       value:
         response:
@@ -3249,6 +3246,600 @@ components:
               value: 10
             webURL: https://benchling.com/samples/containers/con_FzQ1stz9
         status: SUCCEEDED
+    TaskFailed:
+      value:
+        message: Alignment not found.
+        status: FAILED
+    BulkOperateContainersTaskResponse:
+      value:
+        response:
+          containers:
+          - archiveRecord:
+              reason: Made in error
+            barcode: 201006-005
+            checkoutRecord:
+              assignee:
+                handle: lpasteur
+                id: ent_a0SApq3z
+                name: Louis Pasteur
+              comment: Example comment
+              modifiedAt: '2021-07-14T12:27:27.917Z'
+              status: AVAILABLE
+            contents:
+            - batch:
+                archiveRecord:
+                  reason: Made in error
+                createdAt: '2021-07-14T12:27:27.917Z'
+                creator:
+                  handle: lpasteur
+                  id: ent_a0SApq3z
+                  name: Louis Pasteur
+                entity:
+                  aliases:
+                  - Example alias
+                  annotations: []
+                  apiURL: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
+                  archiveRecord:
+                    reason: Made in error
+                  bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+                  createdAt: '2021-07-14T12:27:27.917Z'
+                  creator:
+                    handle: lpasteur
+                    id: ent_a0SApq3z
+                    name: Louis Pasteur
+                  customFields:
+                    Legacy ID:
+                      value: STR100
+                  entityRegistryId: sBN000
+                  fields:
+                    additionalProp1:
+                      displayValue: Amp
+                      isMulti: true
+                      textValue: Amp
+                      type: dna_sequence_link
+                      value:
+                      - seq_jdf8BV24
+                  folderId: lib_hBHqKbzE
+                  id: seq_bhuDUw9D
+                  isCircular: true
+                  length: 0
+                  modifiedAt: '2021-07-14T12:27:27.917Z'
+                  name: Example entity
+                  primers: []
+                  registrationOrigin:
+                    originEntryId: etr_3wievUIJ
+                    registeredAt: '2021-07-14T07:34:25.157Z'
+                  registryId: src_NetYd96a
+                  schema:
+                    id: ts_DaiFhsNA
+                    name: Example Schema
+                  translations: []
+                  webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-seqs/seq_bhuDUw9D-example-entity/edit
+                fields:
+                  additionalProp1:
+                    displayValue: Amp
+                    isMulti: true
+                    textValue: Amp
+                    type: dna_sequence_link
+                    value:
+                    - seq_jdf8BV24
+                id: bat_UOIr8IjL
+                modifiedAt: '2021-07-14T12:27:27.917Z'
+                name: Example Batch
+                schema:
+                  id: ts_DaiFhsNA
+                  name: Example Schema
+                webURL: https://benchling.com/benchling/f/lib_55UxcIps-registry/bfi_YtegMKkT-batch-test/edit
+              concentration:
+                units: uM
+                value: 5
+              entity:
+                aliases:
+                - Example alias
+                annotations: []
+                apiURL: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
+                archiveRecord:
+                  reason: Made in error
+                bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+                createdAt: '2021-07-14T12:27:27.917Z'
+                creator:
+                  handle: lpasteur
+                  id: ent_a0SApq3z
+                  name: Louis Pasteur
+                customFields:
+                  Legacy ID:
+                    value: STR100
+                entityRegistryId: sBN000
+                fields:
+                  additionalProp1:
+                    displayValue: Amp
+                    isMulti: true
+                    textValue: Amp
+                    type: dna_sequence_link
+                    value:
+                    - seq_jdf8BV24
+                folderId: lib_mrZWMrft
+                id: seq_bhuDUw9D
+                isCircular: true
+                length: 0
+                modifiedAt: '2021-07-14T12:27:27.917Z'
+                name: Example entity
+                primers: []
+                registrationOrigin:
+                  originEntryId: etr_3wievUIJ
+                  registeredAt: '2021-07-14T07:34:25.157Z'
+                registryId: src_NetYd96a
+                schema:
+                  id: ts_DaiFhsNA
+                  name: Example Schema
+                translations: []
+                webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-seqs/seq_bhuDUw9D-example-entity/edit
+            createdAt": '2021-07-14T12:27:27.917Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            fields:
+              additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: dna_sequence_link
+                value:
+                - seq_jdf8BV24
+            id: con_ZBL9QQWD
+            modifiedAt: '2021-07-14T12:27:27.917Z'
+            name: Example container
+            parentStorageId: loc_MmtNUQIA
+            parentStorageSchema:
+              id: locsch_ToRk7Elm
+              name: Building
+            projectId: src_1m4443Ek
+            quantity:
+              units: mL
+              value: 10
+            schema:
+              id: ts_DaiFhsNA
+              name: Example Schema
+            volume:
+              units: mL
+              value: 10
+            webURL: https://benchling.com/samples/containers/con_FzQ1stz9
+        status: SUCCEEDED
+    AOPProcessOutputTaskResponse:
+      value:
+        response:
+          apiURL: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
+          archiveRecord:
+            reason: Made in error
+          assayRunId: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          automationFileConfig:
+            name: MyInstrumentName
+          file:
+            id: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+            mimeType: text/csv
+            name: MyInstrumentInputFile.csv
+            type: RAW_FILE
+            uploadStatus: IN_PROGRESS
+          id: aop_C3wGA9HF
+          status: SUCCEEDED
+        status: SUCCEEDED
+    BulkOperateDnaOligosTaskResponse:
+      value:
+        response:
+          dnaOligos:
+          - aliases:
+            - Example alias
+            apiURL: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
+            archiveRecord:
+              reason: Made in error
+            bases: ACTTTTT
+            createdAt: '2021-07-13T21:00:49.245Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            customFields:
+              Legacy ID:
+                value: STR100
+            entityRegistryId: sBN000
+            fields:
+              additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: dna_sequence_link
+                value:
+                - seq_jdf8BV24
+            folderId: lib_mrZWMrft
+            id: seq_bhuDUw9D
+            length: 0
+            modifiedAt: '2021-07-13T21:00:49.245Z'
+            name: Example DNA Oligo
+            nucleotideType: DNA
+            registrationOrigin:
+              originEntryId: etr_3wievUIJ
+              registeredAt: '2021-07-13T21:00:49.245Z'
+            registryId: src_NetYd96a
+            schema:
+              id: ts_DaiFhsNA
+              name: Example Schema
+            webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
+        status: SUCCEEDED
+    EmptySuccessTaskResponse:
+      value:
+        response: {}
+        status: SUCCEEDED
+    BulkOperateAaSequencesTaskResponse:
+      value:
+        response:
+          aaSequences:
+          - aliases:
+            - Example alias
+            aminoAcids: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
+            annotations:
+            - color: '#85DAE9'
+              end: 10
+              id: prtnann_o7zMPG0P
+              name: Example annotation
+              start: 0
+            apiURL: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
+            archiveRecord:
+              reason: Made in error
+            createdAt: '2021-07-14T07:34:25.156Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            customFields:
+              Legacy ID:
+                value: STR100
+            entityRegistryId: sBN000
+            fields:
+              additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: dna_sequence_link
+                value:
+                - seq_jdf8BV24
+            folderId: lib_mrZWMrft
+            id: prtn_ObbdtGhC
+            length: 0
+            modifiedAt: '2021-07-14T07:34:25.157Z'
+            name: Example AA Sequence
+            registrationOrigin:
+              originEntryId: etr_3wievUIJ
+              registeredAt: '2021-07-14T07:34:25.157Z'
+            registryId: src_NetYd96a
+            schema:
+              id: ts_DaiFhsNA
+              name: Example Schema
+            webURL: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
+        status: SUCCEEDED
+    DnaCreateAlignmentTaskResponse:
+      value:
+        response:
+          alignedSequences:
+          - bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+            dnaSequenceId: seq_MYmsnS1u
+            name: Gene001
+            sequenceId: seq_MYmsnS1u
+            trimEnd: 60
+            trimStart: 0
+          apiURL: https://benchling.com/api/v2/dna-alignments/seqanl_6ZVdX98t
+          createdAt: '2021-07-13T12:59:51.903Z'
+          id: seqanl_6ZVdX98t
+          modifiedAt: '2021-07-13T12:59:51.903Z'
+          name: Example alignment
+          webURL: https://benchling.com/benchling/f/lib_Fy2C0HOl-example/seq_UpzwvUug-consensus/edit?alignment=seqanl_6ZVdX98t
+        status: SUCCEEDED
+    BulkOperateCustomEntitiesTaskResponse:
+      value:
+        response:
+          customEntities:
+          - aliases:
+            - sBN000
+            apiURL: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
+            archiveRecord:
+              reason: Made in error
+            authors:
+            - handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            createdAt: '2021-07-14T07:34:25.156Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            customFields:
+              Legacy ID:
+                value: STR100
+            entityRegistryId: sBN000
+            fields:
+              additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: dna_sequence_link
+                value:
+                - seq_jdf8BV24
+            folderId: lib_mrZWMrft
+            id: prtn_ObbdtGhC
+            modifiedAt: '2021-07-14T07:34:25.157Z'
+            name: sBN000
+            registrationOrigin:
+              originEntryId: etr_3wievUIJ
+              registeredAt: '2021-07-14T07:34:25.157Z'
+            registryId: src_NetYd96a
+            schema:
+              id: ts_DaiFhsNA
+              name: Example Schema
+            webURL: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
+        status: SUCCEEDED
+    BulkTaskFailed:
+      value:
+        errors:
+          index: 0
+          message: Invalid field value
+        message: Your request was invalid.
+        status: FAILED
+    AIGGenerateInputTaskResponse:
+      value:
+        response:
+          apiURL: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
+          assayRunId: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          automationFileConfig:
+            name: MyInstrumentName
+          file:
+            id: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+            mimeType: text/csv
+            name: MyInstrumentInputFile.csv
+            type: RAW_FILE
+            uploadStatus: IN_PROGRESS
+          id: aif_C3wGA9HF
+          status: SUCCEEDED
+        status: SUCCEEDED
+    BulkOperateRnaOligosTaskResponse:
+      value:
+        response:
+          rnaOligos:
+          - aliases:
+            - Example alias
+            apiURL: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9
+            archiveRecord:
+              reason: Made in error
+            bases: ACUUUUU
+            createdAt: '2021-07-13T21:00:49.245Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            customFields:
+              Legacy ID:
+                value: STR100
+            entityRegistryId: sBN000
+            fields:
+              additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: dna_sequence_link
+                value:
+                - seq_jdf8BV24
+            folderId: lib_mrZWMrft
+            id: seq_bhuDUw9D
+            length: 0
+            modifiedAt: '2021-07-13T21:00:49.245Z'
+            name: Example RNA Oligo
+            nucleotideType: DNA
+            registrationOrigin:
+              originEntryId: etr_3wievUIJ
+              registeredAt: '2021-07-13T21:00:49.245Z'
+            registryId: src_NetYd96a
+            schema:
+              id: ts_DaiFhsNA
+              name: Example Schema
+            webURL: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
+        status: SUCCEEDED
+    BulkOperateRnaSequencesTaskResponse:
+      value:
+        response:
+          rnaSequences:
+          - aliases:
+            - Example alias
+            annotations:
+            - color: '#85DAE9'
+              end: 10
+              name: Example annotation
+              start: 0
+              strand: 0
+              type: Example annotation type
+            apiURL: https://benchling.com/api/v2/rna-sequences/seq_asQya4lk
+            archiveRecord:
+              reason: Made in error
+            bases: GUAGCAAAGANUAGUAGCCAGCUGUGAUAAAUGUCAGCUAAAAGGGGAAGCCAUG
+            createdAt: '2021-07-13T13:16:44.315Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            customFields:
+              Legacy ID:
+                value: STR100
+            entityRegistryId: sBN000
+            fields:
+            - additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: rna_sequence_link
+                value: seq_jdf8BV24
+            folderId: lib_mrZWMrft
+            id: seq_asQya4lk
+            isCircular: false
+            length: 55
+            modifiedAt: '2021-07-13T13:16:44.315Z'
+            name: Example rna sequence
+            primers:
+            - bases: CAUCG
+              bindPosition: 0
+              color: '#F58A5E'
+              end: 5
+              name: Example primer
+              oligoId: seq_HJyE332n
+              overhangLength: 0
+              start: 0
+              strand: 1
+            registrationOrigin:
+              originEntryId: ent_a0SApq3z
+              registeredAt: '2021-07-13T13:16:44.315Z'
+            registryId: src_ae40j3TZ
+            schema:
+              id: ts_n4l12nf0
+              name: Example schema
+            translations:
+            - aminoAcids: KK
+              end: 0
+              regions:
+              - end: 0
+                start: 0
+              start: 0
+              strand: 1
+            webURL: https://benchling.com/benchling/f/lib_zky83cLg-example/seq_mnY8u4bs-chain-1/edit
+        status: SUCCEEDED
+    BulkOperateDnaSequencesTaskResponse:
+      value:
+        response:
+          dnaSequences:
+          - aliases:
+            - Example alias
+            annotations:
+            - color: '#85DAE9'
+              end: 10
+              name: Example annotation
+              start: 0
+              strand: 0
+              type: Example annotation type
+            apiURL: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
+            archiveRecord:
+              reason: Made in error
+            bases: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+            createdAt: '2021-07-13T13:16:44.315Z'
+            creator:
+              handle: lpasteur
+              id: ent_a0SApq3z
+              name: Louis Pasteur
+            customFields:
+              Legacy ID:
+                value: STR100
+            entityRegistryId: sBN000
+            fields:
+            - additionalProp1:
+                displayValue: Amp
+                isMulti: true
+                textValue: Amp
+                type: dna_sequence_link
+                value:
+                - seq_jdf8BV24
+            folderId: lib_mrZWMrft
+            id: seq_asQya4lk
+            isCircular: true
+            length: 0
+            modifiedAt: '2021-07-13T13:16:44.315Z'
+            name: Example sequence
+            primers:
+            - bases: CATCG
+              bindPosition: 0
+              color: '#F58A5E'
+              end: 5
+              name: Example primer
+              oligoId: seq_HJyE332n
+              overhangLength: 0
+              start: 0
+              strand: -1
+            registrationOrigin:
+              originEntryId: ent_a0SApq3z
+              registeredAt: '2021-07-13T13:16:44.315Z'
+            registryId: src_ae40j3TZ
+            schema:
+              id: ts_n4l12nf0
+              name: Example schema
+            translations:
+            - aminoAcids: KK
+              end: 0
+              regions:
+              - end: 0
+                start: 0
+              start: 0
+              strand: 1
+            webURL: https://benchling.com/benchling/f/lib_zky83cLg-computed-fields/seq_mnY8u4bs-chain-1/edit
+        status: SUCCEEDED
+    AuditLogTaskResponse:
+      value:
+        response:
+          downloadURL: https://benchling-temp.s3.amazonaws.com/exports/dHJgG40awwbze7a6jhaoShaqwGGpgyb1atUD4f16/entry_audit_log_etr_Fr35NTqk_doe_04Dec2024.csv?response-content-disposition=attachment&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=REDACTED_AWS_ACCESS_KEY_ID%2F20241204%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20241204T194928Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQo...&X-Amz-Signature=5ce237d862201e1bba540fac126852f4b1568cfa829d59618c80370a4fa58931
+        status: SUCCEEDED
+    AaSequencesFindMatchingRegionTaskResponse:
+      value:
+        response:
+          aaSequenceMatches:
+          - matchingAASequenceIds:
+            - prtn_TIIi7lto
+            - prtn_0qTaIIDE
+            targetAASequenceId: prtn_W1Qh8teE
+        status: SUCCEEDED
+    ExportsTaskResponse:
+      value:
+        response:
+          downloadURL: https://benchling-temp.s3.amazonaws.com/benchling-temp/RShkPPS0dj1jsn1LKnbpl7mz421kne52Ndp8UJnB/capillary/export_items/etr_HzOyiNj8.zip?response-content-disposition=attachment&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=REDACTED_AWS_ACCESS_KEY_ID%2F20210714%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20210714T144850Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEB4aCXVzLWVhc3QtMSJSDNU1IHZ81FpESNaiQLue6l%2Bjz04FWk7fNUhMxiEbLYCt5LDNAiEAhNbTM9EdeAuxlj4svhS01NmwRJZTyF3Bjzr%2BhK22ACcq%2BQMIFxAAGrebNzE1ODk2NTYwNjgiDHKa3fq33iZwsM1KdCrWA8dnOWQ1%2FXsYrrbzk7cCID6qPA%2F3MQH%2F7FaQoMCUvXj06aeH6RhMD5WZyqoaISBr%2FP4FUua%2B%2FFSdAW8UoFpur0IvkSFTi472CA7hfGmgcjspBdsTCrOA8R1ofgscYwOvGcFreenw5l1VhXZDSeXLC9yLJXPBWFzeup8uRyNXQFIHFcmNHvsLiLMUTY0S5eEBc5Zn9SAaWOcm4OGjAurpUJqpTTPOAu5VZOT2d1K2XMy%2FoH7x01Xf0MRIEd0yfyOLK60dhngbaey39vw1wMfPOm3JBvOyVdhGg1WR2sRF1RG10t7dI7iIO2Y4Z3Yb9w%2FdQhlafF8Ss45YtRRv2RRtzfpwoWE846At1pWvhP0tA0I1bhtehd6Upk%2F0iLehO5JWUiYqz1oMfefdZa30JAS9UNdKNqqsX8%2FjhAR9Ff09xKzOD%2FXzqeZwTT0EWtG6hqerKX9%2B%2BULfjB%2F44t3FjL5pRXrxRDIy0uZVI3qhjoRot5Nf7Lm9edccJJ%2BaujnHOMd96mxEcB584VO6eb63I99geVmNO%2FGpuuBvMxf2oV4AN83BEKipJEM3K4OYFI5VASfcTx2V3nMILj8FMKATYEWPYns0KxMuEpQ0Nf7dSSEiFKIfQ1px5iEvMKfPu4cGOqUBUaO0C2gNEeOUs8Fy4ci2hsLw4MW7jVnT5jLEQd2BB44hZzqkMvmeOYeiTxQB%2FgBpqAC%2FfZRF2Am3nCyLaADQYGpRhpg0QFRkBH8ukSxqOx%2BwLvLAV537t5AfFLcqjar4C9a0DXO9hgWfF3yY6HISlZ4NE9VGXei1wqy7i5ZDcbP1%2FlfWqH6LspK2rMJGgAlJthf7De%2BlQ5yJmYW%2FH7KG5eC%2Fu2MV&X-Amz-Signature=b08cad199962bcdc6d0b4b5d2409e90b67a4484ae554ce843f537d1d471ea70d
+        status: SUCCEEDED
+    TaskRunning:
+      value:
+        status: RUNNING
+    BulkOperateFeaturesTaskResponse:
+      value:
+        response:
+          features:
+          - color: '#75C6A9'
+            featureLibraryId: featlib_cWYhFmxq
+            featureType: promoter
+            id: feat_XhYjGBpFoZ4wVary
+            matchType: nucleotide
+            name: lacZalpha promoter
+            pattern: ggagtactgtcctccgagcggagtactgtcctccgagcggagtactgtcctccgagcggagtactgtcctccgagcggagttctgtcctccga
+        status: SUCCEEDED
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
@@ -3268,3 +3859,6 @@ components:
 externalDocs:
   description: Additional API Documentation
   url: https://docs.benchling.com
+x-refined-from:
+- benchling-openapi.yaml
+- benchling-v3-openapi.yaml

@@ -7,21 +7,7 @@ info:
   version: 2.0.0
   description: 'Represents a group of users within Benchling, typically corresponding to a company,
 
-    department, or research group. Organizations provide a many-to-many relationship between
-
-    users—each user can belong to multiple organizations, and each organization can have
-
-    multiple users. Users are designated as either ADMIN (with management privileges) or
-
-    MEMBER within the organization via `GroupMembership`. Organizations can own resources
-
-    like Projects and Folders, and can contain Teams for finer-grained user grouping.
-
-    Organizations also control access settings such as whether members can create personal
-
-    ownables and what default policies apply to new resources. In the UI, organizations
-
-    appear in user profiles and are used for sharing and access control throughout Benchling.'
+    department, or research group.'
 servers:
 - url: /api/v3
 security:
@@ -30,21 +16,7 @@ security:
 tags:
 - description: 'Represents a group of users within Benchling, typically corresponding to a company,
 
-    department, or research group. Organizations provide a many-to-many relationship between
-
-    users—each user can belong to multiple organizations, and each organization can have
-
-    multiple users. Users are designated as either ADMIN (with management privileges) or
-
-    MEMBER within the organization via `GroupMembership`. Organizations can own resources
-
-    like Projects and Folders, and can contain Teams for finer-grained user grouping.
-
-    Organizations also control access settings such as whether members can create personal
-
-    ownables and what default policies apply to new resources. In the UI, organizations
-
-    appear in user profiles and are used for sharing and access control throughout Benchling.'
+    department, or research group.'
   name: Organization
   x-bnch-organization: Benchling
 paths:
@@ -182,14 +154,160 @@ paths:
       - Organization
       x-bnch-rate-limit-tier: 4
 components:
-  schemas:
-    GroupMembershipUnpaginatedList:
-      additionalProperties: false
-      properties:
+  parameters:
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
         items:
-          items:
-            $ref: '#/components/schemas/GroupMembership'
-          type: array
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+  schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    Group:
+      anyOf:
+      - $ref: '#/components/schemas/Organization'
+      - $ref: '#/components/schemas/Team'
+      discriminator:
+        propertyName: __typename
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     GroupMembership:
       description: 'Indicates that a Principal is a member of Group. Role indicates that the Principal is
@@ -218,31 +336,13 @@ components:
           - ADMIN
           type: string
       type: object
-    InternalServerError:
+    PrincipalRef:
       properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
+        __typename:
           type: string
-        instance:
+        id:
+          format: api_id
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     OrganizationPaginatedList:
       additionalProperties: false
@@ -254,12 +354,52 @@ components:
         nextToken:
           type: string
       type: object
-    Group:
-      anyOf:
-      - $ref: '#/components/schemas/Organization'
-      - $ref: '#/components/schemas/Team'
-      discriminator:
-        propertyName: __typename
+    GroupMembershipUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/GroupMembership'
+          type: array
+      type: object
+    Organization:
+      description: 'Represents a group of users within Benchling, typically corresponding to a company,
+
+        department, or research group. Organizations provide a many-to-many relationship between
+
+        users—each user can belong to multiple organizations, and each organization can have
+
+        multiple users. Users are designated as either ADMIN (with management privileges) or
+
+        MEMBER within the organization via `GroupMembership`. Organizations can own resources
+
+        like Projects and Folders, and can contain Teams for finer-grained user grouping.
+
+        Organizations also control access settings such as whether members can create personal
+
+        ownables and what default policies apply to new resources. In the UI, organizations
+
+        appear in user profiles and are used for sharing and access control throughout Benchling.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        handle:
+          type: string
+        id:
+          type: string
+        memberships:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
       type: object
     Team:
       description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
@@ -305,205 +445,37 @@ components:
         organization:
           $ref: '#/components/schemas/OrganizationRef'
       type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    OrganizationRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    Organization:
-      description: 'Represents a group of users within Benchling, typically corresponding to a company,
-
-        department, or research group. Organizations provide a many-to-many relationship between
-
-        users—each user can belong to multiple organizations, and each organization can have
-
-        multiple users. Users are designated as either ADMIN (with management privileges) or
-
-        MEMBER within the organization via `GroupMembership`. Organizations can own resources
-
-        like Projects and Folders, and can contain Teams for finer-grained user grouping.
-
-        Organizations also control access settings such as whether members can create personal
-
-        ownables and what default policies apply to new resources. In the UI, organizations
-
-        appear in user profiles and are used for sharing and access control throughout Benchling.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        handle:
-          type: string
-        id:
-          type: string
-        memberships:
-          format: uri
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

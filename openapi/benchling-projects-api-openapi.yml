@@ -1,13 +1,11 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Projects API
+  title: Benchling Projects API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
-
-    '
+  description: Manage project objects.
 servers:
 - url: /api/v2
 security:
@@ -19,7 +17,6 @@ tags:
 paths:
   /projects:
     get:
-      description: List projects
       operationId: listProjects
       parameters:
       - in: query
@@ -32,7 +29,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: 'Method by which to order search results. Valid sorts are name, modifiedAt, and createdAt. Optionally add :asc or :desc to specify ascending or descending order. Default is modifiedAt.
 
@@ -51,7 +47,6 @@ paths:
           - name:asc
           - modifiedAt:desc
           - name:desc
-          nullable: false
           type: string
       - description: 'Archive reason. Restricts items to those with the specified archive reason. Use "NOT_ARCHIVED" to filter for unarchived projects. Use "ANY_ARCHIVED" to filter for archived projects regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived.
 
@@ -98,7 +93,6 @@ paths:
       - Projects
   /projects/{project_id}:
     get:
-      description: Get a project by ID
       operationId: getProject
       parameters:
       - description: ID of project to get
@@ -169,6 +163,15 @@ paths:
       - Projects
 components:
   schemas:
+    ProjectsPaginatedList:
+      properties:
+        nextToken:
+          type: string
+        projects:
+          items:
+            $ref: '#/components/schemas/Project'
+          type: array
+      type: object
     UserSummary:
       allOf:
       - $ref: '#/components/schemas/PartySummary'
@@ -176,17 +179,6 @@ components:
           handle: lpasteur
           id: ent_a0SApq3z
           name: Louis Pasteur
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
     ProjectsArchive:
       additionalProperties: false
       properties:
@@ -208,21 +200,20 @@ components:
       - reason
       - projectIds
       type: object
-    ProjectsPaginatedList:
+    PartySummary:
       properties:
-        nextToken:
+        handle:
           type: string
-        projects:
-          items:
-            $ref: '#/components/schemas/Project'
-          type: array
+        id:
+          type: string
+        name:
+          type: string
       type: object
     Project:
       properties:
         archiveRecord:
           allOf:
           - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
         id:
           type: string
         name:
@@ -231,28 +222,6 @@ components:
           anyOf:
           - $ref: '#/components/schemas/Organization'
           - $ref: '#/components/schemas/UserSummary'
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    Organization:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
       type: object
     ProjectsArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of projects along with any IDs of project contents that were unarchived.
@@ -296,29 +265,35 @@ components:
             type: string
           type: array
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
     ArchiveRecord:
       properties:
         reason:
           example: Made in error
           type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     ProjectsUnarchive:
       additionalProperties: false
@@ -330,6 +305,24 @@ components:
           type: array
       required:
       - projectIds
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Organization:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

@@ -7,15 +7,7 @@ info:
   version: 2.0.0
   description: 'A Protein is a complex biomolecule entity in Benchling representing immunoglobulins or
 
-    related therapeutic proteins like T-cell receptors. Proteins are defined by an
-
-    `ProteinFormat` that specifies their structural organization, with actual sequences
-
-    provided in domains (see `ProteinDomain`) and chains (see `ProteinChain`). Proteins support versioning
-
-    through history/fullHistory, allowing tracking of structural changes over time. As registry entities,
-
-    proteins can have schemas with custom fields, belong to projects and folders, and be linked to studies.'
+    related therapeutic proteins like T-cell receptors.'
 servers:
 - url: /api/v3
 security:
@@ -24,15 +16,7 @@ security:
 tags:
 - description: 'A Protein is a complex biomolecule entity in Benchling representing immunoglobulins or
 
-    related therapeutic proteins like T-cell receptors. Proteins are defined by an
-
-    `ProteinFormat` that specifies their structural organization, with actual sequences
-
-    provided in domains (see `ProteinDomain`) and chains (see `ProteinChain`). Proteins support versioning
-
-    through history/fullHistory, allowing tracking of structural changes over time. As registry entities,
-
-    proteins can have schemas with custom fields, belong to projects and folders, and be linked to studies.'
+    related therapeutic proteins like T-cell receptors.'
   name: Protein
   x-bnch-core-type: Protein
   x-bnch-organization: Benchling
@@ -1083,9 +1067,7 @@ paths:
 
         After that TTL expires, this endpoint returns 404. Retrieve any status
 
-        and results you need before the task ID expires.
-
-        '
+        and results you need before the task ID expires.'
       operationId: BulkCreateAndRegisterProteinsAndComponentsTask.Get
       parameters:
       - in: path
@@ -1151,7 +1133,49 @@ paths:
       x-bnch-rate-limit-tier: 5
   /tasks/bulk-create-and-register-proteins-and-components/{task_id}/results:
     get:
-      description: "Get the results of a completed bulk-create-and-register-proteins-and-components task.\n\nThis endpoint returns an identifier for the output dataset, plus an optional\npre-signed URL to download the errors file if any inputs failed validation.\n\nTask IDs for this endpoint remain queryable for 14 days after the\njob is created.\nAfter that TTL expires, this endpoint returns 404. Retrieve the dataset\nID and any errors file URL you need before the task ID expires.\n\n**Partial Success**: A job can complete with both successful and failed inputs. Always check\n`errorsFileUrl` even when `datasetId` is present, since some inputs may have been rejected\nwhile others were created successfully.\n\nBehavior:\n- Returns 400 unless the task has a COMPLETED status. While a task is running\n  you can poll the\n  `GET /tasks/bulk-create-and-register-proteins-and-components/{task_id}`\n  endpoint first and only call this endpoint once\n  `status == \"COMPLETED\"`. If the status becomes FAILED, this endpoint\n  will always return 400.\n- If the task is in a COMPLETED status, returns parameters you can\n  use to fetch output and error data.  See the descriptions of the output\n  parameters for more detail.\n"
+      description: 'Get the results of a completed bulk-create-and-register-proteins-and-components task.
+
+
+        This endpoint returns an identifier for the output dataset, plus an optional
+
+        pre-signed URL to download the errors file if any inputs failed validation.
+
+
+        Task IDs for this endpoint remain queryable for 14 days after the
+
+        job is created.
+
+        After that TTL expires, this endpoint returns 404. Retrieve the dataset
+
+        ID and any errors file URL you need before the task ID expires.
+
+
+        **Partial Success**: A job can complete with both successful and failed inputs. Always check
+
+        `errorsFileUrl` even when `datasetId` is present, since some inputs may have been rejected
+
+        while others were created successfully.
+
+
+        Behavior:
+
+        - Returns 400 unless the task has a COMPLETED status. While a task is running
+
+        you can poll the
+
+        `GET /tasks/bulk-create-and-register-proteins-and-components/{task_id}`
+
+        endpoint first and only call this endpoint once
+
+        `status == "COMPLETED"`. If the status becomes FAILED, this endpoint
+
+        will always return 400.
+
+        - If the task is in a COMPLETED status, returns parameters you can
+
+        use to fetch output and error data. See the descriptions of the output
+
+        parameters for more detail.'
       operationId: BulkCreateAndRegisterProteinsAndComponentsResults.Get
       parameters:
       - in: path
@@ -1226,569 +1250,80 @@ paths:
       x-bnch-rate-limit-tier: 5
 components:
   schemas:
-    ProteinFormatChainPosition:
-      description: 'Defines each instance of a polypeptide chain within a `ProteinFormat`, specifying the chain type and
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DropdownAppConfigSpec:
+      description: Specifies that an app configuration field should be a dropdown with predefined options.
+      properties:
+        __typename:
+          type: string
+        options:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigDropdownOption'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    ProteinDomain:
+      description: 'Represents a domain within an `Protein`, containing the actual amino acid sequence for a specific label.
 
-        its constituent domains. Each chain position has a unique ref identifier and lists the domain positions
+        Unlike `ProteinFormatDomain` which is a template, `ProteinDomain` is a concrete instance of the domain and
 
-        (see `ProteinFormatDomainPosition`) that compose it in order from N-terminus to C-terminus.
-
-        For example, a heavy chain position might reference domain positions [VH, CH1, Hinge, CH2, CH3].'
+        links to the underlying amino acid sequence entity.'
       properties:
         __typename:
           type: string
         domainPositions:
-          description: A list of all the domain positions that make up the chain position, in order
+          description: 'Each domain position of this domain in the protein. If this domain appears multiple times in the physical
+
+            structure of the protein, each domain position will be listed here.'
           items:
             $ref: '#/components/schemas/ProteinFormatDomainPosition'
           type: array
-        ref:
-          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
-
-            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
-          type: integer
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the domain.
+        label:
+          description: A human-readable label for the domain.
+          type: string
         type:
-          description: Type of the chain.
-          enum:
-          - HEAVY
-          - LIGHT
-          - NONE
-          - ALPHA
-          - BETA
-          - JOINING
-          type: string
-      type: object
-    ProteinFormatRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AppInstallation:
-      description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
-
-        App installations store tenant-specific configuration values and feature bindings. As a
-
-        Principal, app installations can be attributed as actors for API operations and auditing.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        configurationValues:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        featureValues:
-          items:
-            $ref: '#/components/schemas/AssayRunFeatureValue'
-          type: array
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-      type: object
-    CustomField:
-      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
-
-        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
-
-        datasets, and other Benchling objects without modifying their schemas. Objects that can
-
-        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
-
-        custom fields are not validated against a schema and can be freely added or modified.'
-      properties:
-        __typename:
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    User:
-      description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
-
-        Users belong to one or more Organizations and may be members of Teams within those
-
-        organizations. As an Owner, users can own Projects, Folders, and other resources.
-
-        As a Principal, users can be assigned as reviewers, authors, or collaborators on
-
-        various items. Users have attributes like email and username for identification.
-
-        Users are distinct from `ServicePrincipal`, which represents non-human service
-
-        accounts used for integrations.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        email:
-          type: string
-        id:
-          type: string
-        lastSeen:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-        status:
-          enum:
-          - ACTIVE
-          - SUSPENDED
-          type: string
-        username:
-          type: string
-      type: object
-    SchemaFieldValue:
-      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
-
-        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
-
-        date, or link to another object). The value may be null if no value has been set. Used within
-
-        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
-
-        custom field values defined by the object''s schema.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinition:
-          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
-        id:
-          type: string
-        linkedEntityId:
-          type:
-          - 'null'
-          - string
-        value:
-          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
-          oneOf:
-          - anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            - $ref: '#/components/schemas/ArrayValue'
-            discriminator:
-              propertyName: __typename
-          - type: 'null'
-      type: object
-    AppConfigWorkflowTaskSchemaOutput:
-      description: Defines the output field structure for a workflow task schema configuration.
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-      type: object
-    ResourceAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a Benchling object instance.
-
-        The type field identifies the kind of object required, matching the BenchlingAppType
-
-        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
-
-        reference types with no additional spec constraints beyond requiredConfig. For schema
-
-        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    AaSequenceRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
-          type: string
-      type: object
-    RegistrationOrigin:
-      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
-
-        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
-
-        providing traceability back to the original experimental context. The `registeredAt` timestamp
-
-        records when the registration occurred. This information helps scientists understand where
-
-        registered entities came from and when they were added to the registry.'
-      properties:
-        __typename:
-          type: string
-        originEntry:
-          oneOf:
-          - $ref: '#/components/schemas/DocumentLikeRef'
-          - type: 'null'
-        registeredAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-      type: object
-    FolderRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    FloatAppConfigSpec:
-      description: Specifies that an app configuration field should accept a floating-point number.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these floats.
-          oneOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    WorkflowTaskSchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a workflow task schema.
-
-        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        output:
-          description: Output field definitions for the workflow task schema.
-          oneOf:
-          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    EntitySchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference an entity schema.
-
-        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        subtype:
-          description: 'Optional subtype constraint — if present, the referenced schema must be of this
-
-            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
-          enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    AppConfigFieldDefinition:
-      description: 'Defines a field within an app configuration that references schema fields. Specifies the
-
-        field name, type, whether it accepts multiple values, and whether it is required.'
-      properties:
-        __typename:
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        isMulti:
-          description: Whether the field must be multi-valued — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        isRequired:
-          description: Whether the field must be required — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        name:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          description: Type constraint for the field — null means any type is acceptable.
-          enum:
-          - DNA_SEQUENCE_LINK
-          - AA_SEQUENCE_LINK
-          - CUSTOM_ENTITY_LINK
-          - ENTITY_LINK
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - DROPDOWN
-          - PART_LINK
-          - AA_PART_LINK
-          - TRANSLATION_LINK
-          - BLOB_LINK
-          - TEXT
-          - LONG_TEXT
-          - BATCH_LINK
-          - STORAGE_LINK
-          - ENTRY_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BOOLEAN
-          - FLOAT
-          - INTEGER
-          - DATETIME
-          - DATE
-          - JSON
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    JsonValue:
-      description: A type that represents JSON values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The JSON value.
-          type: object
-      type: object
-    TextAndUrlValue:
-      description: A type that represents text (string) values with an associated URL.
-      properties:
-        __typename:
-          type: string
-        url:
-          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    SchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference one of the schema types
-
-        that share a common structure: container_schema, plate_schema, location_schema,
-
-        box_schema, run_schema, result_schema, legacy_request_schema, or entry_schema.
-
-        The type field identifies which schema kind is required. For entity_schema use
-
-        EntitySchemaAppConfigSpec; for workflow_task_schema use WorkflowTaskSchemaAppConfigSpec.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    ProteinFormatDomainPosition:
-      description: 'Defines a domain position within a1 `ProteinFormat`, specifying the domain type and identity of each
-
-        physical domain in the protein format. Each domain position has a unique ref identifier used
-
-        to construct HELM notation for complex polymer structures. Domain positions are grouped into ProteinFormatDomains,
-
-        and each group can be uniquely identified by its label, and will be a single amino acid sequence entity in proteins
-
-        of this format.'
-      properties:
-        __typename:
-          type: string
-        optional:
-          description: Whether this domain is optional in the format. If true, entities of this format may not have this domain.
-          type: boolean
-        ref:
-          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
-
-            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
-          type: integer
-        type:
-          description: Type of the domain
+          description: The type of the domain.
           enum:
           - VL
           - CL
@@ -1813,83 +1348,59 @@ components:
           - ELEMENT
           type: string
       type: object
-    ProteinChain:
-      description: 'Represents a polypeptide chain within an `Protein`, containing the domain composition. Each chain has a
-
-        computed label derived from the format.'
-      properties:
-        __typename:
-          type: string
-        chainPositions:
-          description: 'Each chain position of this chain in the protein. If a chain has multiplicity > 1, each chain position
-
-            will be listed here.'
-          items:
-            $ref: '#/components/schemas/ProteinFormatChainPosition'
-          type: array
-        domains:
-          description: Each domain on the chain, ordered according to the format.
-          items:
-            $ref: '#/components/schemas/ProteinDomain'
-          type: array
-        entity:
-          $ref: '#/components/schemas/AaSequenceRef'
-          description: The amino acid sequence entity associated with the chain.
-        label:
-          description: Unique label for the chain, computed from the format.
-          type: string
-        type:
-          description: The type of the chain.
-          enum:
-          - HEAVY
-          - LIGHT
-          - NONE
-          - ALPHA
-          - BETA
-          - JOINING
-          type: string
-      type: object
-    JsonAppConfigSpec:
-      description: Specifies that an app configuration field should accept a JSON value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AnyType: {}
-    CanvasFeatureSpec:
-      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
-
-        entries or templates. Canvases allow apps to render custom interactive content.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        locations:
-          oneOf:
-          - items:
-              enum:
-              - ENTRY
-              - ENTRY_TEMPLATE
-              - APP_HOME
-              type: string
-            type: array
-          - type: 'null'
-        name:
-          type: string
-      type: object
-    ObjectLinkValue:
-      description: A type that represents links to other objects.
+    DateValue:
+      description: A type that represents date values.
       properties:
         __typename:
           type: string
         value:
-          $ref: '#/components/schemas/ObjectRef'
-          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    AnyType: {}
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
       type: object
     UpdateProteinInput:
       additionalProperties: false
@@ -1952,540 +1463,6 @@ components:
             type: string
           type: array
       type: object
-    CreateProteinInput:
-      additionalProperties: false
-      properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        authorIds:
-          items:
-            type: string
-          type: array
-        chains:
-          description: A chain input for each chain on the relevant format. All must be provided.
-          items:
-            $ref: '#/components/schemas/ProteinChainInput'
-          type: array
-        customFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        domains:
-          description: A domain input for each domain on the relevant format. All must be provided.
-          items:
-            $ref: '#/components/schemas/ProteinDomainInput'
-          type: array
-        entityRegistryId:
-          type: string
-        folderId:
-          type: string
-        name:
-          type: string
-        namingStrategy:
-          enum:
-          - NEW_IDS
-          - IDS_FROM_NAMES
-          - DELETE_NAMES
-          - SET_FROM_NAME_PARTS
-          - REPLACE_NAMES_FROM_PARTS
-          - KEEP_NAMES
-          - REPLACE_ID_AND_NAME_FROM_PARTS
-          type: string
-        registryId:
-          type:
-          - 'null'
-          - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          description: The ID of the schema to create the protein in.
-          type: string
-        studyIds:
-          description: Study IDs to add the new protein to.
-          items:
-            type: string
-          type: array
-      required:
-      - folderId
-      - name
-      - schemaId
-      - domains
-      - chains
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
-          type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
-          type:
-          - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
-          type:
-          - 'null'
-          - string
-      type: object
-    EntitySchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProteinDomain:
-      description: 'Represents a domain within an `Protein`, containing the actual amino acid sequence for a specific label.
-
-        Unlike `ProteinFormatDomain` which is a template, `ProteinDomain` is a concrete instance of the domain and
-
-        links to the underlying amino acid sequence entity.'
-      properties:
-        __typename:
-          type: string
-        domainPositions:
-          description: 'Each domain position of this domain in the protein. If this domain appears multiple times in the physical
-
-            structure of the protein, each domain position will be listed here.'
-          items:
-            $ref: '#/components/schemas/ProteinFormatDomainPosition'
-          type: array
-        entity:
-          $ref: '#/components/schemas/AaSequenceRef'
-          description: The amino acid sequence entity associated with the domain.
-        label:
-          description: A human-readable label for the domain.
-          type: string
-        type:
-          description: The type of the domain.
-          enum:
-          - VL
-          - CL
-          - VH
-          - VHH
-          - CH1
-          - CH2
-          - CH3
-          - CH4
-          - J
-          - H
-          - L
-          - VA
-          - CA
-          - VB
-          - CB
-          - VG
-          - CG
-          - VD
-          - CD
-          - F
-          - ELEMENT
-          type: string
-      type: object
-    BooleanAppConfigSpec:
-      description: Specifies that an app configuration field should accept a boolean value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    TextAppConfigSpec:
-      description: Specifies that an app configuration field should accept a text string.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these strings.
-          oneOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    RegistryRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    SchemaFieldDefinitionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
-          items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
-          type: array
-      type: object
-    LegacyAppInstallation:
-      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
-
-        are configured directly with webhook URLs and configuration specs rather than through
-
-        app definition versions. This type is maintained for backward compatibility with older
-
-        app integrations. For new apps, see `AppInstallation`.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        configurationSpecs:
-          items:
-            $ref: '#/components/schemas/AppConfigOption'
-          type: array
-        configurationValues:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        description:
-          type:
-          - 'null'
-          - string
-        featureSpecs:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CanvasFeatureSpec'
-            - $ref: '#/components/schemas/AssayRunFeatureSpec'
-            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
-            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
-            discriminator:
-              propertyName: __typename
-          type: array
-        featureValues:
-          items:
-            $ref: '#/components/schemas/AssayRunFeatureValue'
-          type: array
-        id:
-          type: string
-        messageSubscriptions:
-          items:
-            $ref: '#/components/schemas/AppMessageSubscription'
-          type: array
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        publicKey:
-          type:
-          - 'null'
-          - string
-        versionNumber:
-          type:
-          - 'null'
-          - string
-        webhookUrl:
-          type:
-          - 'null'
-          - string
-      type: object
-    DateAppConfigSpec:
-      description: Specifies that an app configuration field should accept a date value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AppMessageSubscription:
-      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
-
-        how notifications should be delivered (see `DeliveryMethod`).'
-      properties:
-        __typename:
-          type: string
-        deliveryMethod:
-          enum:
-          - WEBHOOK
-          - WEBHOOK_INTERNAL
-          type: string
-        type:
-          enum:
-          - V2_BETA_CANVAS_CREATED
-          - V2_CANVAS_CREATED
-          - V2_CANVAS_USER_INTERACTED
-          - V2_CANVAS_INITIALIZED
-          - V2_APP_ACTIVATE_REQUESTED
-          - V2_APP_DEACTIVATED
-          - V2_APP_INSTALLED
-          - V2_BETA_APP_CONFIGURATION_UPDATED
-          - V2_ASSAY_RUN_CREATED
-          - V2_ASSAY_RUN_UPDATED_FIELDS
-          - V2_ENTITY_REGISTERED
-          - V2_ENTRY_CREATED
-          - V2_ENTRY_UPDATED_FIELDS
-          - V2_ENTRY_UPDATED_REVIEW_RECORD
-          - V2_REQUEST_CREATED
-          - V2_REQUEST_UPDATED_FIELDS
-          - V2_REQUEST_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_GROUP_CREATED
-          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
-          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
-          - V2_WORKFLOW_TASK_CREATED
-          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
-          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
-          - V2_WORKFLOW_TASK_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_UPDATED_FIELDS
-          - V2_WORKFLOW_OUTPUT_CREATED
-          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
-          - V3_CUSTOM_ENTITY_CREATED
-          - V3_CUSTOM_ENTITY_UPDATED
-          - V3_DNA_OLIGO_CREATED
-          - V3_DNA_OLIGO_UPDATED
-          - V3_DNA_SEQUENCE_CREATED
-          - V3_DNA_SEQUENCE_UPDATED
-          - V3_ENTRY_CREATED
-          - V3_PROJECT_CREATED
-          - V3_PROJECT_UPDATED
-          - V3_RNA_OLIGO_CREATED
-          - V3_RNA_OLIGO_UPDATED
-          - V3_RNA_SEQUENCE_CREATED
-          - V3_RNA_SEQUENCE_UPDATED
-          - V3_RUN_CREATED
-          type: string
-      type: object
-    DateValue:
-      description: A type that represents date values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The date value.
-          format: date
-          type: string
-      type: object
-    DropdownAppConfigSpec:
-      description: Specifies that an app configuration field should be a dropdown with predefined options.
-      properties:
-        __typename:
-          type: string
-        options:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigDropdownOption'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ArrayAppConfigSpec:
-      description: Specifies that an app configuration field should accept an array of values.
-      properties:
-        __typename:
-          type: string
-        elementDefinition:
-          description: Defines the named config options allowed within this array and their type constraints.
-          items:
-            $ref: '#/components/schemas/ArrayAppConfigOption'
-          type: array
-        maxElements:
-          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
-          type:
-          - 'null'
-          - integer
-        minElements:
-          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
-          type:
-          - 'null'
-          - integer
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    BooleanValue:
-      description: A type that represents boolean values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The boolean value.
-          type: boolean
-      type: object
-    PrincipalUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Principal'
-          type: array
-      type: object
-    AssayRunFeatureSpec:
-      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
-
-        lab automation run data.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    AppHomepageFeatureSpec:
-      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
-
-        the Benchling application for the app''s functionality.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    Principal:
-      anyOf:
-      - $ref: '#/components/schemas/AppInstallation'
-      - $ref: '#/components/schemas/LegacyAppInstallation'
-      - $ref: '#/components/schemas/ServicePrincipal'
-      - $ref: '#/components/schemas/User'
-      discriminator:
-        propertyName: __typename
-      type: object
-    ProteinVersion:
-      description: 'A historical snapshot of an `Protein` at a specific point in time, preserving the complete
-
-        structural state including domains, chains, and HELM notation. Protein versions form a
-
-        lineage that tracks changes over time. Each version records its creator and creation time.
-
-        The parent field links to the version this one was derived from. Versions may become out of
-
-        sync with their constituent entities if underlying sequences change.'
-      properties:
-        __typename:
-          type: string
-        chains:
-          description: The chains and associated amino acid sequences on the protein.
-          items:
-            $ref: '#/components/schemas/ProteinChain'
-          type: array
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        domains:
-          description: The domains and associated amino acid sequences on the protein.
-          items:
-            $ref: '#/components/schemas/ProteinDomain'
-          type: array
-        format:
-          $ref: '#/components/schemas/ProteinFormatRef'
-          description: The protein format that defines the structure (domains, chains, interactions) for the protein.
-        id:
-          type: string
-        name:
-          type: string
-        outOfSync:
-          description: Indicates if constituent domain or chain entities have changed since the protein was last updated.
-          type: boolean
-        outOfSyncReason:
-          description: Any additional information about why the protein is out of sync.
-          type:
-          - 'null'
-          - string
-        parent:
-          description: The parent version of the protein.
-          oneOf:
-          - $ref: '#/components/schemas/ProteinVersionRef'
-          - type: 'null'
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
     DocumentLikeRef:
       properties:
         __typename:
@@ -2493,23 +1470,6 @@ components:
         id:
           format: api_id
           type: string
-      type: object
-    AssayRunFeatureValue:
-      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
-
-        tenant. The featureId identifies the feature from the app definition, and resourceId
-
-        references the tenant-specific resource it''s bound to.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          description: Developer-specified feature ID as defined in the app manifest / app definition version
-          type: string
-        resourceId:
-          type:
-          - 'null'
-          - string
       type: object
     ArrayAppConfigOption:
       description: 'A config option nested within an array-type app configuration field. Structurally
@@ -2547,225 +1507,38 @@ components:
         name:
           type: string
       type: object
-    ProteinPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Protein'
-          type: array
-        nextToken:
-          type: string
+    Principal:
+      anyOf:
+      - $ref: '#/components/schemas/AppInstallation'
+      - $ref: '#/components/schemas/LegacyAppInstallation'
+      - $ref: '#/components/schemas/ServicePrincipal'
+      - $ref: '#/components/schemas/User'
+      discriminator:
+        propertyName: __typename
       type: object
-    ProteinVersionRef:
+    AppConfigDropdownOption:
+      description: Defines an option within a dropdown-type app configuration field.
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    SchemaFieldDefinitionRef:
       properties:
         __typename:
           type: string
         id:
           format: api_id
           type: string
-      type: object
-    IntegerValue:
-      description: A type that represents integer values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The integer value.
-          type: integer
-      type: object
-    ProteinVersionUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProteinVersion'
-          type: array
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ServicePrincipal:
-      description: 'Represents a non-human identity used for system integrations and automated processes
-
-        within Benchling. Service principals act as the identity for service accounts that
-
-        perform actions via APIs or background processes without human intervention. Unlike
-
-        `User`, which represents a human user, ServicePrincipal is used when an integration
-
-        or automated system needs to be attributed as the actor for auditing and attribution
-
-        purposes. Service principals implement the Principal interface, allowing them to
-
-        appear as creators or actors on domain objects. Also known as "service account" in
-
-        some contexts.'
-      properties:
-        __typename:
-          type: string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type:
-          - 'null'
-          - string
-      type: object
-    ProteinDomainInput:
-      additionalProperties: false
-      properties:
-        aaSequenceId:
-          description: The ID of the AA sequence to use for the domain.
-          type: string
-        label:
-          description: The label of the domain, uniquely identifying the domain within the format.
-          type: string
-      required:
-      - label
-      - aaSequenceId
-      type: object
-    UpdateProteinInputWithPathParams:
-      additionalProperties: false
-      properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        authorIds:
-          items:
-            type: string
-          type: array
-        chains:
-          description: A chain input for each chain on the relevant format. Must be all provided if domains are provided.
-          items:
-            $ref: '#/components/schemas/ProteinChainInput'
-          type: array
-        customFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        domains:
-          description: A domain input for each domain on the relevant format. If any are provided, all must be provided.
-          items:
-            $ref: '#/components/schemas/ProteinDomainInput'
-          type: array
-        entityRegistryId:
-          type: string
-        folderId:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        namingStrategy:
-          enum:
-          - NEW_IDS
-          - IDS_FROM_NAMES
-          - DELETE_NAMES
-          - SET_FROM_NAME_PARTS
-          - REPLACE_NAMES_FROM_PARTS
-          - KEEP_NAMES
-          - REPLACE_ID_AND_NAME_FROM_PARTS
-          type: string
-        registryId:
-          type:
-          - 'null'
-          - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          type: string
-        studyIds:
-          description: Study IDs to add the protein to.
-          items:
-            type: string
-          type: array
-      required:
-      - id
-      type: object
-    FieldValueInput:
-      additionalProperties: false
-      properties:
-        value:
-          $ref: '#/components/schemas/AnyType'
-      required:
-      - value
-      type: object
-    Protein:
-      allOf:
-      - $ref: '#/components/schemas/IProtein'
-      - description: 'A Protein is a complex biomolecule entity in Benchling representing immunoglobulins or
-
-          related therapeutic proteins like T-cell receptors. Proteins are defined by an
-
-          `ProteinFormat` that specifies their structural organization, with actual sequences
-
-          provided in domains (see `ProteinDomain`) and chains (see `ProteinChain`). Proteins support versioning
-
-          through history/fullHistory, allowing tracking of structural changes over time. As registry entities,
-
-          proteins can have schemas with custom fields, belong to projects and folders, and be linked to studies.'
-        properties:
-          __typename:
-            type: string
-          authors:
-            oneOf:
-            - format: uri
-              type: string
-            - type: 'null'
-          creator:
-            $ref: '#/components/schemas/PrincipalRef'
-          schemaFields:
-            oneOf:
-            - items:
-                $ref: '#/components/schemas/SchemaFieldValue'
-              type: array
-            - type: 'null'
-        type: object
-    ProteinChainInput:
-      additionalProperties: false
-      properties:
-        aaSequenceId:
-          description: The ID of the AA sequence to use for the chain.
-          type: string
-        label:
-          description: The label of the chain, uniquely identifying the chain within the format.
-          type: string
-      required:
-      - label
-      - aaSequenceId
       type: object
     IProtein:
       properties:
@@ -2858,48 +1631,80 @@ components:
         schema:
           $ref: '#/components/schemas/EntitySchemaRef'
       type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
-      properties:
-        __typename:
-          type: string
-        value:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
-            discriminator:
-              propertyName: __typename
-          type: array
-      type: object
-    IntegerAppConfigSpec:
-      description: Specifies that an app configuration field should accept an integer value.
+    ProteinFormatDomainPosition:
+      description: 'Defines a domain position within a1 `ProteinFormat`, specifying the domain type and identity of each
+
+        physical domain in the protein format. Each domain position has a unique ref identifier used
+
+        to construct HELM notation for complex polymer structures. Domain positions are grouped into ProteinFormatDomains,
+
+        and each group can be uniquely identified by its label, and will be a single amino acid sequence entity in proteins
+
+        of this format.'
       properties:
         __typename:
           type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these integers.
+        optional:
+          description: Whether this domain is optional in the format. If true, entities of this format may not have this domain.
+          type: boolean
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the domain
+          enum:
+          - VL
+          - CL
+          - VH
+          - VHH
+          - CH1
+          - CH2
+          - CH3
+          - CH4
+          - J
+          - H
+          - L
+          - VA
+          - CA
+          - VB
+          - CB
+          - VG
+          - CG
+          - VD
+          - CD
+          - F
+          - ELEMENT
+          type: string
+      type: object
+    DateAppConfigSpec:
+      description: Specifies that an app configuration field should accept a date value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    WorkflowTaskSchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a workflow task schema.
+
+        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
           oneOf:
           - items:
-              type: integer
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
             type: array
+          - type: 'null'
+        output:
+          description: Output field definitions for the workflow task schema.
+          oneOf:
+          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
           - type: 'null'
         requiredConfig:
           type:
@@ -2939,48 +1744,134 @@ components:
         name:
           type: string
       type: object
-    AppConfigDropdownOption:
-      description: Defines an option within a dropdown-type app configuration field.
+    GeneralError:
       properties:
-        __typename:
-          type: string
-        description:
+        detail:
           type:
           - 'null'
           - string
-        name:
+          - object
+        instance:
           type: string
-        requiredConfig:
+        status:
+          type: integer
+        title:
           type:
           - 'null'
-          - boolean
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
-    ObjectRef:
+    Protein:
+      allOf:
+      - $ref: '#/components/schemas/IProtein'
+      - description: 'A Protein is a complex biomolecule entity in Benchling representing immunoglobulins or
+
+          related therapeutic proteins like T-cell receptors. Proteins are defined by an
+
+          `ProteinFormat` that specifies their structural organization, with actual sequences
+
+          provided in domains (see `ProteinDomain`) and chains (see `ProteinChain`). Proteins support versioning
+
+          through history/fullHistory, allowing tracking of structural changes over time. As registry entities,
+
+          proteins can have schemas with custom fields, belong to projects and folders, and be linked to studies.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    UpdateProteinInputWithPathParams:
+      additionalProperties: false
       properties:
-        __typename:
+        aliases:
+          items:
+            type: string
+          type: array
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        authorIds:
+          items:
+            type: string
+          type: array
+        chains:
+          description: A chain input for each chain on the relevant format. Must be all provided if domains are provided.
+          items:
+            $ref: '#/components/schemas/ProteinChainInput'
+          type: array
+        customFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        domains:
+          description: A domain input for each domain on the relevant format. If any are provided, all must be provided.
+          items:
+            $ref: '#/components/schemas/ProteinDomainInput'
+          type: array
+        entityRegistryId:
+          type: string
+        folderId:
           type: string
         id:
-          format: api_id
           type: string
+        name:
+          type: string
+        namingStrategy:
+          enum:
+          - NEW_IDS
+          - IDS_FROM_NAMES
+          - DELETE_NAMES
+          - SET_FROM_NAME_PARTS
+          - REPLACE_NAMES_FROM_PARTS
+          - KEEP_NAMES
+          - REPLACE_ID_AND_NAME_FROM_PARTS
+          type: string
+        registryId:
+          type:
+          - 'null'
+          - string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          type: string
+        studyIds:
+          description: Study IDs to add the protein to.
+          items:
+            type: string
+          type: array
+      required:
+      - id
       type: object
-    TextValue:
-      description: A type that represents text (string) values.
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
       properties:
         __typename:
           type: string
         value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    DateTimeAppConfigSpec:
-      description: Specifies that an app configuration field should accept a datetime value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
       type: object
     SecureTextAppConfigSpec:
       description: 'Specifies that an app configuration field should accept secure (encrypted) text.
@@ -2994,13 +1885,1316 @@ components:
           - 'null'
           - boolean
       type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    EntitySchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinDomainInput:
+      additionalProperties: false
+      properties:
+        aaSequenceId:
+          description: The ID of the AA sequence to use for the domain.
+          type: string
+        label:
+          description: The label of the domain, uniquely identifying the domain within the format.
+          type: string
+      required:
+      - label
+      - aaSequenceId
+      type: object
+    ProteinFormatRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ServicePrincipal:
+      description: 'Represents a non-human identity used for system integrations and automated processes
+
+        within Benchling. Service principals act as the identity for service accounts that
+
+        perform actions via APIs or background processes without human intervention. Unlike
+
+        `User`, which represents a human user, ServicePrincipal is used when an integration
+
+        or automated system needs to be attributed as the actor for auditing and attribution
+
+        purposes. Service principals implement the Principal interface, allowing them to
+
+        appear as creators or actors on domain objects. Also known as "service account" in
+
+        some contexts.'
+      properties:
+        __typename:
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    BooleanValue:
+      description: A type that represents boolean values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The boolean value.
+          type: boolean
+      type: object
+    PrincipalUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Principal'
+          type: array
+      type: object
+    AssayRunFeatureSpec:
+      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+
+        lab automation run data.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
+          type: string
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              propertyName: __typename
+          type: array
+      type: object
+    AppConfigFieldDefinition:
+      description: 'Defines a field within an app configuration that references schema fields. Specifies the
+
+        field name, type, whether it accepts multiple values, and whether it is required.'
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        isMulti:
+          description: Whether the field must be multi-valued — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        isRequired:
+          description: Whether the field must be required — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          description: Type constraint for the field — null means any type is acceptable.
+          enum:
+          - DNA_SEQUENCE_LINK
+          - AA_SEQUENCE_LINK
+          - CUSTOM_ENTITY_LINK
+          - ENTITY_LINK
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - DROPDOWN
+          - PART_LINK
+          - AA_PART_LINK
+          - TRANSLATION_LINK
+          - BLOB_LINK
+          - TEXT
+          - LONG_TEXT
+          - BATCH_LINK
+          - STORAGE_LINK
+          - ENTRY_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BOOLEAN
+          - FLOAT
+          - INTEGER
+          - DATETIME
+          - DATE
+          - JSON
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    TextAppConfigSpec:
+      description: Specifies that an app configuration field should accept a text string.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these strings.
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppConfigWorkflowTaskSchemaOutput:
+      description: Defines the output field structure for a workflow task schema configuration.
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+      type: object
+    AppHomepageFeatureSpec:
+      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
+
+        the Benchling application for the app''s functionality.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
+          type: string
+      type: object
+    LegacyAppInstallation:
+      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
+
+        are configured directly with webhook URLs and configuration specs rather than through
+
+        app definition versions. This type is maintained for backward compatibility with older
+
+        app integrations. For new apps, see `AppInstallation`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationSpecs:
+          items:
+            $ref: '#/components/schemas/AppConfigOption'
+          type: array
+        configurationValues:
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        description:
+          type:
+          - 'null'
+          - string
+        featureSpecs:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CanvasFeatureSpec'
+            - $ref: '#/components/schemas/AssayRunFeatureSpec'
+            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
+            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
+            discriminator:
+              propertyName: __typename
+          type: array
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        messageSubscriptions:
+          items:
+            $ref: '#/components/schemas/AppMessageSubscription'
+          type: array
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        publicKey:
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          type:
+          - 'null'
+          - string
+        webhookUrl:
+          type:
+          - 'null'
+          - string
+      type: object
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+
+        tenant. The featureId identifies the feature from the app definition, and resourceId
+
+        references the tenant-specific resource it''s bound to.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
+          type: string
+        resourceId:
+          type:
+          - 'null'
+          - string
+      type: object
+    CreateProteinInput:
+      additionalProperties: false
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        authorIds:
+          items:
+            type: string
+          type: array
+        chains:
+          description: A chain input for each chain on the relevant format. All must be provided.
+          items:
+            $ref: '#/components/schemas/ProteinChainInput'
+          type: array
+        customFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        domains:
+          description: A domain input for each domain on the relevant format. All must be provided.
+          items:
+            $ref: '#/components/schemas/ProteinDomainInput'
+          type: array
+        entityRegistryId:
+          type: string
+        folderId:
+          type: string
+        name:
+          type: string
+        namingStrategy:
+          enum:
+          - NEW_IDS
+          - IDS_FROM_NAMES
+          - DELETE_NAMES
+          - SET_FROM_NAME_PARTS
+          - REPLACE_NAMES_FROM_PARTS
+          - KEEP_NAMES
+          - REPLACE_ID_AND_NAME_FROM_PARTS
+          type: string
+        registryId:
+          type:
+          - 'null'
+          - string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          description: The ID of the schema to create the protein in.
+          type: string
+        studyIds:
+          description: Study IDs to add the new protein to.
+          items:
+            type: string
+          type: array
+      required:
+      - folderId
+      - name
+      - schemaId
+      - domains
+      - chains
+      type: object
+    ResourceAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a Benchling object instance.
+
+        The type field identifies the kind of object required, matching the BenchlingAppType
+
+        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
+
+        reference types with no additional spec constraints beyond requiredConfig. For schema
+
+        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    ProteinVersion:
+      description: 'A historical snapshot of an `Protein` at a specific point in time, preserving the complete
+
+        structural state including domains, chains, and HELM notation. Protein versions form a
+
+        lineage that tracks changes over time. Each version records its creator and creation time.
+
+        The parent field links to the version this one was derived from. Versions may become out of
+
+        sync with their constituent entities if underlying sequences change.'
+      properties:
+        __typename:
+          type: string
+        chains:
+          description: The chains and associated amino acid sequences on the protein.
+          items:
+            $ref: '#/components/schemas/ProteinChain'
+          type: array
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        domains:
+          description: The domains and associated amino acid sequences on the protein.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        format:
+          $ref: '#/components/schemas/ProteinFormatRef'
+          description: The protein format that defines the structure (domains, chains, interactions) for the protein.
+        id:
+          type: string
+        name:
+          type: string
+        outOfSync:
+          description: Indicates if constituent domain or chain entities have changed since the protein was last updated.
+          type: boolean
+        outOfSyncReason:
+          description: Any additional information about why the protein is out of sync.
+          type:
+          - 'null'
+          - string
+        parent:
+          description: The parent version of the protein.
+          oneOf:
+          - $ref: '#/components/schemas/ProteinVersionRef'
+          - type: 'null'
+      type: object
+    ProteinVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BooleanAppConfigSpec:
+      description: Specifies that an app configuration field should accept a boolean value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppInstallation:
+      description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
+
+        App installations store tenant-specific configuration values and feature bindings. As a
+
+        Principal, app installations can be attributed as actors for API operations and auditing.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationValues:
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    EntitySchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference an entity schema.
+
+        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        subtype:
+          description: 'Optional subtype constraint — if present, the referenced schema must be of this
+
+            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
+          enum:
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    CanvasFeatureSpec:
+      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+
+        entries or templates. Canvases allow apps to render custom interactive content.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        locations:
+          oneOf:
+          - items:
+              enum:
+              - ENTRY
+              - ENTRY_TEMPLATE
+              - APP_HOME
+              type: string
+            type: array
+          - type: 'null'
+        name:
+          type: string
+      type: object
+    AppMessageSubscription:
+      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
+
+        how notifications should be delivered (see `DeliveryMethod`).'
+      properties:
+        __typename:
+          type: string
+        deliveryMethod:
+          enum:
+          - WEBHOOK
+          - WEBHOOK_INTERNAL
+          type: string
+        type:
+          enum:
+          - V2_BETA_CANVAS_CREATED
+          - V2_CANVAS_CREATED
+          - V2_CANVAS_USER_INTERACTED
+          - V2_CANVAS_INITIALIZED
+          - V2_APP_ACTIVATE_REQUESTED
+          - V2_APP_DEACTIVATED
+          - V2_APP_INSTALLED
+          - V2_BETA_APP_CONFIGURATION_UPDATED
+          - V2_ASSAY_RUN_CREATED
+          - V2_ASSAY_RUN_UPDATED_FIELDS
+          - V2_ENTITY_REGISTERED
+          - V2_ENTRY_CREATED
+          - V2_ENTRY_UPDATED_FIELDS
+          - V2_ENTRY_UPDATED_REVIEW_RECORD
+          - V2_REQUEST_CREATED
+          - V2_REQUEST_UPDATED_FIELDS
+          - V2_REQUEST_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_GROUP_CREATED
+          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
+          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
+          - V2_WORKFLOW_TASK_CREATED
+          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
+          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
+          - V2_WORKFLOW_TASK_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_UPDATED_FIELDS
+          - V2_WORKFLOW_OUTPUT_CREATED
+          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
+          - V3_CUSTOM_ENTITY_CREATED
+          - V3_CUSTOM_ENTITY_UPDATED
+          - V3_DNA_OLIGO_CREATED
+          - V3_DNA_OLIGO_UPDATED
+          - V3_DNA_SEQUENCE_CREATED
+          - V3_DNA_SEQUENCE_UPDATED
+          - V3_ENTRY_CREATED
+          - V3_PROJECT_CREATED
+          - V3_PROJECT_UPDATED
+          - V3_RNA_OLIGO_CREATED
+          - V3_RNA_OLIGO_UPDATED
+          - V3_RNA_SEQUENCE_CREATED
+          - V3_RNA_SEQUENCE_UPDATED
+          - V3_RUN_CREATED
+          type: string
+      type: object
+    DateTimeAppConfigSpec:
+      description: Specifies that an app configuration field should accept a datetime value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    SchemaFieldValue:
+      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
+
+        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
+
+        date, or link to another object). The value may be null if no value has been set. Used within
+
+        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
+
+        custom field values defined by the object''s schema.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinition:
+          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
+        id:
+          type: string
+        linkedEntityId:
+          type:
+          - 'null'
+          - string
+        value:
+          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
+          oneOf:
+          - anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            - $ref: '#/components/schemas/ArrayValue'
+            discriminator:
+              propertyName: __typename
+          - type: 'null'
+      type: object
+    ProteinPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Protein'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RegistrationOrigin:
+      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
+
+        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
+
+        providing traceability back to the original experimental context. The `registeredAt` timestamp
+
+        records when the registration occurred. This information helps scientists understand where
+
+        registered entities came from and when they were added to the registry.'
+      properties:
+        __typename:
+          type: string
+        originEntry:
+          oneOf:
+          - $ref: '#/components/schemas/DocumentLikeRef'
+          - type: 'null'
+        registeredAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    JsonAppConfigSpec:
+      description: Specifies that an app configuration field should accept a JSON value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    ProteinVersionUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProteinVersion'
+          type: array
+      type: object
+    ProteinChain:
+      description: 'Represents a polypeptide chain within an `Protein`, containing the domain composition. Each chain has a
+
+        computed label derived from the format.'
+      properties:
+        __typename:
+          type: string
+        chainPositions:
+          description: 'Each chain position of this chain in the protein. If a chain has multiplicity > 1, each chain position
+
+            will be listed here.'
+          items:
+            $ref: '#/components/schemas/ProteinFormatChainPosition'
+          type: array
+        domains:
+          description: Each domain on the chain, ordered according to the format.
+          items:
+            $ref: '#/components/schemas/ProteinDomain'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The amino acid sequence entity associated with the chain.
+        label:
+          description: Unique label for the chain, computed from the format.
+          type: string
+        type:
+          description: The type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
+    ProteinFormatChainPosition:
+      description: 'Defines each instance of a polypeptide chain within a `ProteinFormat`, specifying the chain type and
+
+        its constituent domains. Each chain position has a unique ref identifier and lists the domain positions
+
+        (see `ProteinFormatDomainPosition`) that compose it in order from N-terminus to C-terminus.
+
+        For example, a heavy chain position might reference domain positions [VH, CH1, Hinge, CH2, CH3].'
+      properties:
+        __typename:
+          type: string
+        domainPositions:
+          description: A list of all the domain positions that make up the chain position, in order
+          items:
+            $ref: '#/components/schemas/ProteinFormatDomainPosition'
+          type: array
+        ref:
+          description: 'A unique identifier for a physical component (chain or domain) in a protein format.
+
+            This is used to form a HELM reference that is used in the protein''s complex polymer structure.'
+          type: integer
+        type:
+          description: Type of the chain.
+          enum:
+          - HEAVY
+          - LIGHT
+          - NONE
+          - ALPHA
+          - BETA
+          - JOINING
+          type: string
+      type: object
+    FieldValueInput:
+      additionalProperties: false
+      properties:
+        value:
+          $ref: '#/components/schemas/AnyType'
+      required:
+      - value
+      type: object
+    ArrayAppConfigSpec:
+      description: Specifies that an app configuration field should accept an array of values.
+      properties:
+        __typename:
+          type: string
+        elementDefinition:
+          description: Defines the named config options allowed within this array and their type constraints.
+          items:
+            $ref: '#/components/schemas/ArrayAppConfigOption'
+          type: array
+        maxElements:
+          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
+          type:
+          - 'null'
+          - integer
+        minElements:
+          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
+          type:
+          - 'null'
+          - integer
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    FloatAppConfigSpec:
+      description: Specifies that an app configuration field should accept a floating-point number.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these floats.
+          oneOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    IntegerAppConfigSpec:
+      description: Specifies that an app configuration field should accept an integer value.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these integers.
+          oneOf:
+          - items:
+              type: integer
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    ProteinChainInput:
+      additionalProperties: false
+      properties:
+        aaSequenceId:
+          description: The ID of the AA sequence to use for the chain.
+          type: string
+        label:
+          description: The label of the chain, uniquely identifying the chain within the format.
+          type: string
+      required:
+      - label
+      - aaSequenceId
+      type: object
+    FolderRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AaSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    User:
+      description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
+
+        Users belong to one or more Organizations and may be members of Teams within those
+
+        organizations. As an Owner, users can own Projects, Folders, and other resources.
+
+        As a Principal, users can be assigned as reviewers, authors, or collaborators on
+
+        various items. Users have attributes like email and username for identification.
+
+        Users are distinct from `ServicePrincipal`, which represents non-human service
+
+        accounts used for integrations.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        email:
+          type: string
+        id:
+          type: string
+        lastSeen:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        status:
+          enum:
+          - ACTIVE
+          - SUSPENDED
+          type: string
+        username:
+          type: string
+      type: object
+    SchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference one of the schema types
+
+        that share a common structure: container_schema, plate_schema, location_schema,
+
+        box_schema, run_schema, result_schema, legacy_request_schema, or entry_schema.
+
+        The type field identifies which schema kind is required. For entity_schema use
+
+        EntitySchemaAppConfigSpec; for workflow_task_schema use WorkflowTaskSchemaAppConfigSpec.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
   parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    schema.anyOf:
+      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: schema.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    registry.eq:
+      description: ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+      in: query
+      name: registry.eq
+      schema:
+        type: string
+    authors.anyOf:
+      description: Restricts results to those whose author matches any of the specified user or author IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: authors.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
       name: modifiedAt.gt
       schema:
         format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    systemCategory.anyOf:
+      description: Restricts results to those whose schema implements any of the specified system category API IDs (non-exclusive static schema interfaces). Comma-separated list.
+      explode: false
+      in: query
+      name: systemCategory.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    schema.eq:
+      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
+      in: query
+      name: schema.eq
+      schema:
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    project.eq:
+      description: ID of a project. Restricts results to those in the project.
+      in: query
+      name: project.eq
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
         type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
@@ -3022,23 +3216,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
@@ -3056,159 +3233,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    authors.anyOf:
-      description: Restricts results to those whose author matches any of the specified user or author IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: authors.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    project.eq:
-      description: ID of a project. Restricts results to those in the project.
-      in: query
-      name: project.eq
-      schema:
-        type: string
-    registry.eq:
-      description: ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
-      in: query
-      name: registry.eq
-      schema:
-        type: string
-    schema.anyOf:
-      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: schema.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    systemCategory.anyOf:
-      description: Restricts results to those whose schema implements any of the specified system category API IDs (non-exclusive static schema interfaces). Comma-separated list.
-      explode: false
-      in: query
-      name: systemCategory.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    schema.eq:
-      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
-      in: query
-      name: schema.eq
-      schema:
-        type: string
   responses:
     TooManyRequests:
       content:
@@ -3222,18 +3246,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
     NotFound:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
     Forbidden:
       content:
         application/problem+json:

@@ -5,42 +5,14 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Procedure Parameter Version API
   version: 2.0.0
-  description: 'A versioned definition of a procedure parameter. Each version specifies the parameter''s name,
-
-    description, data type configuration (`dataType`), and how values are entered (`confirmationMethod`).
-
-    Parameters are versioned to allow procedure templates to evolve while preserving the exact
-
-    configuration used in past executions. Links to its parent `ProcedureParameter` for identity.
-
-    For data parameters, `minimum` and `maximum` fields define optional numeric bounds. For material
-
-    inputs, `amountDataType` configures how quantities are specified. For equipment parameters,
-
-    `allowedEquipmentModels` restricts which equipment can be selected. May reference a
-
-    `LibraryParameterDefinition` when the parameter was created from the parameter library.'
+  description: A versioned definition of a procedure parameter.
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: 'A versioned definition of a procedure parameter. Each version specifies the parameter''s name,
-
-    description, data type configuration (`dataType`), and how values are entered (`confirmationMethod`).
-
-    Parameters are versioned to allow procedure templates to evolve while preserving the exact
-
-    configuration used in past executions. Links to its parent `ProcedureParameter` for identity.
-
-    For data parameters, `minimum` and `maximum` fields define optional numeric bounds. For material
-
-    inputs, `amountDataType` configures how quantities are specified. For equipment parameters,
-
-    `allowedEquipmentModels` restricts which equipment can be selected. May reference a
-
-    `LibraryParameterDefinition` when the parameter was created from the parameter library.'
+- description: A versioned definition of a procedure parameter.
   name: ProcedureParameterVersion
   x-bnch-organization: Benchling
 paths:
@@ -142,37 +114,122 @@ paths:
       - ProcedureParameterVersion
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    libraryParameterDefinition.anyOf:
+      description: Restricts results to parameter versions linked to any of the specified library parameter definition IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: libraryParameterDefinition.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    procedureParameter.eq:
+      description: ID of a procedure parameter. Restricts results to children of the specified parameter.
+      in: query
+      name: procedureParameter.eq
+      schema:
+        type: string
   schemas:
-    ProcedureParameterDataType:
-      description: 'Specifies the value type configuration for a procedure parameter. Used within
-
-        `ProcedureParameterVersion` to define what kind of data a parameter accepts. The `type` field
-
-        indicates the field type (such as text, decimal, entity link, or dropdown). For numeric types,
-
-        `unit` optionally references a `Unit` for measurement context. For entity link types, `schema`
-
-        optionally constrains values to entities of a specific `EntitySchema`. Also used as
-
-        `amountDataType` on material input parameter versions to define how amounts are specified.'
-      properties:
-        __typename:
-          type: string
-        dropdown:
-          oneOf:
-          - $ref: '#/components/schemas/DropdownRef'
-          - type: 'null'
-        schema:
-          oneOf:
-          - $ref: '#/components/schemas/EntitySchemaRef'
-          - type: 'null'
-        type:
-          type: string
-        unit:
-          oneOf:
-          - $ref: '#/components/schemas/UnitRef'
-          - type: 'null'
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -198,32 +255,6 @@ components:
       - detail
       - status
       - instance
-      type: object
-    EntitySchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureParameterVersionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureParameterVersion'
-          type: array
-        nextToken:
-          type: string
       type: object
     ProcedureParameterVersion:
       description: 'A versioned definition of a procedure parameter. Each version specifies the parameter''s name,
@@ -289,14 +320,6 @@ components:
           format: api_id
           type: string
       type: object
-    UnitRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     GeneralError:
       properties:
         detail:
@@ -321,6 +344,32 @@ components:
       - status
       - instance
       type: object
+    ProcedureParameterVersionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureParameterVersion'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    EntitySchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     ProcedureParameterRef:
       properties:
         __typename:
@@ -329,152 +378,75 @@ components:
           format: api_id
           type: string
       type: object
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    libraryParameterDefinition.anyOf:
-      description: Restricts results to parameter versions linked to any of the specified library parameter definition IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: libraryParameterDefinition.anyOf
-      schema:
-        items:
+    UnitRef:
+      properties:
+        __typename:
           type: string
-        maxItems: 100
-        type: array
-    procedureParameter.eq:
-      description: ID of a procedure parameter. Restricts results to children of the specified parameter.
-      in: query
-      name: procedureParameter.eq
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
+        id:
+          format: api_id
           type: string
-        maxItems: 100
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
+      type: object
+    ProcedureParameterDataType:
+      description: 'Specifies the value type configuration for a procedure parameter. Used within
+
+        `ProcedureParameterVersion` to define what kind of data a parameter accepts. The `type` field
+
+        indicates the field type (such as text, decimal, entity link, or dropdown). For numeric types,
+
+        `unit` optionally references a `Unit` for measurement context. For entity link types, `schema`
+
+        optionally constrains values to entities of a specific `EntitySchema`. Also used as
+
+        `amountDataType` on material input parameter versions to define how amounts are specified.'
+      properties:
+        __typename:
           type: string
-        maxItems: 100
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
+        dropdown:
+          oneOf:
+          - $ref: '#/components/schemas/DropdownRef'
+          - type: 'null'
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+        type:
           type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
+        unit:
+          oneOf:
+          - $ref: '#/components/schemas/UnitRef'
+          - type: 'null'
+      type: object
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

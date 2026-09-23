@@ -128,7 +128,191 @@ paths:
       - ReviewChange
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    reviewId.anyOf:
+      description: Restricts results to review changes for any of the specified Review API IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: reviewId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    reviewableId.anyOf:
+      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
+      explode: false
+      in: query
+      name: reviewableId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    review.eq:
+      description: ID of a Review.
+      in: query
+      name: review.eq
+      schema:
+        type: string
   schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ReviewSnapshot:
+      description: 'A point-in-time snapshot of a reviewable item (e.g. an Entry) captured when a
+
+        review action was taken. Snapshots are a configurable feature enabled via
+
+        ENABLE_ELN_REVIEW_SNAPSHOTS. When status is SUCCEEDED, a time-limited downloadUrl is available.'
+      properties:
+        __typename:
+          type: string
+        downloadUrl:
+          description: URL to download the snapshot export. Only present when status is SUCCEEDED.
+          type:
+          - 'null'
+          - string
+        size:
+          description: Size of the snapshot export in bytes. Only present when status is SUCCEEDED.
+          type:
+          - 'null'
+          - integer
+        status:
+          description: Status of the snapshot export
+          enum:
+          - PENDING
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     ReviewChangePaginatedList:
       additionalProperties: false
       properties:
@@ -137,14 +321,6 @@ components:
             $ref: '#/components/schemas/ReviewChange'
           type: array
         nextToken:
-          type: string
-      type: object
-    ReviewRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
           type: string
       type: object
     ReviewChange:
@@ -206,213 +382,37 @@ components:
           - $ref: '#/components/schemas/ReviewSnapshot'
           - type: 'null'
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ReviewSnapshot:
-      description: 'A point-in-time snapshot of a reviewable item (e.g. an Entry) captured when a
-
-        review action was taken. Snapshots are a configurable feature enabled via
-
-        ENABLE_ELN_REVIEW_SNAPSHOTS. When status is SUCCEEDED, a time-limited downloadUrl is available.'
-      properties:
-        __typename:
-          type: string
-        downloadUrl:
-          description: URL to download the snapshot export. Only present when status is SUCCEEDED.
-          type:
-          - 'null'
-          - string
-        size:
-          description: Size of the snapshot export in bytes. Only present when status is SUCCEEDED.
-          type:
-          - 'null'
-          - integer
-        status:
-          description: Status of the snapshot export
-          enum:
-          - PENDING
-          - RUNNING
-          - SUCCEEDED
-          - FAILED
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    reviewableId.anyOf:
-      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
-      explode: false
-      in: query
-      name: reviewableId.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    review.eq:
-      description: ID of a Review.
-      in: query
-      name: review.eq
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    reviewId.anyOf:
-      description: Restricts results to review changes for any of the specified Review API IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: reviewId.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -3,45 +3,46 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling App Config Value API
+  title: Benchling App Installation API
   version: 2.0.0
-  description: 'Represents a configured value for a Benchling App on a specific tenant. Each config
+  description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
 
-    value has a path identifying its location in the configuration hierarchy and valueData
+    App installations store tenant-specific configuration values and feature bindings. As a
 
-    containing the actual value. Config values are defined by the app''s configuration spec
-
-    and set during installation or later configuration.'
+    Principal, app installations can be attributed as actors for API operations and auditing.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: 'Represents a configured value for a Benchling App on a specific tenant. Each config
+- description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
 
-    value has a path identifying its location in the configuration hierarchy and valueData
+    App installations store tenant-specific configuration values and feature bindings. As a
 
-    containing the actual value. Config values are defined by the app''s configuration spec
-
-    and set during installation or later configuration.'
-  name: AppConfigValue
+    Principal, app installations can be attributed as actors for API operations and auditing.'
+  name: App Installation
   x-bnch-organization: Benchling
 paths:
-  /app-config-value/items:
+  /app-installation/items:
     get:
-      description: List AppConfigValue items.
-      operationId: AppConfigValue.List
+      description: List AppInstallation items.
+      operationId: AppInstallation.List
       parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
       - $ref: '#/components/parameters/createdAt.gt'
       - $ref: '#/components/parameters/createdAt.gte'
       - $ref: '#/components/parameters/createdAt.lt'
       - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/creator.anyOf'
       - $ref: '#/components/parameters/id.anyOf'
       - $ref: '#/components/parameters/modifiedAt.gt'
       - $ref: '#/components/parameters/modifiedAt.gte'
       - $ref: '#/components/parameters/modifiedAt.lt'
       - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/omit'
       - $ref: '#/components/parameters/pageSize'
@@ -68,7 +69,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppConfigValuePaginatedList'
+                $ref: '#/components/schemas/AppInstallationPaginatedList'
           description: OK
           headers: {}
         '400':
@@ -81,18 +82,18 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-      summary: List AppConfigValue items
+      summary: List AppInstallation items
       tags:
-      - AppConfigValue
+      - App Installation
       x-bnch-rate-limit-tier: 4
-  /app-config-value/{app_config_value_id}:
+  /app-installation/{app_installation_id}:
     get:
-      description: Get a single AppConfigValue by ID.
-      operationId: AppConfigValue.Get
+      description: Get a single AppInstallation by ID.
+      operationId: AppInstallation.Get
       parameters:
-      - description: ID of the AppConfigValue.
+      - description: ID of the AppInstallation.
         in: path
-        name: app_config_value_id
+        name: app_installation_id
         required: true
         schema:
           type: string
@@ -109,7 +110,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AppConfigValue'
+                $ref: '#/components/schemas/AppInstallation'
           description: OK
           headers: {}
         '400':
@@ -122,10 +123,49 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-      summary: Get AppConfigValue by ID
+      summary: Get AppInstallation by ID
       tags:
-      - AppConfigValue
+      - App Installation
       x-bnch-rate-limit-tier: 5
+  /app-installation/{app_installation_id}/configuration-values/items:
+    get:
+      description: List AppConfigValue items.
+      operationId: AppInstallation.configurationValues.List
+      parameters:
+      - description: ID of the AppInstallation.
+        in: path
+        name: app_installation_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfigValueUnpaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List AppConfigValue items
+      tags:
+      - App Installation
+      x-bnch-rate-limit-tier: 4
 components:
   schemas:
     DateAppConfigValue:
@@ -191,6 +231,23 @@ components:
               propertyName: __typename
           - type: 'null'
       type: object
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+
+        tenant. The featureId identifies the feature from the app definition, and resourceId
+
+        references the tenant-specific resource it''s bound to.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
+          type: string
+        resourceId:
+          type:
+          - 'null'
+          - string
+      type: object
     BooleanAppConfigValue:
       description: Stores a boolean value in an app configuration field.
       properties:
@@ -226,6 +283,24 @@ components:
       - detail
       - status
       - instance
+      type: object
+    AppInstallationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AppInstallation'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AppConfigValueUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AppConfigValue'
+          type: array
       type: object
     EntitySchemaAppConfigValue:
       description: 'Stores a reference to an entity schema in an app configuration field.
@@ -290,6 +365,55 @@ components:
           - 'null'
           - string
       type: object
+    AppInstallation:
+      description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
+
+        App installations store tenant-specific configuration values and feature bindings. As a
+
+        Principal, app installations can be attributed as actors for API operations and auditing.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationValues:
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     IntegerAppConfigValue:
       description: Stores an integer value in an app configuration field.
       properties:
@@ -319,16 +443,6 @@ components:
           type:
           - 'null'
           - string
-      type: object
-    AppConfigValuePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/AppConfigValue'
-          type: array
-        nextToken:
-          type: string
       type: object
     ArrayElementAppConfigValue:
       description: Stores an element value within an array-type app configuration.
@@ -431,6 +545,16 @@ components:
         items:
           type: string
         type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     createdAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
@@ -452,6 +576,16 @@ components:
       schema:
         format: datetime
         type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     modifiedAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
@@ -479,6 +613,16 @@ components:
       schema:
         format: datetime
         type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -504,6 +648,16 @@ components:
           type: string
         maxItems: 100
         type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
@@ -518,6 +672,16 @@ components:
       schema:
         format: datetime
         type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
   responses:
     InternalServerError:
       content:

@@ -7,19 +7,7 @@ info:
   version: 2.0.0
   description: 'A ScratchFile represents raw file content used as intermediate input or output of
 
-    pipeline steps (see PipelineStepData). Unlike File, ScratchFiles are not surfaced
-
-    in the Data Catalog because they typically represent transient processing artifacts
-
-    rather than standalone valuable data. ScratchFiles track upload state via uploadStatus
-
-    and provide uploadUrl/downloadUrl for content transfer. When a ScratchFile is
-
-    promoted to user-visible status, it is linked to a File object that appears in the
-
-    Data Catalog. The originPipelineStepData field tracks which pipeline step produced
-
-    this file.'
+    pipeline steps (see PipelineStepData).'
 servers:
 - url: /api/v3
 security:
@@ -28,19 +16,7 @@ security:
 tags:
 - description: 'A ScratchFile represents raw file content used as intermediate input or output of
 
-    pipeline steps (see PipelineStepData). Unlike File, ScratchFiles are not surfaced
-
-    in the Data Catalog because they typically represent transient processing artifacts
-
-    rather than standalone valuable data. ScratchFiles track upload state via uploadStatus
-
-    and provide uploadUrl/downloadUrl for content transfer. When a ScratchFile is
-
-    promoted to user-visible status, it is linked to a File object that appears in the
-
-    Data Catalog. The originPipelineStepData field tracks which pipeline step produced
-
-    this file.'
+    pipeline steps (see PipelineStepData).'
   name: ScratchFile
   x-bnch-organization: Benchling
 paths:
@@ -440,22 +416,35 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-      summary: Create a ScratchFile from either uploaded contents or an existing S3 location. Provide exactly one of `contents` (with a `filename`, up to 10 MiB of UTF-8 sent as an `application/json` body) or `s3Location` (the filename is derived from the location when omitted).
+      summary: Create a ScratchFile from either uploaded contents or an existing S3 location.
       tags:
       - ScratchFile
       x-bnch-rate-limit-tier: 4
 components:
   parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
       in: query
-      name: pageSize
+      name: name.anyOf.caseSensitive
       schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
       in: query
-      name: createdAt.gte
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -466,12 +455,54 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.lte
+      name: createdAt.lte
       schema:
         format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
         type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
@@ -483,51 +514,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
     name.anyOf:
       description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
@@ -538,89 +524,21 @@ components:
           type: string
         maxItems: 100
         type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   schemas:
-    UpdateScratchFileInput:
-      additionalProperties: false
-      properties:
-        errorMessage:
-          type:
-          - 'null'
-          - string
-        uploadStatus:
-          enum:
-          - SUCCEEDED
-          - FAILED_VALIDATION
-          - IN_PROGRESS
-          - NOT_UPLOADED
-          type: string
-      required:
-      - uploadStatus
-      type: object
-    CreateAndUploadScratchFileInput:
-      additionalProperties: false
-      properties:
-        contents:
-          type: string
-        filename:
-          type: string
-        s3Location:
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -647,6 +565,48 @@ components:
       - status
       - instance
       type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateScratchFileInput:
+      additionalProperties: false
+      properties:
+        filename:
+          type: string
+        name:
+          type: string
+      required:
+      - filename
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     AsyncTaskLink:
       properties:
         pollingUri:
@@ -654,6 +614,26 @@ components:
           type: string
         taskId:
           type: string
+      type: object
+    UpdateScratchFileInputWithPathParams:
+      additionalProperties: false
+      properties:
+        errorMessage:
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        uploadStatus:
+          enum:
+          - SUCCEEDED
+          - FAILED_VALIDATION
+          - IN_PROGRESS
+          - NOT_UPLOADED
+          type: string
+      required:
+      - id
+      - uploadStatus
       type: object
     ScratchFilePaginatedList:
       additionalProperties: false
@@ -664,16 +644,6 @@ components:
           type: array
         nextToken:
           type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
       type: object
     ScratchFile:
       description: 'A ScratchFile represents raw file content used as intermediate input or output of
@@ -752,17 +722,44 @@ components:
           - 'null'
           - string
       type: object
-    CreateScratchFileInput:
+    UpdateScratchFileInput:
       additionalProperties: false
       properties:
-        filename:
-          type: string
-        name:
+        errorMessage:
+          type:
+          - 'null'
+          - string
+        uploadStatus:
+          enum:
+          - SUCCEEDED
+          - FAILED_VALIDATION
+          - IN_PROGRESS
+          - NOT_UPLOADED
           type: string
       required:
-      - filename
+      - uploadStatus
       type: object
-    PrincipalRef:
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    CreateAndUploadScratchFileInput:
+      additionalProperties: false
+      properties:
+        contents:
+          type: string
+        filename:
+          type: string
+        s3Location:
+          type: string
+      type: object
+    PipelineStepDataRef:
       properties:
         __typename:
           type: string
@@ -778,58 +775,37 @@ components:
           format: api_id
           type: string
       type: object
-    PipelineStepDataRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    UpdateScratchFileInputWithPathParams:
-      additionalProperties: false
-      properties:
-        errorMessage:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        uploadStatus:
-          enum:
-          - SUCCEEDED
-          - FAILED_VALIDATION
-          - IN_PROGRESS
-          - NOT_UPLOADED
-          type: string
-      required:
-      - id
-      - uploadStatus
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

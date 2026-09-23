@@ -1,33 +1,29 @@
-openapi: 3.0.1
+openapi: 3.2.0
 info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Benchling AA Sequences Oligos API
+  title: Benchling Oligos API
   version: 2.0.0
-  description: 'AA Sequences are the working units of cells that make everything run (they help make structures, catalyze reactions and allow for signaling - a kind of internal cell communication). On Benchling, these are comprised of a string of amino acids and collections of other attributes, such as annotations.
+  description: 'Oligos are short linear DNA sequences that can be attached as primers to full DNA sequences. Just like other entities, they support schemas, tags, and aliases.
 
-    '
+
+    Please migrate to the corresponding DNA Oligos endpoints so that we can support RNA Oligos.'
 servers:
 - url: /api/v2
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: '
-
-    Oligos are short linear DNA sequences that can be attached as primers to full DNA sequences. Just like other entities, they support schemas, tags, and aliases.
+- description: 'Oligos are short linear DNA sequences that can be attached as primers to full DNA sequences. Just like other entities, they support schemas, tags, and aliases.
 
 
-    Please migrate to the corresponding DNA Oligos endpoints so that we can support RNA Oligos.
-
-    '
+    Please migrate to the corresponding DNA Oligos endpoints so that we can support RNA Oligos.'
   name: Oligos
 paths:
   /oligos:
     get:
       deprecated: true
-      description: List Oligos
       operationId: listOligos
       parameters:
       - description: 'Number of results to return. Defaults to 50, maximum of 100.
@@ -39,7 +35,6 @@ paths:
           default: 50
           maximum: 100
           minimum: 0
-          nullable: false
           type: integer
       - description: Token for pagination
         in: query
@@ -63,7 +58,6 @@ paths:
           - name
           - name:asc
           - name:desc
-          nullable: false
           type: string
       - description: 'Datetime, in RFC 3339 format. Supports the > and < operators. Time zone defaults to UTC. Restricts results to those modified in the specified range. e.g. > 2017-04-30. Date ranges can be specified with the following nomenclature > YYYY-MM-DD AND <YYYY-MM-DD.
 
@@ -117,8 +111,9 @@ paths:
         in: query
         name: registryId
         schema:
-          nullable: true
-          type: string
+          type:
+          - string
+          - 'null'
       - description: 'ID of a schema. Restricts results to those of the specified schema.
 
           '
@@ -239,7 +234,6 @@ paths:
       - Oligos
     post:
       deprecated: true
-      description: Create an Oligo
       operationId: createOligo
       requestBody:
         content:
@@ -267,7 +261,6 @@ paths:
   /oligos/{oligo_id}:
     get:
       deprecated: true
-      description: Get an Oligo
       operationId: getOligo
       parameters:
       - in: path
@@ -299,7 +292,6 @@ paths:
       - Oligos
     patch:
       deprecated: true
-      description: Update an Oligo
       operationId: updateOligo
       parameters:
       - in: path
@@ -331,7 +323,6 @@ paths:
   /oligos:archive:
     post:
       deprecated: true
-      description: Archive Oligos
       operationId: archiveOligos
       requestBody:
         content:
@@ -359,9 +350,7 @@ paths:
       deprecated: true
       description: 'Bulk Create DNA Oligos
 
-        Please migrate to [Bulk Create DNA Oligos](#/DNA%20Oligos/bulkCreateDNAOligos) so that we can support RNA Oligos.
-
-        '
+        Please migrate to Bulk Create DNA Oligos so that we can support RNA Oligos.'
       operationId: bulkCreateOligos
       requestBody:
         content:
@@ -390,7 +379,6 @@ paths:
       - Oligos
   /oligos:bulk-get:
     get:
-      description: Bulk get Oligos by ID
       operationId: bulkGetOligos
       parameters:
       - description: 'Comma-separated list of IDs of Oligos to get.
@@ -426,7 +414,6 @@ paths:
   /oligos:unarchive:
     post:
       deprecated: true
-      description: Unarchive Oligos
       operationId: unarchiveOligos
       requestBody:
         content:
@@ -451,113 +438,11 @@ paths:
       - Oligos
 components:
   schemas:
-    OligosArchive:
-      additionalProperties: false
-      description: 'The request body for archiving Oligos.
-
-        '
-      properties:
-        oligoIds:
-          items:
-            type: string
-          type: array
-        reason:
-          $ref: '#/components/schemas/EntityArchiveReason'
-      required:
-      - reason
-      - oligoIds
-      type: object
-    OligosBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        oligos:
-          items:
-            $ref: '#/components/schemas/OligoCreate'
-          maxItems: 1000
-          type: array
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
-      properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    DnaAnnotation:
+    OligoBaseRequestForCreate:
       allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            maximum: 1
-            minimum: -1
-            type: integer
-          type:
-            type: string
-        type: object
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
-          type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-      type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
+      - $ref: '#/components/schemas/OligoBaseRequest'
+      - required:
+        - name
     RnaOligo:
       allOf:
       - $ref: '#/components/schemas/Oligo'
@@ -575,12 +460,14 @@ components:
             type: string
           customNotation:
             description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
+            type:
+            - string
+            - 'null'
           customNotationName:
             description: Name of the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
+            type:
+            - string
+            - 'null'
           helm:
             description: Representation of the oligo in HELM syntax, including any chemical modifications
             example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
@@ -588,14 +475,87 @@ components:
           nucleotideType:
             example: RNA
             type: string
-    Pagination:
+    BaseError:
       properties:
-        nextToken:
+        message:
           type: string
-    ArchiveRecord:
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    RnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 0
+            type: integer
+          type:
+            type: string
+        type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    OligosPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          oligos:
+            items:
+              $ref: '#/components/schemas/Oligo'
+            type: array
+    SchemaSummary:
       properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    OligoUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/OligoBaseRequest'
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    OligosArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Oligos.
+
+        '
+      properties:
+        oligoIds:
+          items:
+            type: string
+          type: array
         reason:
-          example: Made in error
+          $ref: '#/components/schemas/EntityArchiveReason'
+      required:
+      - reason
+      - oligoIds
+      type: object
+    CustomField:
+      properties:
+        value:
           type: string
       type: object
     DnaOligo:
@@ -615,16 +575,130 @@ components:
             type: string
           customNotation:
             description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
+            type:
+            - string
+            - 'null'
           customNotationName:
             description: Name of the custom notation specified in the request. Null if no notation was specified.
-            nullable: true
-            type: string
+            type:
+            - string
+            - 'null'
           helm:
             description: Representation of the oligo in HELM syntax, including any chemical modifications
             example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
             type: string
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    OligoCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    DnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            maximum: 1
+            minimum: -1
+            type: integer
+          type:
+            type: string
+        type: object
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    OligosArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of Oligos along with any IDs of batches that were archived / unarchived.
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        oligoIds:
+          items:
+            type: string
+          type: array
+      type: object
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
     FieldType:
       enum:
       - dna_sequence_link
@@ -654,11 +728,134 @@ components:
       - date
       - json
       type: string
-    OligoBaseRequestForCreate:
-      allOf:
-      - $ref: '#/components/schemas/OligoBaseRequest'
-      - required:
-        - name
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    Oligo:
+      discriminator:
+        mapping:
+          DNA: DnaOligo
+          RNA: RnaOligo
+        propertyName: nucleotideType
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Oligo in the API.
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          description: Base pairs of the Oligo.
+          example: ACTTTTT
+          type: string
+        createdAt:
+          description: DateTime the Oligo was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Oligo.
+        entityRegistryId:
+          description: Registry ID of the Oligo if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Oligo.
+          type:
+          - string
+          - 'null'
+        id:
+          description: ID of the Oligo.
+          example: seq_bhuDUw9D
+          type: string
+        length:
+          description: Number of bases in the Oligo.
+          type: integer
+        modifiedAt:
+          description: DateTime the Oligo was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the Oligo.
+          type: string
+        nucleotideType:
+          description: Nucleotide type of the Oligo.
+          enum:
+          - DNA
+          - RNA
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the Oligo is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        webURL:
+          description: URL of the Oligo.
+          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
+          format: uri
+          readOnly: true
+          type: string
+      type: object
     OligoBaseRequest:
       properties:
         aliases:
@@ -704,6 +901,25 @@ components:
             '
           type: string
       type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
     OligosUnarchive:
       additionalProperties: false
       description: 'The request body for unarchiving Oligos.
@@ -717,105 +933,33 @@ components:
       required:
       - oligoIds
       type: object
-    NamingStrategy:
-      description: 'Specifies the behavior for automatically generated names when registering an entity.
-
-        - NEW_IDS: Generate new registry IDs
-
-        - IDS_FROM_NAMES: Generate registry IDs based on entity names
-
-        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
-
-        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
-
-        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
-
-        - KEEP_NAMES: Keep existing entity names as registry IDs
-
-        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
-
-        '
-      enum:
-      - NEW_IDS
-      - IDS_FROM_NAMES
-      - DELETE_NAMES
-      - SET_FROM_NAME_PARTS
-      - REPLACE_NAMES_FROM_PARTS
-      - KEEP_NAMES
-      - REPLACE_ID_AND_NAME_FROM_PARTS
-      type: string
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    OligosArchivalChange:
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of Oligos along with any IDs of batches that were archived / unarchived.
-
-        '
+    Pagination:
       properties:
-        batchIds:
+        nextToken:
+          type: string
+    OligosBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        oligos:
           items:
-            type: string
-          type: array
-        oligoIds:
-          items:
-            type: string
+            $ref: '#/components/schemas/OligoCreate'
+          maxItems: 1000
           type: array
       type: object
-    OligosPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          oligos:
-            items:
-              $ref: '#/components/schemas/Oligo'
-            type: array
-    Field:
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
       properties:
-        displayValue:
-          nullable: true
-          readOnly: true
-          type: string
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          nullable: true
-          readOnly: true
-          type: string
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          nullable: true
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
         name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
           type: string
       type: object
     OligosBulkGet:
@@ -827,124 +971,16 @@ components:
             - $ref: '#/components/schemas/RnaOligo'
           type: array
       type: object
-    OligoCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
-      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
-    AsyncTaskLink:
+    BadRequestError:
       properties:
-        taskId:
-          type: string
-      type: object
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
-    Oligo:
-      discriminator:
-        mapping:
-          DNA: DnaOligo
-          RNA: RnaOligo
-        propertyName: nucleotideType
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Oligo in the API.
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
+        error:
           allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          nullable: true
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        bases:
-          description: Base pairs of the Oligo.
-          example: ACTTTTT
-          type: string
-        createdAt:
-          description: DateTime the Oligo was created.
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the Oligo.
-        entityRegistryId:
-          description: Registry ID of the Oligo if registered.
-          nullable: true
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the Oligo.
-          nullable: true
-          type: string
-        id:
-          description: ID of the Oligo.
-          example: seq_bhuDUw9D
-          type: string
-        length:
-          description: Number of bases in the Oligo.
-          type: integer
-        modifiedAt:
-          description: DateTime the Oligo was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          description: Name of the Oligo.
-          type: string
-        nucleotideType:
-          description: Nucleotide type of the Oligo.
-          enum:
-          - DNA
-          - RNA
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          nullable: true
-          readOnly: true
-        registryId:
-          description: Registry the Oligo is registered in.
-          nullable: true
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          nullable: true
-        webURL:
-          description: URL of the Oligo.
-          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
-          format: uri
-          readOnly: true
-          type: string
-      type: object
-    RegistrationOrigin:
-      properties:
-        originEntryId:
-          nullable: true
-          readOnly: true
-          type: string
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     CreateEntityIntoRegistry:
       properties:
@@ -969,49 +1005,6 @@ components:
             '
           type: string
       type: object
-    RnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 0
-            type: integer
-          type:
-            type: string
-        type: object
-    OligoUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/OligoBaseRequest'
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    EntityArchiveReason:
-      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
-
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Expended
-      - Shipped
-      - Contaminated
-      - Expired
-      - Missing
-      - Other
-      type: string
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

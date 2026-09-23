@@ -13,7 +13,7 @@ security:
 - basicApiKeyAuth: []
 tags:
 - description: Represents a single entry in an object's audit log. Each entry captures what changed, who made the change, and contextual information about the affected object hierarchy.
-  name: AuditLog
+  name: Audit Log
   x-bnch-organization: Benchling
 paths:
   /audit-log/items:
@@ -69,7 +69,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: List AuditLog items
       tags:
-      - AuditLog
+      - Audit Log
       x-bnch-rate-limit-tier: 4
   /audit-log/{audit_log_id}:
     get:
@@ -110,11 +110,10 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: Get AuditLog by ID
       tags:
-      - AuditLog
+      - Audit Log
       x-bnch-rate-limit-tier: 5
   /audit-log:export:
     post:
-      description: Export the full audit log for an object as a CSV or PDF file
       operationId: AuditLog.Export
       parameters:
       - description: Set to true to access beta operations via /api/v3.
@@ -147,7 +146,7 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: Export the full audit log for an object as a CSV or PDF file
       tags:
-      - AuditLog
+      - Audit Log
       x-bnch-rate-limit-tier: 4
   /tasks/audit-log/export/{task_id}:
     get:
@@ -199,10 +198,207 @@ paths:
           $ref: '#/components/responses/InternalServerError'
       summary: Poll async task status
       tags:
-      - AuditLog
+      - Audit Log
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    userId.anyOf:
+      description: Restricts results to those associated with any of the specified user API IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: userId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    reasonCode.anyOf:
+      description: Restricts results to audit logs with any of the specified reason codes. Comma-separated list.
+      explode: false
+      in: query
+      name: reasonCode.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    objectId.anyOf:
+      description: Retrieves audit logs for the specified object API IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: objectId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    action.anyOf:
+      description: Restricts results to audit logs matching any of the specified action display names (e.g. 'Updated name', 'Created'). Comma-separated list.
+      explode: false
+      in: query
+      name: action.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
   schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AuditLogPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AuditLog'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AuditLogExportInput:
+      additionalProperties: false
+      properties:
+        format:
+          enum:
+          - CSV
+          - PDF
+          type: string
+        objectId:
+          type: string
+      required:
+      - objectId
+      - format
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    AuditLogExportOutput:
+      description: Output of the audit log export custom method. Contains a presigned download URL for the exported file.
+      properties:
+        downloadUrl:
+          type: string
+      type: object
     AuditLog:
       description: Represents a single entry in an object's audit log. Each entry captures what changed, who made the change, and contextual information about the affected object hierarchy.
       properties:
@@ -304,234 +500,37 @@ components:
         userName:
           type: string
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    AuditLogExportInput:
-      additionalProperties: false
-      properties:
-        format:
-          enum:
-          - CSV
-          - PDF
-          type: string
-        objectId:
-          type: string
-      required:
-      - objectId
-      - format
-      type: object
-    AuditLogPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/AuditLog'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    AuditLogExportOutput:
-      description: Output of the audit log export custom method. Contains a presigned download URL for the exported file.
-      properties:
-        downloadUrl:
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    reasonCode.anyOf:
-      description: Restricts results to audit logs with any of the specified reason codes. Comma-separated list.
-      explode: false
-      in: query
-      name: reasonCode.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    objectId.anyOf:
-      description: Retrieves audit logs for the specified object API IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: objectId.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    userId.anyOf:
-      description: Restricts results to those associated with any of the specified user API IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: userId.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    action.anyOf:
-      description: Restricts results to audit logs matching any of the specified action display names (e.g. 'Updated name', 'Created'). Comma-separated list.
-      explode: false
-      in: query
-      name: action.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
