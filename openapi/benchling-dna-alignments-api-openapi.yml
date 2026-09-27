@@ -244,36 +244,110 @@ paths:
       - DNA Alignments
 components:
   schemas:
-    DnaAlignmentSummary:
+    DnaTemplateAlignmentFile:
       properties:
-        apiURL:
-          description: The canonical url of the DNA Alignment in the API.
-          example: https://benchling.com/api/v2/dna-alignments/seqanl_6ZVdX98t
-          format: uri
-          type: string
-        createdAt:
-          description: DateTime the DNA Alignment was created
-          format: date-time
-          type: string
-        id:
-          example: seqanl_6ZVdX98t
-          type: string
-        modifiedAt:
-          description: DateTime the DNA Alignment was last modified
-          format: date-time
+        data:
+          format: byte
           type: string
         name:
           type: string
-        referenceSequenceId:
-          description: The ID of the template or consensus DNA Sequence associated with the DNA Alignment
-          example: seq_MYmsnS1u
-          type: string
-        webURL:
-          description: The Benchling web UI url to view the DNA Alignment
-          format: uri
-          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     EmptyObject:
+      type: object
+    DnaAlignment:
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentSummary'
+      - properties:
+          alignedSequences:
+            items:
+              $ref: '#/components/schemas/AlignedSequence'
+            type: array
+        type: object
+      type: object
+    DnaConsensusAlignmentCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentBase'
+      - properties:
+          newSequence:
+            properties:
+              folderId:
+                example: lib_qQFY3WQH
+                type: string
+            type: object
+          sequenceId:
+            type: string
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    DnaTemplateAlignmentCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentBase'
+      - properties:
+          shouldDisableCircularSequenceRotation:
+            default: false
+            description: Whether to disable circular sequence rotation.
+            type: boolean
+          templateSequenceId:
+            example: seq_rXqq0IHU
+            type: string
+        required:
+        - templateSequenceId
+        type: object
+    DnaAlignmentBase:
+      properties:
+        algorithm:
+          enum:
+          - mafft
+          - clustalo
+          type: string
+        clustaloOptions:
+          $ref: '#/components/schemas/ClustaloOptions'
+        files:
+          items:
+            oneOf:
+            - properties:
+                sequenceId:
+                  example: seq_3cxbVcCf
+                  type: string
+              type: object
+            - $ref: '#/components/schemas/DnaTemplateAlignmentFile'
+          type: array
+        mafftOptions:
+          $ref: '#/components/schemas/MafftOptions'
+        name:
+          example: my new alignment
+          type: string
+      required:
+      - algorithm
+      - files
+      type: object
+    DnaAlignmentsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          dnaAlignments:
+            items:
+              $ref: '#/components/schemas/DnaAlignmentSummary'
+            type: array
       type: object
     MafftOptions:
       description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
@@ -312,144 +386,6 @@ components:
           - globalpair
           type: string
       type: object
-    DnaAlignmentsPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          dnaAlignments:
-            items:
-              $ref: '#/components/schemas/DnaAlignmentSummary'
-            type: array
-      type: object
-    DnaAlignmentBase:
-      properties:
-        algorithm:
-          enum:
-          - mafft
-          - clustalo
-          type: string
-        clustaloOptions:
-          $ref: '#/components/schemas/ClustaloOptions'
-        files:
-          items:
-            oneOf:
-            - properties:
-                sequenceId:
-                  example: seq_3cxbVcCf
-                  type: string
-              type: object
-            - $ref: '#/components/schemas/DnaTemplateAlignmentFile'
-          type: array
-        mafftOptions:
-          $ref: '#/components/schemas/MafftOptions'
-        name:
-          example: my new alignment
-          type: string
-      required:
-      - algorithm
-      - files
-      type: object
-    DnaConsensusAlignmentCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentBase'
-      - properties:
-          newSequence:
-            properties:
-              folderId:
-                example: lib_qQFY3WQH
-                type: string
-            type: object
-          sequenceId:
-            type: string
-    DnaAlignment:
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentSummary'
-      - properties:
-          alignedSequences:
-            items:
-              $ref: '#/components/schemas/AlignedSequence'
-            type: array
-        type: object
-      type: object
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    DnaTemplateAlignmentCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentBase'
-      - properties:
-          shouldDisableCircularSequenceRotation:
-            default: false
-            description: Whether to disable circular sequence rotation.
-            type: boolean
-          templateSequenceId:
-            example: seq_rXqq0IHU
-            type: string
-        required:
-        - templateSequenceId
-        type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    ClustaloOptions:
-      description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
-      properties:
-        maxGuidetreeIterations:
-          default: -1
-          description: Max guide tree iterations within combined iterations. Use -1 for no max (all iterations will include guide tree iterations).
-          maximum: 5
-          minimum: -1
-          type: integer
-        maxHmmIterations:
-          default: -1
-          description: Max HMM iterations within combined iterations. Use -1 for no max (all iterations will include HMM iterations).
-          maximum: 5
-          minimum: -1
-          type: integer
-        mbedGuideTree:
-          default: true
-          description: Whether mBed-like clustering guide tree should be used (faster to use it).
-          type: boolean
-        mbedIteration:
-          default: true
-          description: Whether mBed-like clustering iteration should be used (faster to use it).
-          type: boolean
-        numCombinedIterations:
-          default: 0
-          description: Number of (combined guide-tree/HMM) iterations.
-          maximum: 5
-          minimum: 0
-          type: integer
-      type: object
     AlignedSequence:
       properties:
         bases:
@@ -483,22 +419,86 @@ components:
           example: 0
           type: integer
       type: object
-    BaseError:
+    AsyncTaskLink:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
+        taskId:
           type: string
       type: object
-    DnaTemplateAlignmentFile:
+    Pagination:
       properties:
-        data:
-          format: byte
+        nextToken:
+          type: string
+    ClustaloOptions:
+      description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
+      properties:
+        maxGuidetreeIterations:
+          default: -1
+          description: Max guide tree iterations within combined iterations. Use -1 for no max (all iterations will include guide tree iterations).
+          maximum: 5
+          minimum: -1
+          type: integer
+        maxHmmIterations:
+          default: -1
+          description: Max HMM iterations within combined iterations. Use -1 for no max (all iterations will include HMM iterations).
+          maximum: 5
+          minimum: -1
+          type: integer
+        mbedGuideTree:
+          default: true
+          description: Whether mBed-like clustering guide tree should be used (faster to use it).
+          type: boolean
+        mbedIteration:
+          default: true
+          description: Whether mBed-like clustering iteration should be used (faster to use it).
+          type: boolean
+        numCombinedIterations:
+          default: 0
+          description: Number of (combined guide-tree/HMM) iterations.
+          maximum: 5
+          minimum: 0
+          type: integer
+      type: object
+    DnaAlignmentSummary:
+      properties:
+        apiURL:
+          description: The canonical url of the DNA Alignment in the API.
+          example: https://benchling.com/api/v2/dna-alignments/seqanl_6ZVdX98t
+          format: uri
+          type: string
+        createdAt:
+          description: DateTime the DNA Alignment was created
+          format: date-time
+          type: string
+        id:
+          example: seqanl_6ZVdX98t
+          type: string
+        modifiedAt:
+          description: DateTime the DNA Alignment was last modified
+          format: date-time
           type: string
         name:
           type: string
+        referenceSequenceId:
+          description: The ID of the template or consensus DNA Sequence associated with the DNA Alignment
+          example: seq_MYmsnS1u
+          type: string
+        webURL:
+          description: The Benchling web UI url to view the DNA Alignment
+          format: uri
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

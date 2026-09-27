@@ -372,6 +372,17 @@ components:
   schemas:
     EmptyObject:
       type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     BlobCreate:
       additionalProperties: false
       properties:
@@ -407,13 +418,14 @@ components:
       - data64
       - md5
       type: object
-    BlobComplete:
-      additionalProperties: false
+    BaseError:
       properties:
-        parts:
-          items:
-            $ref: '#/components/schemas/BlobPart'
-          type: array
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
       type: object
     BlobMultipartCreate:
       additionalProperties: false
@@ -439,6 +451,16 @@ components:
       - name
       - type
       type: object
+    BlobPart:
+      properties:
+        eTag:
+          example: '"6f5902ac237024bdd0c176cb93063dc4"'
+          type: string
+        partNumber:
+          maximum: 10000
+          minimum: 1
+          type: integer
+      type: object
     BlobUrl:
       properties:
         downloadURL:
@@ -448,6 +470,13 @@ components:
         expiresAt:
           description: The unix time that the download URL expires at.
           type: integer
+      type: object
+    BlobsBulkGet:
+      properties:
+        blobs:
+          items:
+            $ref: '#/components/schemas/Blob'
+          type: array
       type: object
     BlobPartCreate:
       additionalProperties: false
@@ -469,39 +498,13 @@ components:
       - data64
       - md5
       type: object
-    BlobPart:
+    BlobComplete:
+      additionalProperties: false
       properties:
-        eTag:
-          example: '"6f5902ac237024bdd0c176cb93063dc4"'
-          type: string
-        partNumber:
-          maximum: 10000
-          minimum: 1
-          type: integer
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/BlobPart'
+          type: array
       type: object
     Blob:
       properties:
@@ -535,21 +538,18 @@ components:
           - ABORTED
           type: string
       type: object
-    BlobsBulkGet:
+    NotFoundError:
       properties:
-        blobs:
-          items:
-            $ref: '#/components/schemas/Blob'
-          type: array
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

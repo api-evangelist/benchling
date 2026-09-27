@@ -814,20 +814,111 @@ paths:
       - DNA Sequences
 components:
   schemas:
-    DnaSequenceUpdate:
+    ArchiveRecordSet:
       additionalProperties: false
+      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
+      example: null
+      type:
+      - object
+      - 'null'
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    UserSummary:
       allOf:
-      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
-      - $ref: '#/components/schemas/DnaSequenceRequestRegistryFields'
-    EntityBulkUpsertBaseRequest:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    ReducedPattern:
+      additionalProperties: false
+      description: 'DNA patterns to avoid during optimization. Supports two formats: 1) DNA base patterns: strings of ATGC bases (case-insensitive, e.g., "ATGC" or "gat") 2) Repeat patterns: format "nxkmer" specifying n repeats of k-sized sequences (e.g., "3x4mer" matches 3 consecutive 4-base repeats). Maximum total length for repeat patterns is 50 bases (n * k ≤ 50).
+
+        If avoidReverseComplement is true, the pattern''s reverse complement will also be avoided. Note: avoidReverseComplement cannot be true for repeat patterns (nxkmer format).
+
+        '
+      properties:
+        avoidReverseComplement:
+          default: false
+          type: boolean
+        pattern:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    Translation:
       allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/SequenceFeatureBase'
       - properties:
-          entityRegistryId:
-            description: Registry ID of the entity in Benchling.
+          aminoAcids:
+            readOnly: true
             type: string
-      - required:
-        - entityRegistryId
+          coerceStartCodonToMethionine:
+            default: false
+            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
+            type: boolean
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          geneticCode:
+            default: STANDARD
+            description: The genetic code to use when translating the nucleotide sequence into amino acids.
+            enum:
+            - STANDARD
+            - VERTEBRATE_MITOCHONDRIAL
+            - YEAST_MITOCHONDRIAL
+            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
+            - INVERTEBRATE_MITOCHONDRIAL
+            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
+            - ECHINODERM_FLATWORM_MITOCHONDRIAL
+            - EUPLOTID_NUCLEAR
+            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
+            - ALTERNATIVE_YEAST_NUCLEAR
+            - ASCIDIAN_MITOCHONDRIAL
+            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
+            - CHLOROPHYCEAN_MITOCHONDRIAL
+            - TREMATODE_MITOCHONDRIAL
+            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
+            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
+            - RHABDOPLEURIDAE_MITOCHONDRIAL
+            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
+            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
+            - MESODINIUM_NUCLEAR
+            - PERITRICH_NUCLEAR
+            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
+            type: string
+          regions:
+            items:
+              properties:
+                end:
+                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+                  type: integer
+                start:
+                  description: 0-based inclusive start index.
+                  type: integer
+              type: object
+            type: array
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            type: integer
+        type: object
     OptimizeCodons:
       additionalProperties: false
       properties:
@@ -921,6 +1012,95 @@ components:
       - dnaSequenceIds
       - folderId
       type: object
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    DnaSequenceBulkUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
+      - required:
+        - annotations
+        - primers
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    DnaSequenceBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/DnaSequenceCreate'
+    FieldWithResolution:
+      allOf:
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+        type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
     DnaSequencesBulkUpdateRequest:
       additionalProperties: false
       properties:
@@ -929,145 +1109,129 @@ components:
             $ref: '#/components/schemas/DnaSequenceBulkUpdate'
           type: array
       type: object
-    DnaSequencesBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        dnaSequences:
-          items:
-            $ref: '#/components/schemas/DnaSequenceBulkCreate'
-          maxItems: 1000
-          type: array
-      type: object
-    DnaSequenceUpsertRequest:
+    DnaAnnotation:
       allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
-      - required:
-        - annotations
-        - primers
-    DnaSequenceBaseRequest:
-      properties:
-        aliases:
-          description: Aliases to add to the DNA sequence
-          items:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            maximum: 1
+            minimum: -1
+            type: integer
+          type:
             type: string
-          type: array
-        annotations:
-          description: 'Annotations to create on the DNA sequence.
-
-            '
-          items:
-            $ref: '#/components/schemas/DnaAnnotation'
-          type: array
-        authorIds:
-          description: IDs of users to set as the DNA sequence's authors.
-          items:
-            type: string
-          type: array
-        bases:
-          description: 'Base pairs for the DNA sequence.
-
-            '
-          type: string
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: 'Custom fields to add to the DNA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Fields to set on the DNA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        folderId:
-          description: 'ID of the folder containing the DNA sequence.
-
-            '
-          type: string
-        isCircular:
-          description: 'Whether the DNA sequence is circular or linear.
-
-            '
-          type: boolean
-        name:
-          description: 'Name of the DNA sequence.
-
-            '
-          type: string
-        parts:
-          items:
-            $ref: '#/components/schemas/DnaSequencePart'
-          type: array
-        primers:
-          items:
-            $ref: '#/components/schemas/Primer'
-          type: array
-        schemaId:
-          description: 'ID of the DNA sequence''s schema.
-
-            '
-          type: string
-        translations:
-          description: 'Translations to create on the DNA sequence. Translations are specified by either a combination of ''start'' and ''end'' fields, or a list of regions. Both cannot be provided.
-
-            '
-          items:
-            $ref: '#/components/schemas/Translation'
-          type: array
-      type: object
-    DnaSequenceTranscription:
+        type: object
+    DnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: -1
+            type: integer
+        type: object
+    NucleotideSequencePart:
       properties:
         end:
           description: 0-based exclusive end index. The end of the sequence is always represented as 0.
           type: integer
         sequenceId:
-          description: Linked RNA sequence ID.
           example: seq_VfVOART1
           type: string
         start:
           description: 0-based inclusive start index.
           type: integer
-        strand:
-          example: 1
-          maximum: 1
-          minimum: -1
-          type: integer
       type: object
-    DnaSequencesFindMatchingRegion:
-      additionalProperties: false
+    EntityUpsertBaseRequest:
       properties:
+        archiveRecord:
+          $ref: '#/components/schemas/ArchiveRecordSet'
+        fields:
+          $ref: '#/components/schemas/FieldsWithResolution'
+        name:
+          type: string
         registryId:
-          description: An optional Registry ID to restrict the region search to
-          example: src_ae40j3TZ
           type: string
         schemaId:
-          description: API ID for an Entity Schema. Restricts results to DNA Sequences of this schema type.
-          example: ts_n4l12nf0
           type: string
-        targetDnaSequenceIds:
-          description: API IDs of the DNA sequences which matching regions will be found for
-          example:
-          - seq_W7KgYydE
-          - seq_g7SI2nih
-          items:
-            type: string
-          maxItems: 1000
-          type: array
       required:
-      - targetDnaSequenceIds
+      - registryId
+      - name
       - schemaId
       type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+    DnaSequenceBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    FieldsWithResolution:
+      additionalProperties:
+        $ref: '#/components/schemas/FieldWithResolution'
+      example:
+        Linked Peptide:
+          value: prtn_ObbdtGhC
+        Linked Sequence:
+          value:
+            entityRegistryId: DNA001
+        Linked Strains:
+          value:
+          - entityRegistryId: STRAIN001
+          - entityRegistryId: STRAIN002
       type: object
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
+          type: string
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
     SearchBasesRequest:
       additionalProperties: false
       properties:
@@ -1114,34 +1278,47 @@ components:
       required:
       - bases
       type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    EntityUpsertBaseRequest:
+    DnaSequencesFindMatchingRegion:
+      additionalProperties: false
       properties:
-        archiveRecord:
-          $ref: '#/components/schemas/ArchiveRecordSet'
-        fields:
-          $ref: '#/components/schemas/FieldsWithResolution'
-        name:
-          type: string
         registryId:
+          description: An optional Registry ID to restrict the region search to
+          example: src_ae40j3TZ
           type: string
         schemaId:
+          description: API ID for an Entity Schema. Restricts results to DNA Sequences of this schema type.
+          example: ts_n4l12nf0
           type: string
+        targetDnaSequenceIds:
+          description: API IDs of the DNA sequences which matching regions will be found for
+          example:
+          - seq_W7KgYydE
+          - seq_g7SI2nih
+          items:
+            type: string
+          maxItems: 1000
+          type: array
       required:
-      - registryId
-      - name
+      - targetDnaSequenceIds
       - schemaId
       type: object
-    DnaSequenceRequestRegistryFields:
+    DnaSequenceTranscription:
       properties:
-        entityRegistryId:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          description: Linked RNA sequence ID.
+          example: seq_VfVOART1
           type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          maximum: 1
+          minimum: -1
+          type: integer
       type: object
     SchemaSummary:
       properties:
@@ -1150,30 +1327,6 @@ components:
         name:
           type: string
       type: object
-    DnaSequencesArchive:
-      additionalProperties: false
-      description: 'The request body for archiving DNA sequences.
-
-        '
-      properties:
-        dnaSequenceIds:
-          items:
-            type: string
-          type: array
-        reason:
-          $ref: '#/components/schemas/EntityArchiveReason'
-      required:
-      - reason
-      - dnaSequenceIds
-      type: object
-    DnaSequenceBaseRequestForCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
-      - required:
-        - bases
-        - isCircular
-        - name
     DnaSequence:
       properties:
         aliases:
@@ -1268,184 +1421,16 @@ components:
           readOnly: true
           type: string
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    DnaSequencesPaginatedList:
+    DnaSequencesBulkUpsertRequest:
+      additionalProperties: false
+      maxItems: 1000
       properties:
         dnaSequences:
           items:
-            $ref: '#/components/schemas/DnaSequence'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    DnaSequenceBulkUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
-      - required:
-        - annotations
-        - primers
-    ArchiveRecordSet:
-      additionalProperties: false
-      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
-      example: null
-      type:
-      - object
-      - 'null'
-    FieldValueWithResolution:
-      oneOf:
-      - type: string
-      - type: boolean
-      - type: number
-      - items:
-          type: string
-        type: array
-      - additionalProperties: false
-        description: Look up an entity by its entity registry ID
-        properties:
-          entityRegistryId:
-            type: string
-        required:
-        - entityRegistryId
-        type: object
-    FieldsWithResolution:
-      additionalProperties:
-        $ref: '#/components/schemas/FieldWithResolution'
-      example:
-        Linked Peptide:
-          value: prtn_ObbdtGhC
-        Linked Sequence:
-          value:
-            entityRegistryId: DNA001
-        Linked Strains:
-          value:
-          - entityRegistryId: STRAIN001
-          - entityRegistryId: STRAIN002
-      type: object
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
-          type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-      type: object
-    AutofillSequences:
-      additionalProperties: false
-      properties:
-        dnaSequenceIds:
-          description: Array of DNA sequence IDs.
-          items:
-            type: string
+            $ref: '#/components/schemas/DnaSequenceBulkUpsertRequest'
           type: array
       required:
-      - dnaSequenceIds
-      type: object
-    DnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            maximum: 1
-            minimum: -1
-            type: integer
-          type:
-            type: string
-        type: object
-    NamingStrategy:
-      description: 'Specifies the behavior for automatically generated names when registering an entity.
-
-        - NEW_IDS: Generate new registry IDs
-
-        - IDS_FROM_NAMES: Generate registry IDs based on entity names
-
-        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
-
-        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
-
-        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
-
-        - KEEP_NAMES: Keep existing entity names as registry IDs
-
-        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
-
-        '
-      enum:
-      - NEW_IDS
-      - IDS_FROM_NAMES
-      - DELETE_NAMES
-      - SET_FROM_NAME_PARTS
-      - REPLACE_NAMES_FROM_PARTS
-      - KEEP_NAMES
-      - REPLACE_ID_AND_NAME_FROM_PARTS
-      type: string
-    DnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: -1
-            type: integer
-        type: object
-    NucleotideSequencePart:
-      properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          example: seq_VfVOART1
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-      type: object
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
+      - dnaSequences
       type: object
     AutoAnnotateDnaSequences:
       additionalProperties: false
@@ -1464,134 +1449,74 @@ components:
       - dnaSequenceIds
       - featureLibraryIds
       type: object
-    DnaSequencesBulkGet:
+    EntityBulkUpsertBaseRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
       properties:
-        dnaSequences:
-          items:
-            $ref: '#/components/schemas/DnaSequence'
-          type: array
+        name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
       type: object
-    DnaSequencesBulkUpsertRequest:
+    AutofillSequences:
       additionalProperties: false
-      maxItems: 1000
       properties:
-        dnaSequences:
+        dnaSequenceIds:
+          description: Array of DNA sequence IDs.
           items:
-            $ref: '#/components/schemas/DnaSequenceBulkUpsertRequest'
+            type: string
           type: array
       required:
-      - dnaSequences
+      - dnaSequenceIds
       type: object
-    DnaSequenceBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/DnaSequenceCreate'
-    Translation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          aminoAcids:
-            readOnly: true
-            type: string
-          coerceStartCodonToMethionine:
-            default: false
-            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
-            type: boolean
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          geneticCode:
-            default: STANDARD
-            description: The genetic code to use when translating the nucleotide sequence into amino acids.
-            enum:
-            - STANDARD
-            - VERTEBRATE_MITOCHONDRIAL
-            - YEAST_MITOCHONDRIAL
-            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
-            - INVERTEBRATE_MITOCHONDRIAL
-            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
-            - ECHINODERM_FLATWORM_MITOCHONDRIAL
-            - EUPLOTID_NUCLEAR
-            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
-            - ALTERNATIVE_YEAST_NUCLEAR
-            - ASCIDIAN_MITOCHONDRIAL
-            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
-            - CHLOROPHYCEAN_MITOCHONDRIAL
-            - TREMATODE_MITOCHONDRIAL
-            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
-            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
-            - RHABDOPLEURIDAE_MITOCHONDRIAL
-            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
-            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
-            - MESODINIUM_NUCLEAR
-            - PERITRICH_NUCLEAR
-            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
-            type: string
-          regions:
-            items:
-              properties:
-                end:
-                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-                  type: integer
-                start:
-                  description: 0-based inclusive start index.
-                  type: integer
-              type: object
-            type: array
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            type: integer
-        type: object
-    DnaSequencesArchivalChange:
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of DNA sequences along with any IDs of batches that were archived / unarchived.
-
-        '
+    DnaSequencesBulkCreateRequest:
+      additionalProperties: false
       properties:
-        batchIds:
+        dnaSequences:
           items:
-            type: string
-          type: array
-        dnaSequenceIds:
-          items:
-            type: string
+            $ref: '#/components/schemas/DnaSequenceBulkCreate'
+          maxItems: 1000
           type: array
       type: object
-    Primer:
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    DnaSequenceRequestRegistryFields:
       properties:
-        bases:
-          readOnly: true
+        entityRegistryId:
           type: string
-        bindPosition:
-          readOnly: true
-          type: integer
-        color:
-          readOnly: true
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        name:
-          readOnly: true
-          type: string
-        oligoId:
-          type: string
-        overhangLength:
-          readOnly: true
-          type: integer
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          type: integer
       type: object
     DnaSequenceCreate:
       additionalProperties: false
       allOf:
       - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
       - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    DnaSequenceUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
+      - $ref: '#/components/schemas/DnaSequenceRequestRegistryFields'
     MatchBasesRequest:
       additionalProperties: false
       properties:
@@ -1629,14 +1554,117 @@ components:
       required:
       - bases
       type: object
-    FieldWithResolution:
-      allOf:
-      - $ref: '#/components/schemas/Field'
-      - properties:
-          value:
-            allOf:
-            - $ref: '#/components/schemas/FieldValueWithResolution'
-        type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    DnaSequencesArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of DNA sequences along with any IDs of batches that were archived / unarchived.
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        dnaSequenceIds:
+          items:
+            type: string
+          type: array
+      type: object
+    DnaSequencesBulkGet:
+      properties:
+        dnaSequences:
+          items:
+            $ref: '#/components/schemas/DnaSequence'
+          type: array
+      type: object
+    DnaSequenceBaseRequest:
+      properties:
+        aliases:
+          description: Aliases to add to the DNA sequence
+          items:
+            type: string
+          type: array
+        annotations:
+          description: 'Annotations to create on the DNA sequence.
+
+            '
+          items:
+            $ref: '#/components/schemas/DnaAnnotation'
+          type: array
+        authorIds:
+          description: IDs of users to set as the DNA sequence's authors.
+          items:
+            type: string
+          type: array
+        bases:
+          description: 'Base pairs for the DNA sequence.
+
+            '
+          type: string
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the DNA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Fields to set on the DNA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: 'ID of the folder containing the DNA sequence.
+
+            '
+          type: string
+        isCircular:
+          description: 'Whether the DNA sequence is circular or linear.
+
+            '
+          type: boolean
+        name:
+          description: 'Name of the DNA sequence.
+
+            '
+          type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/DnaSequencePart'
+          type: array
+        primers:
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        schemaId:
+          description: 'ID of the DNA sequence''s schema.
+
+            '
+          type: string
+        translations:
+          description: 'Translations to create on the DNA sequence. Translations are specified by either a combination of ''start'' and ''end'' fields, or a list of regions. Both cannot be provided.
+
+            '
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+      type: object
+    DnaSequencesUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving DNA sequences.
+
+        '
+      properties:
+        dnaSequenceIds:
+          items:
+            type: string
+          type: array
+      required:
+      - dnaSequenceIds
+      type: object
     EntityArchiveReason:
       description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
 
@@ -1651,48 +1679,14 @@ components:
       - Missing
       - Other
       type: string
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
-    DnaSequencesUnarchive:
+    DnaSequenceBaseRequestForCreate:
       additionalProperties: false
-      description: 'The request body for unarchiving DNA sequences.
-
-        '
-      properties:
-        dnaSequenceIds:
-          items:
-            type: string
-          type: array
-      required:
-      - dnaSequenceIds
-      type: object
+      allOf:
+      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
+      - required:
+        - bases
+        - isCircular
+        - name
     Field:
       properties:
         displayValue:
@@ -1730,51 +1724,43 @@ components:
       required:
       - value
       type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    RegistrationOrigin:
+    DnaSequencesPaginatedList:
       properties:
-        originEntryId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
+        dnaSequences:
+          items:
+            $ref: '#/components/schemas/DnaSequence'
+          type: array
+        nextToken:
           type: string
       type: object
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    BaseError:
       properties:
-        name:
-          description: Name of the custom field
+        message:
           type: string
-        value:
-          description: Value of the custom field
+        type:
+          type: string
+        userMessage:
           type: string
       type: object
-    ArchiveRecord:
+    DnaSequencesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving DNA sequences.
+
+        '
       properties:
+        dnaSequenceIds:
+          items:
+            type: string
+          type: array
         reason:
-          example: Made in error
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+          $ref: '#/components/schemas/EntityArchiveReason'
+      required:
+      - reason
+      - dnaSequenceIds
       type: object
     CreateEntityIntoRegistry:
       properties:
@@ -1799,27 +1785,41 @@ components:
             '
           type: string
       type: object
-    DnaSequenceBulkUpdate:
-      additionalProperties: false
+    DnaSequenceUpsertRequest:
       allOf:
-      - properties:
-          id:
-            type: string
-        type: object
-      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
-    ReducedPattern:
-      additionalProperties: false
-      description: 'DNA patterns to avoid during optimization. Supports two formats: 1) DNA base patterns: strings of ATGC bases (case-insensitive, e.g., "ATGC" or "gat") 2) Repeat patterns: format "nxkmer" specifying n repeats of k-sized sequences (e.g., "3x4mer" matches 3 consecutive 4-base repeats). Maximum total length for repeat patterns is 50 bases (n * k ≤ 50).
-
-        If avoidReverseComplement is true, the pattern''s reverse complement will also be avoided. Note: avoidReverseComplement cannot be true for repeat patterns (nxkmer format).
-
-        '
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
+      - required:
+        - annotations
+        - primers
+    Primer:
       properties:
-        avoidReverseComplement:
-          default: false
-          type: boolean
-        pattern:
+        bases:
+          readOnly: true
           type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
       type: object
   securitySchemes:
     basicApiKeyAuth:

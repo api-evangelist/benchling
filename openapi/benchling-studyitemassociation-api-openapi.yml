@@ -297,67 +297,6 @@ paths:
       x-bnch-rate-limit-tier: 2
 components:
   parameters:
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    item.anyOf:
-      description: Restricts results to only those associated with any of the specified item IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: item.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -378,6 +317,41 @@ components:
           type: string
         maxItems: 100
         type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
@@ -385,6 +359,32 @@ components:
       schema:
         format: datetime
         type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    item.anyOf:
+      description: Restricts results to only those associated with any of the specified item IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: item.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
   schemas:
     InternalServerError:
       properties:
@@ -412,60 +412,13 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
       properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
+        pollingUri:
+          format: uri
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
+        taskId:
           type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    StudyItemAssociationPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/StudyItemAssociation'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    StudyItemAssociation:
-      description: 'Represents the link between a Study and a Studyable item (such as entities or molecules).
-
-        Each association is identified by id and links a specific `study` to a specific `item`, and records
-
-        when the link was created via `createdAt` and who created it via `creator`.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        id:
-          type: string
-        item:
-          $ref: '#/components/schemas/StudyableRef'
-        study:
-          $ref: '#/components/schemas/StudyRef'
       type: object
     PrincipalRef:
       properties:
@@ -473,14 +426,6 @@ components:
           type: string
         id:
           format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
           type: string
       type: object
     DeleteStudyItemAssociationInputWithPathParams:
@@ -505,12 +450,14 @@ components:
       - studyId
       - itemId
       type: object
-    StudyRef:
+    StudyItemAssociationPaginatedList:
+      additionalProperties: false
       properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
+        items:
+          items:
+            $ref: '#/components/schemas/StudyItemAssociation'
+          type: array
+        nextToken:
           type: string
       type: object
     BulkImport:
@@ -523,6 +470,59 @@ components:
       required:
       - fileId
       type: object
+    StudyRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    StudyItemAssociation:
+      description: 'Represents the link between a Study and a Studyable item (such as entities or molecules).
+
+        Each association is identified by id and links a specific `study` to a specific `item`, and records
+
+        when the link was created via `createdAt` and who created it via `creator`.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        id:
+          type: string
+        item:
+          $ref: '#/components/schemas/StudyableRef'
+        study:
+          $ref: '#/components/schemas/StudyRef'
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     StudyableRef:
       properties:
         __typename:
@@ -532,6 +532,12 @@ components:
           type: string
       type: object
   responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     InternalServerError:
       content:
         application/problem+json:
@@ -544,24 +550,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

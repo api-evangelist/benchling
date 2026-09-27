@@ -449,42 +449,49 @@ paths:
       - Feature Libraries
 components:
   schemas:
-    FeaturesPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          features:
-            description: List of features for the page
-            items:
-              $ref: '#/components/schemas/Feature'
-            type: array
-      description: A paginated list of features
-      type: object
-    FeatureBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/FeatureCreate'
-    FeatureLibrariesPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          featureLibraries:
-            items:
-              $ref: '#/components/schemas/FeatureLibrary'
-            type: array
-      description: A paginated list of feature libraries
-      type: object
-    NotFoundError:
+    FeatureLibraryBase:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        description:
+          description: The description for the feature library
+          type: string
+        name:
+          description: The name of the feature library
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    Organization:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    FeatureCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      - required:
+        - name
+        - featureType
+        - pattern
+        - matchType
+        - featureLibraryId
+      description: Inputs for a new feature
       type: object
     FeatureLibraryCreate:
       additionalProperties: false
@@ -502,27 +509,10 @@ components:
         - description
       description: Inputs for creating a feature library
       type: object
-    BaseError:
+    AsyncTaskLink:
       properties:
-        message:
+        taskId:
           type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    FeatureLibraryUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/FeatureLibraryBase'
-      description: Inputs for updating a feature library
       type: object
     PartySummary:
       properties:
@@ -533,19 +523,56 @@ components:
         name:
           type: string
       type: object
-    FeatureLibraryBase:
+    BadRequestError:
       properties:
-        description:
-          description: The description for the feature library
-          type: string
-        name:
-          description: The name of the feature library
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
-    AsyncTaskLink:
+    FeaturesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          features:
+            description: List of features for the page
+            items:
+              $ref: '#/components/schemas/Feature'
+            type: array
+      description: A paginated list of features
+      type: object
+    NotFoundError:
       properties:
-        taskId:
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Feature:
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          id:
+            description: The id of the feature
+            example: feat_4YVqX98z
+            type: string
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      description: A feature from a feature library
       type: object
     FeatureBase:
       properties:
@@ -570,51 +597,6 @@ components:
         pattern:
           description: The pattern used for matching during auto-annotation.
           type: string
-      type: object
-    Feature:
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      - properties:
-          id:
-            description: The id of the feature
-            example: feat_4YVqX98z
-            type: string
-          matchType:
-            description: The match type of the feature. Used to determine how auto-annotate matches are made.
-            enum:
-            - nucleotide
-            - protein
-            type: string
-      description: A feature from a feature library
-      type: object
-    FeaturesBulkCreateRequest:
-      additionalProperties: false
-      description: Inputs for bulk creating a new feature
-      properties:
-        features:
-          items:
-            $ref: '#/components/schemas/FeatureBulkCreate'
-          maxItems: 1000
-          type: array
-      type: object
-    FeatureCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      - properties:
-          matchType:
-            description: The match type of the feature. Used to determine how auto-annotate matches are made.
-            enum:
-            - nucleotide
-            - protein
-            type: string
-      - required:
-        - name
-        - featureType
-        - pattern
-        - matchType
-        - featureLibraryId
-      description: Inputs for a new feature
       type: object
     FeatureLibrary:
       allOf:
@@ -642,35 +624,53 @@ components:
             type: string
       description: A feature library
       type: object
-    Organization:
+    FeaturesBulkCreateRequest:
+      additionalProperties: false
+      description: Inputs for bulk creating a new feature
       properties:
-        handle:
+        features:
+          items:
+            $ref: '#/components/schemas/FeatureBulkCreate'
+          maxItems: 1000
+          type: array
+      type: object
+    FeatureBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/FeatureCreate'
+    FeatureUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      description: Inputs for updating a feature
+      type: object
+    BaseError:
+      properties:
+        message:
           type: string
-        id:
+        type:
           type: string
-        name:
+        userMessage:
           type: string
       type: object
     Pagination:
       properties:
         nextToken:
           type: string
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    FeatureUpdate:
+    FeatureLibraryUpdate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      description: Inputs for updating a feature
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      description: Inputs for updating a feature library
+      type: object
+    FeatureLibrariesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          featureLibraries:
+            items:
+              $ref: '#/components/schemas/FeatureLibrary'
+            type: array
+      description: A paginated list of feature libraries
       type: object
   securitySchemes:
     basicApiKeyAuth:

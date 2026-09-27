@@ -150,67 +150,6 @@ paths:
       x-bnch-rate-limit-tier: 4
 components:
   parameters:
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -221,6 +160,51 @@ components:
           type: string
         maxItems: 100
         type: array
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
@@ -228,7 +212,59 @@ components:
       schema:
         format: datetime
         type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
   schemas:
+    ProcedureDataParameterSetting:
+      description: 'Configures a data parameter within a method, linking a parameter definition
+
+        (`ProcedureParameterVersion`) with its planned values. Data parameters capture experimental
+
+        measurements or observations during procedure execution.'
+      properties:
+        __typename:
+          type: string
+        values:
+          items:
+            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
+          type: array
+        version:
+          $ref: '#/components/schemas/ProcedureParameterVersionRef'
+      type: object
+    ProcedureStepGroup:
+      description: 'Groups procedure steps by their execution phase within a method. Each method contains
+
+        multiple step groups (see `ProcedureStepGroupType`), and each group contains an ordered
+
+        list of steps (see `steps` and `ProcedureStepDefinitionVersion`) to be executed in sequence.'
+      properties:
+        __typename:
+          type: string
+        group:
+          enum:
+          - PRE_RUN
+          - RUN
+          - POST_RUN
+          type: string
+        steps:
+          items:
+            $ref: '#/components/schemas/ProcedureStepDefinitionVersionRef'
+          type: array
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -255,15 +291,15 @@ components:
       - status
       - instance
       type: object
-    ProcedureParameterPlannedValueRef:
+    ProcedureMethodDefinitionVersionUnpaginatedList:
+      additionalProperties: false
       properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureMethodDefinitionVersion'
+          type: array
       type: object
-    ProcedureStepDefinitionVersionRef:
+    PrincipalRef:
       properties:
         __typename:
           type: string
@@ -277,6 +313,120 @@ components:
           type: string
         id:
           format: api_id
+          type: string
+      type: object
+    ProcedureMaterialInputSetting:
+      description: 'Configures a material input within a method, linking a parameter definition
+
+        (`ProcedureParameterVersion`) with its planned values. Material inputs specify reagents,
+
+        samples, or other substances consumed by the method step.'
+      properties:
+        __typename:
+          type: string
+        values:
+          items:
+            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
+          type: array
+        version:
+          $ref: '#/components/schemas/ProcedureParameterVersionRef'
+      type: object
+    ProcedureEdge:
+      description: 'A directed connection between two nodes in a procedure flowchart. The edge''s type (see
+
+        `ProcedureEdgeType`) determines what `sourceId` and `targetId` reference: for METHOD_EDGE,
+
+        they are method definition version IDs; for MATERIAL_EDGE, they are material version IDs.
+
+        Edges define the structure and flow of a procedure''s execution graph.'
+      properties:
+        __typename:
+          type: string
+        sourceId:
+          type: string
+        targetId:
+          type: string
+        type:
+          enum:
+          - METHOD_EDGE
+          - MATERIAL_EDGE
+          type: string
+      type: object
+    ProcedureStepDefinitionVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureFlowchartRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureEquipmentSetting:
+      description: 'Configures equipment usage within a method, linking a parameter definition
+
+        (`ProcedureParameterVersion`) with its planned values. Equipment settings specify
+
+        instruments or devices required to perform the method step.'
+      properties:
+        __typename:
+          type: string
+        values:
+          items:
+            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
+          type: array
+        version:
+          $ref: '#/components/schemas/ProcedureParameterVersionRef'
+      type: object
+    ProcedureFlowchartVersion:
+      description: 'An immutable snapshot of a procedure''s flowchart structure at a specific point in time. Each
+
+        version contains the complete graph of method steps (see `nodes` and
+
+        `ProcedureMethodDefinitionVersion`) and their connections (see `edges` and `ProcedureEdge`).
+
+        New versions are created when a procedure''s flowchart is modified, preserving the history of
+
+        changes. The `ProcedureFlowchart` parent tracks which version is latest and which is published
+
+        for execution.
+
+
+        Note that this model will be deprecated soon, in favor of `WorkflowFlowchartConfig`.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        edges:
+          items:
+            $ref: '#/components/schemas/ProcedureEdge'
+          type: array
+        id:
+          type: string
+        nodes:
+          format: uri
+          type: string
+        procedureFlowchart:
+          $ref: '#/components/schemas/ProcedureFlowchartRef'
+      type: object
+    ProcedureFlowchartVersionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureFlowchartVersion'
+          type: array
+        nextToken:
           type: string
       type: object
     GeneralError:
@@ -302,16 +452,6 @@ components:
       - detail
       - status
       - instance
-      type: object
-    ProcedureFlowchartVersionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureFlowchartVersion'
-          type: array
-        nextToken:
-          type: string
       type: object
     ProcedureMethodDefinitionVersion:
       description: 'A versioned method within a procedure flowchart. Methods are the building blocks of
@@ -364,122 +504,6 @@ components:
             $ref: '#/components/schemas/ProcedureStepGroup'
           type: array
       type: object
-    ProcedureMethodDefinitionVersionUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureMethodDefinitionVersion'
-          type: array
-      type: object
-    ProcedureFlowchartRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureStepGroup:
-      description: 'Groups procedure steps by their execution phase within a method. Each method contains
-
-        multiple step groups (see `ProcedureStepGroupType`), and each group contains an ordered
-
-        list of steps (see `steps` and `ProcedureStepDefinitionVersion`) to be executed in sequence.'
-      properties:
-        __typename:
-          type: string
-        group:
-          enum:
-          - PRE_RUN
-          - RUN
-          - POST_RUN
-          type: string
-        steps:
-          items:
-            $ref: '#/components/schemas/ProcedureStepDefinitionVersionRef'
-          type: array
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureDataParameterSetting:
-      description: 'Configures a data parameter within a method, linking a parameter definition
-
-        (`ProcedureParameterVersion`) with its planned values. Data parameters capture experimental
-
-        measurements or observations during procedure execution.'
-      properties:
-        __typename:
-          type: string
-        values:
-          items:
-            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
-          type: array
-        version:
-          $ref: '#/components/schemas/ProcedureParameterVersionRef'
-      type: object
-    ProcedureFlowchartVersion:
-      description: 'An immutable snapshot of a procedure''s flowchart structure at a specific point in time. Each
-
-        version contains the complete graph of method steps (see `nodes` and
-
-        `ProcedureMethodDefinitionVersion`) and their connections (see `edges` and `ProcedureEdge`).
-
-        New versions are created when a procedure''s flowchart is modified, preserving the history of
-
-        changes. The `ProcedureFlowchart` parent tracks which version is latest and which is published
-
-        for execution.
-
-
-        Note that this model will be deprecated soon, in favor of `WorkflowFlowchartConfig`.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        edges:
-          items:
-            $ref: '#/components/schemas/ProcedureEdge'
-          type: array
-        id:
-          type: string
-        nodes:
-          format: uri
-          type: string
-        procedureFlowchart:
-          $ref: '#/components/schemas/ProcedureFlowchartRef'
-      type: object
-    ProcedureEdge:
-      description: 'A directed connection between two nodes in a procedure flowchart. The edge''s type (see
-
-        `ProcedureEdgeType`) determines what `sourceId` and `targetId` reference: for METHOD_EDGE,
-
-        they are method definition version IDs; for MATERIAL_EDGE, they are material version IDs.
-
-        Edges define the structure and flow of a procedure''s execution graph.'
-      properties:
-        __typename:
-          type: string
-        sourceId:
-          type: string
-        targetId:
-          type: string
-        type:
-          enum:
-          - METHOD_EDGE
-          - MATERIAL_EDGE
-          type: string
-      type: object
     ProcedureMaterialOutputSetting:
       description: 'Configures a material output within a method, linking to a parameter definition
 
@@ -492,39 +516,21 @@ components:
         version:
           $ref: '#/components/schemas/ProcedureParameterVersionRef'
       type: object
-    ProcedureMaterialInputSetting:
-      description: 'Configures a material input within a method, linking a parameter definition
-
-        (`ProcedureParameterVersion`) with its planned values. Material inputs specify reagents,
-
-        samples, or other substances consumed by the method step.'
+    ProcedureParameterPlannedValueRef:
       properties:
         __typename:
           type: string
-        values:
-          items:
-            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
-          type: array
-        version:
-          $ref: '#/components/schemas/ProcedureParameterVersionRef'
-      type: object
-    ProcedureEquipmentSetting:
-      description: 'Configures equipment usage within a method, linking a parameter definition
-
-        (`ProcedureParameterVersion`) with its planned values. Equipment settings specify
-
-        instruments or devices required to perform the method step.'
-      properties:
-        __typename:
+        id:
+          format: api_id
           type: string
-        values:
-          items:
-            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
-          type: array
-        version:
-          $ref: '#/components/schemas/ProcedureParameterVersionRef'
       type: object
   responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     InternalServerError:
       content:
         application/problem+json:
@@ -537,24 +543,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

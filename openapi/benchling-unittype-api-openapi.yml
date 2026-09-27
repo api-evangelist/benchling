@@ -424,6 +424,16 @@ paths:
       x-bnch-rate-limit-tier: 2
 components:
   parameters:
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
@@ -443,31 +453,16 @@ components:
         items:
           type: string
         type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: createdAt.gt
+      name: nextToken
       schema:
-        format: datetime
         type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -478,16 +473,61 @@ components:
       schema:
         format: datetime
         type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
       name: pageSize
       schema:
         type: integer
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.gte
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -500,53 +540,73 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
   schemas:
-    CreateFormulaUnitTermInput:
+    UnitTypeTerm:
+      description: 'A term in the dimensional formula of a `UnitType`, pairing one of the seven SI base
+
+        dimensions (see `BaseUnitType`) with an integer exponent. Multiple terms together
+
+        describe the dimensional composition of a UnitType. For example, a Volume UnitType
+
+        would have a single term with value=LENGTH and exponent=3, while Acceleration would
+
+        have [LENGTH^1, TIME^-2]. Terms are descriptive metadata and do not uniquely identify
+
+        a UnitType—multiple UnitTypes can share the same dimensional terms.'
+      properties:
+        __typename:
+          type: string
+        exponent:
+          type: integer
+        value:
+          enum:
+          - TIME
+          - LENGTH
+          - MASS
+          - CURRENT
+          - TEMPERATURE
+          - AMOUNT
+          - LUMINOUS_INTENSITY
+          type: string
+      type: object
+    UpdateUnitTypeInput:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        formula:
+          items:
+            $ref: '#/components/schemas/CreateFormulaUnitTermInput'
+          type: array
+        name:
+          type: string
+        overrideIsConcentration:
+          description: When true, forces this UnitType to be treated as a concentration type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsContainerQuantity`.
+          type: boolean
+        overrideIsContainerQuantity:
+          description: When true, forces this UnitType to be treated as a container quantity type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsConcentration`.
+          type: boolean
+        terms:
+          items:
+            $ref: '#/components/schemas/CreateUnitTypeTermInput'
+          type: array
+      type: object
+    CreateUnitTypeTermInput:
       additionalProperties: false
       properties:
         exponent:
           type: integer
         value:
+          enum:
+          - TIME
+          - LENGTH
+          - MASS
+          - CURRENT
+          - TEMPERATURE
+          - AMOUNT
+          - LUMINOUS_INTENSITY
           type: string
       required:
       - value
@@ -578,12 +638,12 @@ components:
       - status
       - instance
       type: object
-    UnitTypeRef:
+    AsyncTaskLink:
       properties:
-        __typename:
+        pollingUri:
+          format: uri
           type: string
-        id:
-          format: api_id
+        taskId:
           type: string
       type: object
     CreateUnitTypeInput:
@@ -614,84 +674,6 @@ components:
       - overrideIsConcentration
       - overrideIsContainerQuantity
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    UpdateUnitTypeInput:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        formula:
-          items:
-            $ref: '#/components/schemas/CreateFormulaUnitTermInput'
-          type: array
-        name:
-          type: string
-        overrideIsConcentration:
-          description: When true, forces this UnitType to be treated as a concentration type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsContainerQuantity`.
-          type: boolean
-        overrideIsContainerQuantity:
-          description: When true, forces this UnitType to be treated as a container quantity type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsConcentration`.
-          type: boolean
-        terms:
-          items:
-            $ref: '#/components/schemas/CreateUnitTypeTermInput'
-          type: array
-      type: object
-    FormulaUnitTerm:
-      description: 'A term in the original formula of a `UnitType` that references an actual `Unit`
-
-        rather than a base dimension. This is used to define relationships between units
-
-        across different UnitTypes, such as defining that Liter = decimeter³. Unlike
-
-        `UnitTypeTerm` which uses abstract SI dimensions, FormulaUnitTerm references
-
-        concrete Unit definitions and is the crucial piece for establishing mathematical
-
-        relationships when composing derived unit types.'
-      properties:
-        __typename:
-          type: string
-        exponent:
-          type: integer
-        value:
-          $ref: '#/components/schemas/UnitRef'
-      type: object
-    UnitTypePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/UnitType'
-          type: array
-        nextToken:
-          type: string
-      type: object
     PrincipalRef:
       properties:
         __typename:
@@ -700,104 +682,16 @@ components:
           format: api_id
           type: string
       type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    UnitRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CreateUnitTypeTermInput:
+    CreateFormulaUnitTermInput:
       additionalProperties: false
       properties:
         exponent:
           type: integer
         value:
-          enum:
-          - TIME
-          - LENGTH
-          - MASS
-          - CURRENT
-          - TEMPERATURE
-          - AMOUNT
-          - LUMINOUS_INTENSITY
           type: string
       required:
       - value
       - exponent
-      type: object
-    UnitUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Unit'
-          type: array
-      type: object
-    UnitTypeTerm:
-      description: 'A term in the dimensional formula of a `UnitType`, pairing one of the seven SI base
-
-        dimensions (see `BaseUnitType`) with an integer exponent. Multiple terms together
-
-        describe the dimensional composition of a UnitType. For example, a Volume UnitType
-
-        would have a single term with value=LENGTH and exponent=3, while Acceleration would
-
-        have [LENGTH^1, TIME^-2]. Terms are descriptive metadata and do not uniquely identify
-
-        a UnitType—multiple UnitTypes can share the same dimensional terms.'
-      properties:
-        __typename:
-          type: string
-        exponent:
-          type: integer
-        value:
-          enum:
-          - TIME
-          - LENGTH
-          - MASS
-          - CURRENT
-          - TEMPERATURE
-          - AMOUNT
-          - LUMINOUS_INTENSITY
-          type: string
-      type: object
-    UpdateUnitTypeInputWithPathParams:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        formula:
-          items:
-            $ref: '#/components/schemas/CreateFormulaUnitTermInput'
-          type: array
-        id:
-          type: string
-        name:
-          type: string
-        overrideIsConcentration:
-          description: When true, forces this UnitType to be treated as a concentration type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsContainerQuantity`.
-          type: boolean
-        overrideIsContainerQuantity:
-          description: When true, forces this UnitType to be treated as a container quantity type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsConcentration`.
-          type: boolean
-        terms:
-          items:
-            $ref: '#/components/schemas/CreateUnitTypeTermInput'
-          type: array
-      required:
-      - id
       type: object
     Unit:
       description: 'A Unit is a specific measure of a physical quantity within Benchling''s tenant-specific
@@ -864,6 +758,44 @@ components:
         unitType:
           $ref: '#/components/schemas/UnitTypeRef'
       type: object
+    FormulaUnitTerm:
+      description: 'A term in the original formula of a `UnitType` that references an actual `Unit`
+
+        rather than a base dimension. This is used to define relationships between units
+
+        across different UnitTypes, such as defining that Liter = decimeter³. Unlike
+
+        `UnitTypeTerm` which uses abstract SI dimensions, FormulaUnitTerm references
+
+        concrete Unit definitions and is the crucial piece for establishing mathematical
+
+        relationships when composing derived unit types.'
+      properties:
+        __typename:
+          type: string
+        exponent:
+          type: integer
+        value:
+          $ref: '#/components/schemas/UnitRef'
+      type: object
+    UnitTypePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/UnitType'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    UnitUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Unit'
+          type: array
+      type: object
     BulkImport:
       example:
         fileId: scrfile_jdf8BV24kLmN
@@ -873,6 +805,82 @@ components:
           type: string
       required:
       - fileId
+      type: object
+    CreateBaseUnitInput:
+      additionalProperties: false
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        symbol:
+          type: string
+      required:
+      - name
+      - symbol
+      - aliases
+      type: object
+    UpdateUnitTypeInputWithPathParams:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        formula:
+          items:
+            $ref: '#/components/schemas/CreateFormulaUnitTermInput'
+          type: array
+        id:
+          type: string
+        name:
+          type: string
+        overrideIsConcentration:
+          description: When true, forces this UnitType to be treated as a concentration type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsContainerQuantity`.
+          type: boolean
+        overrideIsContainerQuantity:
+          description: When true, forces this UnitType to be treated as a container quantity type regardless of its terms. When false, the classification is determined by the UnitType's terms. Mutually exclusive with `overrideIsConcentration`.
+          type: boolean
+        terms:
+          items:
+            $ref: '#/components/schemas/CreateUnitTypeTermInput'
+          type: array
+      required:
+      - id
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UnitRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     UnitType:
       description: 'A UnitType is a dimensional category that groups inter-convertible `Unit` objects
@@ -958,23 +966,21 @@ components:
             type: string
           - type: 'null'
       type: object
-    CreateBaseUnitInput:
-      additionalProperties: false
+    UnitTypeRef:
       properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        name:
+        __typename:
           type: string
-        symbol:
+        id:
+          format: api_id
           type: string
-      required:
-      - name
-      - symbol
-      - aliases
       type: object
   responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     InternalServerError:
       content:
         application/problem+json:
@@ -987,24 +993,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

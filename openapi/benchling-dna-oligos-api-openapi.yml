@@ -577,6 +577,56 @@ paths:
       - DNA Oligos
 components:
   schemas:
+    ArchiveRecordSet:
+      additionalProperties: false
+      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
+      example: null
+      type:
+      - object
+      - 'null'
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    DnaOligosBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        dnaOligos:
+          items:
+            $ref: '#/components/schemas/DnaOligoCreate'
+          maxItems: 1000
+          type: array
+      type: object
+    CustomNotationRequest:
+      properties:
+        customNotation:
+          description: Representation of the sequence or oligo in the custom notation specified by customNotationId
+          type: string
+        customNotationId:
+          description: ID of the notation used to interpret the string provided in the customNotation field
+          type: string
+      type: object
     DnaOligosArchive:
       additionalProperties: false
       description: 'The request body for archiving DNA Oligos.
@@ -593,15 +643,33 @@ components:
       - reason
       - dnaOligoIds
       type: object
-    OligoBaseRequestForCreate:
-      allOf:
-      - $ref: '#/components/schemas/OligoBaseRequest'
-      - required:
-        - name
-    OligoBulkUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
     CustomNotationAlias:
       properties:
         baseMonomerId:
@@ -634,33 +702,6 @@ components:
           - string
           - 'null'
       type: object
-    CustomNotationsPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          customNotations:
-            items:
-              $ref: '#/components/schemas/CustomNotation'
-            type: array
-      type: object
-    EntityBulkUpsertBaseRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - properties:
-          entityRegistryId:
-            description: Registry ID of the entity in Benchling.
-            type: string
-      - required:
-        - entityRegistryId
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
     CustomNotation:
       properties:
         aliases:
@@ -674,92 +715,29 @@ components:
           example: Your Custom Notation
           type: string
       type: object
-    EntityUpsertBaseRequest:
-      properties:
-        archiveRecord:
-          $ref: '#/components/schemas/ArchiveRecordSet'
-        fields:
-          $ref: '#/components/schemas/FieldsWithResolution'
-        name:
-          type: string
-        registryId:
-          type: string
-        schemaId:
-          type: string
-      required:
-      - registryId
-      - name
-      - schemaId
-      type: object
-    DnaOligoBulkUpdate:
-      additionalProperties: false
+    DnaOligoUpdate:
       allOf:
+      - $ref: '#/components/schemas/OligoUpdate'
       - properties:
-          id:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/DnaAnnotation'
+            type: array
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{d(A)p.d([impd2G])p.d(G)[Ssp].d(A)p.d(T)p.d(T)p}$$$$V2.0
             type: string
-        type: object
-      - $ref: '#/components/schemas/DnaOligoUpdate'
-    UserSummary:
+      - $ref: '#/components/schemas/CustomNotationRequest'
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    OligoBulkUpsertRequest:
       allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    DnaOligosArchivalChange:
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of DNA Oligos along with any IDs of batches that were archived / unarchived.
-
-        '
-      properties:
-        batchIds:
-          items:
-            type: string
-          type: array
-        dnaOligoIds:
-          items:
-            type: string
-          type: array
-      type: object
-    OligoUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/OligoBaseRequest'
-    DnaOligosBulkUpsertRequest:
-      additionalProperties: false
-      maxItems: 1000
-      properties:
-        dnaOligos:
-          items:
-            $ref: '#/components/schemas/OligoBulkUpsertRequest'
-          type: array
-      required:
-      - dnaOligos
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
     DnaOligo:
       allOf:
       - $ref: '#/components/schemas/Oligo'
@@ -789,65 +767,53 @@ components:
             description: Representation of the oligo in HELM syntax, including any chemical modifications
             example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
             type: string
-    OligoCreate:
+    DnaOligoBulkUpdate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
-      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
-    ArchiveRecordSet:
-      additionalProperties: false
-      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
-      example: null
-      type:
-      - object
-      - 'null'
-    FieldValueWithResolution:
-      oneOf:
-      - type: string
-      - type: boolean
-      - type: number
-      - items:
-          type: string
-        type: array
-      - additionalProperties: false
-        description: Look up an entity by its entity registry ID
-        properties:
-          entityRegistryId:
+      - properties:
+          id:
             type: string
-        required:
-        - entityRegistryId
         type: object
-    DnaOligosUnarchive:
+      - $ref: '#/components/schemas/DnaOligoUpdate'
+    FieldWithResolution:
+      allOf:
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+        type: object
+    DnaOligosBulkUpsertRequest:
       additionalProperties: false
-      description: 'The request body for unarchiving DNA Oligos.
-
-        '
+      maxItems: 1000
       properties:
-        dnaOligoIds:
+        dnaOligos:
           items:
-            type: string
+            $ref: '#/components/schemas/OligoBulkUpsertRequest'
           type: array
       required:
-      - dnaOligoIds
+      - dnaOligos
       type: object
-    FieldsWithResolution:
-      additionalProperties:
-        $ref: '#/components/schemas/FieldWithResolution'
-      example:
-        Linked Peptide:
-          value: prtn_ObbdtGhC
-        Linked Sequence:
-          value:
-            entityRegistryId: DNA001
-        Linked Strains:
-          value:
-          - entityRegistryId: STRAIN001
-          - entityRegistryId: STRAIN002
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
       type: object
-    OligoUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     SequenceFeatureBase:
       properties:
         color:
@@ -867,10 +833,13 @@ components:
           maxLength: 10000
           type: string
       type: object
-    AsyncTaskLink:
+    DnaOligosBulkUpdateRequest:
+      additionalProperties: false
       properties:
-        taskId:
-          type: string
+        dnaOligos:
+          items:
+            $ref: '#/components/schemas/DnaOligoBulkUpdate'
+          type: array
       type: object
     DnaAnnotation:
       allOf:
@@ -889,39 +858,39 @@ components:
           type:
             type: string
         type: object
-    NamingStrategy:
-      description: 'Specifies the behavior for automatically generated names when registering an entity.
-
-        - NEW_IDS: Generate new registry IDs
-
-        - IDS_FROM_NAMES: Generate registry IDs based on entity names
-
-        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
-
-        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
-
-        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
-
-        - KEEP_NAMES: Keep existing entity names as registry IDs
-
-        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+    OligoUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/OligoBaseRequest'
+    EntityUpsertBaseRequest:
+      properties:
+        archiveRecord:
+          $ref: '#/components/schemas/ArchiveRecordSet'
+        fields:
+          $ref: '#/components/schemas/FieldsWithResolution'
+        name:
+          type: string
+        registryId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - registryId
+      - name
+      - schemaId
+      type: object
+    DnaOligosUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving DNA Oligos.
 
         '
-      enum:
-      - NEW_IDS
-      - IDS_FROM_NAMES
-      - DELETE_NAMES
-      - SET_FROM_NAME_PARTS
-      - REPLACE_NAMES_FROM_PARTS
-      - KEEP_NAMES
-      - REPLACE_ID_AND_NAME_FROM_PARTS
-      type: string
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
+      properties:
+        dnaOligoIds:
+          items:
+            type: string
+          type: array
+      required:
+      - dnaOligoIds
       type: object
     DnaOligosPaginatedList:
       allOf:
@@ -931,37 +900,6 @@ components:
             items:
               $ref: '#/components/schemas/DnaOligo'
             type: array
-    CustomNotationRequest:
-      properties:
-        customNotation:
-          description: Representation of the sequence or oligo in the custom notation specified by customNotationId
-          type: string
-        customNotationId:
-          description: ID of the notation used to interpret the string provided in the customNotation field
-          type: string
-      type: object
-    FieldWithResolution:
-      allOf:
-      - $ref: '#/components/schemas/Field'
-      - properties:
-          value:
-            allOf:
-            - $ref: '#/components/schemas/FieldValueWithResolution'
-        type: object
-    DnaOligoUpdate:
-      allOf:
-      - $ref: '#/components/schemas/OligoUpdate'
-      - properties:
-          annotations:
-            description: Annotations on the Oligo.
-            items:
-              $ref: '#/components/schemas/DnaAnnotation'
-            type: array
-          helm:
-            description: Representation of the oligo in HELM syntax, including any chemical modifications
-            example: RNA1{d(A)p.d([impd2G])p.d(G)[Ssp].d(A)p.d(T)p.d(T)p}$$$$V2.0
-            type: string
-      - $ref: '#/components/schemas/CustomNotationRequest'
     FieldType:
       enum:
       - dna_sequence_link
@@ -991,57 +929,36 @@ components:
       - date
       - json
       type: string
-    EntityArchiveReason:
-      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
-
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Expended
-      - Shipped
-      - Contaminated
-      - Expired
-      - Missing
-      - Other
-      type: string
-    Field:
-      properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
+    FieldsWithResolution:
+      additionalProperties:
+        $ref: '#/components/schemas/FieldWithResolution'
+      example:
+        Linked Peptide:
+          value: prtn_ObbdtGhC
+        Linked Sequence:
+          value:
+            entityRegistryId: DNA001
+        Linked Strains:
+          value:
+          - entityRegistryId: STRAIN001
+          - entityRegistryId: STRAIN002
       type: object
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
+          type: string
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
     Oligo:
       discriminator:
         mapping:
@@ -1149,6 +1066,179 @@ components:
       - $ref: '#/components/schemas/CustomNotationRequest'
       - required:
         - name
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    DnaOligosArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of DNA Oligos along with any IDs of batches that were archived / unarchived.
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        dnaOligoIds:
+          items:
+            type: string
+          type: array
+      type: object
+    EntityBulkUpsertBaseRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+      properties:
+        name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
+      type: object
+    CustomNotationsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          customNotations:
+            items:
+              $ref: '#/components/schemas/CustomNotation'
+            type: array
+      type: object
+    OligoBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/OligoBaseRequest'
+      - required:
+        - name
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    OligoCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    OligoUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+    Pagination:
+      properties:
+        nextToken:
+          type: string
+    CreateEntityIntoRegistry:
+      properties:
+        entityRegistryId:
+          description: 'Entity registry ID to set for the registered entity. Cannot specify both entityRegistryId and namingStrategy at the same time.
+
+            '
+          type: string
+        folderId:
+          description: ID of the folder containing the entity. Can be left empty when registryId is present.
+          type: string
+        namingStrategy:
+          $ref: '#/components/schemas/NamingStrategy'
+        registryId:
+          description: 'Registry ID into which entity should be registered. this is the ID of the registry which was configured for a particular organization
+
+            To get available registryIds, use the [/registries endpoint](#/Registry/listRegistries)
+
+
+            Required in order for entities to be created directly in the registry.
+
+            '
+          type: string
+      type: object
     OligoBaseRequest:
       properties:
         aliases:
@@ -1193,96 +1283,6 @@ components:
 
             '
           type: string
-      type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    RegistrationOrigin:
-      properties:
-        originEntryId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
-      type: object
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
-      properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    DnaOligosBulkUpdateRequest:
-      additionalProperties: false
-      properties:
-        dnaOligos:
-          items:
-            $ref: '#/components/schemas/DnaOligoBulkUpdate'
-          type: array
-      type: object
-    CreateEntityIntoRegistry:
-      properties:
-        entityRegistryId:
-          description: 'Entity registry ID to set for the registered entity. Cannot specify both entityRegistryId and namingStrategy at the same time.
-
-            '
-          type: string
-        folderId:
-          description: ID of the folder containing the entity. Can be left empty when registryId is present.
-          type: string
-        namingStrategy:
-          $ref: '#/components/schemas/NamingStrategy'
-        registryId:
-          description: 'Registry ID into which entity should be registered. this is the ID of the registry which was configured for a particular organization
-
-            To get available registryIds, use the [/registries endpoint](#/Registry/listRegistries)
-
-
-            Required in order for entities to be created directly in the registry.
-
-            '
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    DnaOligosBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        dnaOligos:
-          items:
-            $ref: '#/components/schemas/DnaOligoCreate'
-          maxItems: 1000
-          type: array
       type: object
   securitySchemes:
     basicApiKeyAuth:

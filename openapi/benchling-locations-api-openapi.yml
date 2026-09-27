@@ -381,38 +381,6 @@ paths:
       - Locations
 components:
   schemas:
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    LocationUpdate:
-      additionalProperties: false
-      properties:
-        fields:
-          $ref: '#/components/schemas/Fields'
-        name:
-          type: string
-        parentStorageId:
-          type: string
-      type: object
     UserSummary:
       allOf:
       - $ref: '#/components/schemas/PartySummary'
@@ -420,42 +388,11 @@ components:
           handle: lpasteur
           id: ent_a0SApq3z
           name: Louis Pasteur
-    SchemaSummary:
+    ArchiveRecord:
       properties:
-        id:
+        reason:
+          example: Made in error
           type: string
-        name:
-          type: string
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    LocationCreate:
-      additionalProperties: false
-      properties:
-        barcode:
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        name:
-          type: string
-        parentStorageId:
-          type: string
-        schemaId:
-          type: string
-      required:
-      - name
-      - schemaId
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
       type: object
     Location:
       properties:
@@ -509,6 +446,108 @@ components:
           - 'null'
         webURL:
           type: string
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    LocationUpdate:
+      additionalProperties: false
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    ForbiddenRestrictedSampleError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidIds:
+                items:
+                  type: string
+                type: array
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+          - example:
+              invalidIds:
+              - Q6uhNZvw
+              - con_OwmERWGE
+              - con_zuDFhNvz
+              message: You're not a restricted sample user for some items.
+              type: invalid_request_error
+              userMessage: You're not a restricted sample user for some items.
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     ForbiddenError:
       properties:
         error:
@@ -549,35 +588,37 @@ components:
       - locationIds
       - reason
       type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    LocationCreate:
+      additionalProperties: false
+      properties:
+        barcode:
+          type: string
+        fields:
+          $ref: '#/components/schemas/Fields'
+        name:
+          type: string
+        parentStorageId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - name
+      - schemaId
+      type: object
+    LocationsBulkGet:
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/Location'
+          type: array
+      type: object
     Field:
       properties:
         displayValue:
@@ -615,12 +656,27 @@ components:
       required:
       - value
       type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    LocationsPaginatedList:
+      properties:
+        locations:
+          items:
+            $ref: '#/components/schemas/Location'
+          type: array
+        nextToken:
+          type: string
       type: object
     LocationsArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of locations along with any IDs of locations, boxes, plates, containers that were archived.
@@ -643,62 +699,6 @@ components:
           items:
             type: string
           type: array
-      type: object
-    ForbiddenRestrictedSampleError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidIds:
-                items:
-                  type: string
-                type: array
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-          - example:
-              invalidIds:
-              - Q6uhNZvw
-              - con_OwmERWGE
-              - con_zuDFhNvz
-              message: You're not a restricted sample user for some items.
-              type: invalid_request_error
-              userMessage: You're not a restricted sample user for some items.
-      type: object
-    LocationsPaginatedList:
-      properties:
-        locations:
-          items:
-            $ref: '#/components/schemas/Location'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    LocationsBulkGet:
-      properties:
-        locations:
-          items:
-            $ref: '#/components/schemas/Location'
-          type: array
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
       type: object
     LocationsUnarchive:
       additionalProperties: false

@@ -642,12 +642,95 @@ paths:
       - RNA Sequences
 components:
   schemas:
-    RnaSequenceBaseRequestForCreate:
+    RnaSequenceCreate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
-      - required:
-        - name
+      - $ref: '#/components/schemas/RnaSequenceBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    Translation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          aminoAcids:
+            readOnly: true
+            type: string
+          coerceStartCodonToMethionine:
+            default: false
+            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
+            type: boolean
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          geneticCode:
+            default: STANDARD
+            description: The genetic code to use when translating the nucleotide sequence into amino acids.
+            enum:
+            - STANDARD
+            - VERTEBRATE_MITOCHONDRIAL
+            - YEAST_MITOCHONDRIAL
+            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
+            - INVERTEBRATE_MITOCHONDRIAL
+            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
+            - ECHINODERM_FLATWORM_MITOCHONDRIAL
+            - EUPLOTID_NUCLEAR
+            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
+            - ALTERNATIVE_YEAST_NUCLEAR
+            - ASCIDIAN_MITOCHONDRIAL
+            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
+            - CHLOROPHYCEAN_MITOCHONDRIAL
+            - TREMATODE_MITOCHONDRIAL
+            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
+            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
+            - RHABDOPLEURIDAE_MITOCHONDRIAL
+            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
+            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
+            - MESODINIUM_NUCLEAR
+            - PERITRICH_NUCLEAR
+            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
+            type: string
+          regions:
+            items:
+              properties:
+                end:
+                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+                  type: integer
+                start:
+                  description: 0-based inclusive start index.
+                  type: integer
+              type: object
+            type: array
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            type: integer
+        type: object
     RnaSequenceBaseRequest:
       allOf:
       - properties:
@@ -727,32 +810,52 @@ components:
             type: array
       - $ref: '#/components/schemas/CustomNotationRequest'
       type: object
-    AutoAnnotateRnaSequences:
-      additionalProperties: false
+    CustomNotationRequest:
       properties:
-        featureLibraryIds:
-          description: Array of feature library IDs.
-          items:
-            type: string
-          type: array
-        rnaSequenceIds:
-          description: Array of RNA sequence IDs.
-          items:
-            type: string
-          maxItems: 1000
-          type: array
-      required:
-      - rnaSequenceIds
-      - featureLibraryIds
+        customNotation:
+          description: Representation of the sequence or oligo in the custom notation specified by customNotationId
+          type: string
+        customNotationId:
+          description: ID of the notation used to interpret the string provided in the customNotation field
+          type: string
       type: object
-    RnaSequenceBulkUpdate:
-      additionalProperties: false
-      allOf:
-      - properties:
-          id:
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    RnaSequencesArchivalChange:
+      description: 'IDs of all RNA Sequences that were archived or unarchived, grouped by resource type.
+
+        '
+      properties:
+        rnaSequenceIds:
+          items:
             type: string
-        type: object
-      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
+          type: array
+      type: object
     RnaSequence:
       properties:
         aliases:
@@ -860,20 +963,120 @@ components:
           readOnly: true
           type: string
       type: object
-    RnaSequenceUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
-      - $ref: '#/components/schemas/RnaSequenceRequestRegistryFields'
-    BaseError:
+    AsyncTaskLink:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
+        taskId:
           type: string
       type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    RnaSequencesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving RNA sequences.
+
+        '
+      properties:
+        reason:
+          $ref: '#/components/schemas/EntityArchiveReason'
+        rnaSequenceIds:
+          items:
+            type: string
+          type: array
+      required:
+      - reason
+      - rnaSequenceIds
+      type: object
+    NucleotideSequencePart:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+      type: object
+    RnaSequenceRequestRegistryFields:
+      properties:
+        entityRegistryId:
+          type: string
+      type: object
+    RnaSequencesBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        rnaSequences:
+          items:
+            $ref: '#/components/schemas/RnaSequenceBulkUpdate'
+          type: array
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
     SearchBasesRequest:
       additionalProperties: false
       properties:
@@ -920,31 +1123,13 @@ components:
       required:
       - bases
       type: object
-    RnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 0
-            type: integer
-          type:
-            type: string
-        type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
+    RnaSequencesBulkGet:
+      properties:
+        rnaSequences:
+          items:
+            $ref: '#/components/schemas/RnaSequence'
+          type: array
+      type: object
     SchemaSummary:
       properties:
         id:
@@ -952,31 +1137,70 @@ components:
         name:
           type: string
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    RnaSequencesBulkUpdateRequest:
+    RnaSequenceBaseRequestForCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
+      - required:
+        - name
+    AutoAnnotateRnaSequences:
       additionalProperties: false
       properties:
-        rnaSequences:
+        featureLibraryIds:
+          description: Array of feature library IDs.
           items:
-            $ref: '#/components/schemas/RnaSequenceBulkUpdate'
+            type: string
           type: array
+        rnaSequenceIds:
+          description: Array of RNA sequence IDs.
+          items:
+            type: string
+          maxItems: 1000
+          type: array
+      required:
+      - rnaSequenceIds
+      - featureLibraryIds
       type: object
-    CustomField:
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
       properties:
+        name:
+          description: Name of the custom field
+          type: string
         value:
+          description: Value of the custom field
           type: string
       type: object
-    Fields:
+    RnaSequenceUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
+      - $ref: '#/components/schemas/RnaSequenceRequestRegistryFields'
+    RnaSequenceBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceCreate'
+    CustomFields:
       additionalProperties:
-        $ref: '#/components/schemas/Field'
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    RnaSequencesPaginatedList:
+      properties:
+        nextToken:
+          type: string
+        rnaSequences:
+          items:
+            $ref: '#/components/schemas/RnaSequence'
+          type: array
       type: object
     RnaSequencesUnarchive:
       additionalProperties: false
@@ -991,238 +1215,10 @@ components:
       required:
       - rnaSequenceIds
       type: object
-    RnaSequencesBulkGet:
+    CustomField:
       properties:
-        rnaSequences:
-          items:
-            $ref: '#/components/schemas/RnaSequence'
-          type: array
-      type: object
-    RnaSequencesPaginatedList:
-      properties:
-        nextToken:
+        value:
           type: string
-        rnaSequences:
-          items:
-            $ref: '#/components/schemas/RnaSequence'
-          type: array
-      type: object
-    RnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 1
-            type: integer
-        type: object
-    RnaSequencesArchive:
-      additionalProperties: false
-      description: 'The request body for archiving RNA sequences.
-
-        '
-      properties:
-        reason:
-          $ref: '#/components/schemas/EntityArchiveReason'
-        rnaSequenceIds:
-          items:
-            type: string
-          type: array
-      required:
-      - reason
-      - rnaSequenceIds
-      type: object
-    RnaSequencesArchivalChange:
-      description: 'IDs of all RNA Sequences that were archived or unarchived, grouped by resource type.
-
-        '
-      properties:
-        rnaSequenceIds:
-          items:
-            type: string
-          type: array
-      type: object
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
-          type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    NamingStrategy:
-      description: 'Specifies the behavior for automatically generated names when registering an entity.
-
-        - NEW_IDS: Generate new registry IDs
-
-        - IDS_FROM_NAMES: Generate registry IDs based on entity names
-
-        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
-
-        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
-
-        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
-
-        - KEEP_NAMES: Keep existing entity names as registry IDs
-
-        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
-
-        '
-      enum:
-      - NEW_IDS
-      - IDS_FROM_NAMES
-      - DELETE_NAMES
-      - SET_FROM_NAME_PARTS
-      - REPLACE_NAMES_FROM_PARTS
-      - KEEP_NAMES
-      - REPLACE_ID_AND_NAME_FROM_PARTS
-      type: string
-    RnaSequenceRequestRegistryFields:
-      properties:
-        entityRegistryId:
-          type: string
-      type: object
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
-    NucleotideSequencePart:
-      properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          example: seq_VfVOART1
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-      type: object
-    RnaSequencesBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        rnaSequences:
-          items:
-            $ref: '#/components/schemas/RnaSequenceBulkCreate'
-          maxItems: 1000
-          type: array
-      type: object
-    Translation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          aminoAcids:
-            readOnly: true
-            type: string
-          coerceStartCodonToMethionine:
-            default: false
-            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
-            type: boolean
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          geneticCode:
-            default: STANDARD
-            description: The genetic code to use when translating the nucleotide sequence into amino acids.
-            enum:
-            - STANDARD
-            - VERTEBRATE_MITOCHONDRIAL
-            - YEAST_MITOCHONDRIAL
-            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
-            - INVERTEBRATE_MITOCHONDRIAL
-            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
-            - ECHINODERM_FLATWORM_MITOCHONDRIAL
-            - EUPLOTID_NUCLEAR
-            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
-            - ALTERNATIVE_YEAST_NUCLEAR
-            - ASCIDIAN_MITOCHONDRIAL
-            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
-            - CHLOROPHYCEAN_MITOCHONDRIAL
-            - TREMATODE_MITOCHONDRIAL
-            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
-            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
-            - RHABDOPLEURIDAE_MITOCHONDRIAL
-            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
-            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
-            - MESODINIUM_NUCLEAR
-            - PERITRICH_NUCLEAR
-            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
-            type: string
-          regions:
-            items:
-              properties:
-                end:
-                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-                  type: integer
-                start:
-                  description: 0-based inclusive start index.
-                  type: integer
-              type: object
-            type: array
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            type: integer
-        type: object
-    CustomNotationRequest:
-      properties:
-        customNotation:
-          description: Representation of the sequence or oligo in the custom notation specified by customNotationId
-          type: string
-        customNotationId:
-          description: ID of the notation used to interpret the string provided in the customNotation field
-          type: string
-      type: object
-    Primer:
-      properties:
-        bases:
-          readOnly: true
-          type: string
-        bindPosition:
-          readOnly: true
-          type: integer
-        color:
-          readOnly: true
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        name:
-          readOnly: true
-          type: string
-        oligoId:
-          type: string
-        overhangLength:
-          readOnly: true
-          type: integer
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          type: integer
       type: object
     MatchBasesRequest:
       additionalProperties: false
@@ -1261,6 +1257,14 @@ components:
       required:
       - bases
       type: object
+    RnaSequenceBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
     EntityArchiveReason:
       description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
 
@@ -1275,35 +1279,27 @@ components:
       - Missing
       - Other
       type: string
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
+    RnaSequencesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        rnaSequences:
+          items:
+            $ref: '#/components/schemas/RnaSequenceBulkCreate'
+          maxItems: 1000
+          type: array
+      type: object
+    AutofillRnaSequences:
+      additionalProperties: false
+      properties:
+        rnaSequenceIds:
+          description: Array of RNA sequence IDs.
+          items:
+            type: string
+          maxItems: 1000
+          type: array
+      required:
+      - rnaSequenceIds
+      type: object
     Field:
       properties:
         displayValue:
@@ -1341,49 +1337,37 @@ components:
       required:
       - value
       type: object
-    RnaSequenceBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/RnaSequenceCreate'
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    RegistrationOrigin:
+    BaseError:
       properties:
-        originEntryId:
-          readOnly: true
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    RnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 0
+            type: integer
           type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
-      type: object
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
-      properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    RnaSequenceCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/RnaSequenceBaseRequestForCreate'
-      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
+            type: string
+        type: object
     CreateEntityIntoRegistry:
       properties:
         entityRegistryId:
@@ -1407,28 +1391,44 @@ components:
             '
           type: string
       type: object
-    BadRequestError:
+    RnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 1
+            type: integer
+        type: object
+    Primer:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    AutofillRnaSequences:
-      additionalProperties: false
-      properties:
-        rnaSequenceIds:
-          description: Array of RNA sequence IDs.
-          items:
-            type: string
-          maxItems: 1000
-          type: array
-      required:
-      - rnaSequenceIds
+        bases:
+          readOnly: true
+          type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
       type: object
   securitySchemes:
     basicApiKeyAuth:
