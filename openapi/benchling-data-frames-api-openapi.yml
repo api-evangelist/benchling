@@ -294,30 +294,143 @@ paths:
       - Data Frames
 components:
   schemas:
-    ForbiddenError:
+    DataFrameUpdate:
       properties:
-        error:
-          properties:
-            invalidId:
-              type: string
-            message:
-              type: string
-            type:
-              type: string
-            userMessage:
-              type: string
-          type: object
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          type: string
       type: object
-    BadRequestError:
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    DataFrameColumnTypeNameEnum:
+      properties:
+        name:
+          enum:
+          - String
+          - Int
+          - Float
+          - JSON
+          - DateTime
+          - Date
+          - Boolean
+          - ObjectLink
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    DataFrameColumnMetadata:
+      properties:
+        displayName:
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/DataFrameColumnTypeMetadata'
+      type: object
+    FileStatus:
+      properties:
+        errorMessage:
+          example: null
+          type:
+          - string
+          - 'null'
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - SUCCEEDED
+          - FAILED_VALIDATION
+          - NOT_UPLOADED
+          example: SUCCEEDED
+          type: string
+      type: object
+    DataFrameColumnTypeMetadata:
+      allOf:
+      - $ref: '#/components/schemas/DataFrameColumnTypeNameEnum'
+      - properties:
+          isList:
+            type: boolean
+          isNullable:
+            type: boolean
+          target:
+            description: Only present if the column type is ObjectLink
+            properties:
+              baseTypeName:
+                example: DNASequence
+                type: string
+              schemaId:
+                example: ts_n4l12nf0
+                type:
+                - string
+                - 'null'
+            type: object
+        required:
+        - isNullable
+        - isList
+        type: object
+    DataFrameManifest:
+      properties:
+        manifest:
+          example:
+          - fileName: 09-14-2022_011620_PM_well_plate-part-00000.csv
+            url: https://benchling-location.s3.amazonaws.com/deploys/location/data_frames/.../09-14-2022_011620_PM_well_plate-part-00000.csv?...
+          items:
+            description: List of files composing a data frane, their names, and their corresponding URLs.
+            properties:
+              fileName:
+                type: string
+              url:
+                type:
+                - string
+                - 'null'
+            type: object
+          type: array
+      type: object
+    NotFoundError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
+              invalidId:
+                type: string
               type:
                 enum:
                 - invalid_request_error
                 type: string
+      type: object
+    DataFrameCreate:
+      allOf:
+      - $ref: '#/components/schemas/DataFrameCreateManifest'
+      - properties:
+          name:
+            example: 09-14-2022 01:16:20 PM well plate
+            type: string
+        required:
+        - manifest
+        - name
+        type: object
+    DataFrameCreateManifest:
+      properties:
+        manifest:
+          example:
+          - fileName: 09-14-2022_011620_PM_well_plate-part-00000.csv
+          items:
+            description: List of files that will be uploaded to a data frame and their names.
+            properties:
+              fileName:
+                type: string
+            type: object
+          type: array
       type: object
     DataFrame:
       allOf:
@@ -345,143 +458,30 @@ components:
             example: 09-14-2022 01:16:20 PM well plate
             type: string
         type: object
-    BaseError:
+    ForbiddenError:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
       type: object
-    DataFrameCreate:
-      allOf:
-      - $ref: '#/components/schemas/DataFrameCreateManifest'
-      - properties:
-          name:
-            example: 09-14-2022 01:16:20 PM well plate
-            type: string
-        required:
-        - manifest
-        - name
-        type: object
-    DataFrameManifest:
-      properties:
-        manifest:
-          example:
-          - fileName: 09-14-2022_011620_PM_well_plate-part-00000.csv
-            url: https://benchling-location.s3.amazonaws.com/deploys/location/data_frames/.../09-14-2022_011620_PM_well_plate-part-00000.csv?...
-          items:
-            description: List of files composing a data frane, their names, and their corresponding URLs.
-            properties:
-              fileName:
-                type: string
-              url:
-                type:
-                - string
-                - 'null'
-            type: object
-          type: array
-      type: object
-    DataFrameColumnMetadata:
-      properties:
-        displayName:
-          type: string
-        type:
-          allOf:
-          - $ref: '#/components/schemas/DataFrameColumnTypeMetadata'
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    DataFrameCreateManifest:
-      properties:
-        manifest:
-          example:
-          - fileName: 09-14-2022_011620_PM_well_plate-part-00000.csv
-          items:
-            description: List of files that will be uploaded to a data frame and their names.
-            properties:
-              fileName:
-                type: string
-            type: object
-          type: array
-      type: object
-    DataFrameColumnTypeMetadata:
-      allOf:
-      - $ref: '#/components/schemas/DataFrameColumnTypeNameEnum'
-      - properties:
-          isList:
-            type: boolean
-          isNullable:
-            type: boolean
-          target:
-            description: Only present if the column type is ObjectLink
-            properties:
-              baseTypeName:
-                example: DNASequence
-                type: string
-              schemaId:
-                example: ts_n4l12nf0
-                type:
-                - string
-                - 'null'
-            type: object
-        required:
-        - isNullable
-        - isList
-        type: object
-    DataFrameUpdate:
-      properties:
-        uploadStatus:
-          enum:
-          - IN_PROGRESS
-          type: string
-      type: object
-    DataFrameColumnTypeNameEnum:
-      properties:
-        name:
-          enum:
-          - String
-          - Int
-          - Float
-          - JSON
-          - DateTime
-          - Date
-          - Boolean
-          - ObjectLink
-          type: string
-      type: object
-    NotFoundError:
+    BadRequestError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
-              invalidId:
-                type: string
               type:
                 enum:
                 - invalid_request_error
                 type: string
-      type: object
-    FileStatus:
-      properties:
-        errorMessage:
-          example: null
-          type:
-          - string
-          - 'null'
-        uploadStatus:
-          enum:
-          - IN_PROGRESS
-          - SUCCEEDED
-          - FAILED_VALIDATION
-          - NOT_UPLOADED
-          example: SUCCEEDED
-          type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

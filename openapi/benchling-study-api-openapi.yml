@@ -377,109 +377,31 @@ paths:
       x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    Principal:
-      anyOf:
-      - $ref: '#/components/schemas/AppInstallation'
-      - $ref: '#/components/schemas/LegacyAppInstallation'
-      - $ref: '#/components/schemas/ServicePrincipal'
-      - $ref: '#/components/schemas/User'
-      discriminator:
-        propertyName: __typename
-      type: object
-    AppConfigFieldDefinition:
-      description: 'Defines a field within an app configuration that references schema fields. Specifies the
-
-        field name, type, whether it accepts multiple values, and whether it is required.'
+    IntegerAppConfigSpec:
+      description: Specifies that an app configuration field should accept an integer value.
       properties:
         __typename:
           type: string
-        description:
-          type:
-          - 'null'
-          - string
-        isMulti:
-          description: Whether the field must be multi-valued — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        isRequired:
-          description: Whether the field must be required — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        name:
-          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these integers.
+          oneOf:
+          - items:
+              type: integer
+            type: array
+          - type: 'null'
         requiredConfig:
           type:
           - 'null'
           - boolean
-        type:
-          description: Type constraint for the field — null means any type is acceptable.
-          enum:
-          - DNA_SEQUENCE_LINK
-          - AA_SEQUENCE_LINK
-          - CUSTOM_ENTITY_LINK
-          - ENTITY_LINK
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - DROPDOWN
-          - PART_LINK
-          - AA_PART_LINK
-          - TRANSLATION_LINK
-          - BLOB_LINK
-          - TEXT
-          - LONG_TEXT
-          - BATCH_LINK
-          - STORAGE_LINK
-          - ENTRY_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BOOLEAN
-          - FLOAT
-          - INTEGER
-          - DATETIME
-          - DATE
-          - JSON
-          - null
-          type:
-          - 'null'
-          - string
       type: object
-    TextValue:
-      description: A type that represents text (string) values.
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
       properties:
         __typename:
           type: string
         value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    SchemaFieldValue:
-      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
-
-        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
-
-        date, or link to another object). The value may be null if no value has been set. Used within
-
-        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
-
-        custom field values defined by the object''s schema.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinition:
-          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
-        id:
-          type: string
-        linkedEntityId:
-          type:
-          - 'null'
-          - string
-        value:
-          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
-          oneOf:
-          - anyOf:
+          items:
+            anyOf:
             - $ref: '#/components/schemas/BooleanValue'
             - $ref: '#/components/schemas/DateTimeValue'
             - $ref: '#/components/schemas/DateValue'
@@ -490,47 +412,10 @@ components:
             - $ref: '#/components/schemas/ObjectLinkListValue'
             - $ref: '#/components/schemas/TextAndUrlValue'
             - $ref: '#/components/schemas/TextValue'
-            - $ref: '#/components/schemas/ArrayValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
             discriminator:
               propertyName: __typename
-          - type: 'null'
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    SecureTextAppConfigSpec:
-      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
-
-        Used for sensitive data like API keys or credentials.'
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    FloatAppConfigSpec:
-      description: Specifies that an app configuration field should accept a floating-point number.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these floats.
-          oneOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
+          type: array
       type: object
     AppConfigOption:
       description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
@@ -565,175 +450,7 @@ components:
         name:
           type: string
       type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    AppMessageSubscription:
-      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
-
-        how notifications should be delivered (see `DeliveryMethod`).'
-      properties:
-        __typename:
-          type: string
-        deliveryMethod:
-          enum:
-          - WEBHOOK
-          - WEBHOOK_INTERNAL
-          type: string
-        type:
-          enum:
-          - V2_BETA_CANVAS_CREATED
-          - V2_CANVAS_CREATED
-          - V2_CANVAS_USER_INTERACTED
-          - V2_CANVAS_INITIALIZED
-          - V2_APP_ACTIVATE_REQUESTED
-          - V2_APP_DEACTIVATED
-          - V2_APP_INSTALLED
-          - V2_BETA_APP_CONFIGURATION_UPDATED
-          - V2_ASSAY_RUN_CREATED
-          - V2_ASSAY_RUN_UPDATED_FIELDS
-          - V2_ENTITY_REGISTERED
-          - V2_ENTRY_CREATED
-          - V2_ENTRY_UPDATED_FIELDS
-          - V2_ENTRY_UPDATED_REVIEW_RECORD
-          - V2_REQUEST_CREATED
-          - V2_REQUEST_UPDATED_FIELDS
-          - V2_REQUEST_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_GROUP_CREATED
-          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
-          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
-          - V2_WORKFLOW_TASK_CREATED
-          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
-          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
-          - V2_WORKFLOW_TASK_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_UPDATED_FIELDS
-          - V2_WORKFLOW_OUTPUT_CREATED
-          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
-          - V3_CUSTOM_ENTITY_CREATED
-          - V3_CUSTOM_ENTITY_UPDATED
-          - V3_DNA_OLIGO_CREATED
-          - V3_DNA_OLIGO_UPDATED
-          - V3_DNA_SEQUENCE_CREATED
-          - V3_DNA_SEQUENCE_UPDATED
-          - V3_ENTRY_CREATED
-          - V3_PROJECT_CREATED
-          - V3_PROJECT_UPDATED
-          - V3_RNA_OLIGO_CREATED
-          - V3_RNA_OLIGO_UPDATED
-          - V3_RNA_SEQUENCE_CREATED
-          - V3_RNA_SEQUENCE_UPDATED
-          - V3_RUN_CREATED
-          type: string
-      type: object
-    WorkflowTaskSchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a workflow task schema.
-
-        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        output:
-          description: Output field definitions for the workflow task schema.
-          oneOf:
-          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    DateTimeAppConfigSpec:
-      description: Specifies that an app configuration field should accept a datetime value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ArrayAppConfigSpec:
-      description: Specifies that an app configuration field should accept an array of values.
-      properties:
-        __typename:
-          type: string
-        elementDefinition:
-          description: Defines the named config options allowed within this array and their type constraints.
-          items:
-            $ref: '#/components/schemas/ArrayAppConfigOption'
-          type: array
-        maxElements:
-          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
-          type:
-          - 'null'
-          - integer
-        minElements:
-          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
-          type:
-          - 'null'
-          - integer
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    JsonValue:
-      description: A type that represents JSON values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The JSON value.
-          type: object
-      type: object
-    BooleanAppConfigSpec:
-      description: Specifies that an app configuration field should accept a boolean value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    PrincipalUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Principal'
-          type: array
-      type: object
-    AppConfigWorkflowTaskSchemaOutput:
-      description: Defines the output field structure for a workflow task schema configuration.
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-      type: object
-    ObjectRef:
+    FolderRef:
       properties:
         __typename:
           type: string
@@ -741,148 +458,88 @@ components:
           format: api_id
           type: string
       type: object
-    UpdateStudyInput:
-      additionalProperties: false
-      example:
-        archiveReason: Archived
-        archived: true
-        authorIds:
-        - ent_a0SApq3z
-        - ent_t40Vb4aA
-        description: Updated Study Description
-        displayId: CSWNAR1
-        folderId: lib_o2thOLlq
-        name: Updated Study Name
-        phase: EXECUTION
-        schemaFields:
-          boolean_field_system_name:
-            value: false
-          date_field_system_name:
-            value: '2025-06-15'
-          datetime_field_system_name:
-            value: '2025-06-15T09:00:00Z'
-          dropdown_field_system_name:
-            value: sfso_UcQuhAwx
-          entity_field_system_name:
-            value:
-            - bfi_jdf8BV24
-          number_field_system_name:
-            value: 456
-          text_field_system_name:
-            value: Updated text value
+    AsyncTaskLink:
       properties:
-        archiveReason:
+        pollingUri:
+          format: uri
           type: string
-        archived:
-          type: boolean
-        authorIds:
-          description: The IDs of the users or apps to set as study authors. Omit to leave authors unchanged. Pass an empty array to clear all authors.
-          items:
-            type: string
-          type: array
-        description:
+        taskId:
           type: string
-        displayId:
+      type: object
+    EntitySchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference an entity schema.
+
+        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+      properties:
+        __typename:
           type: string
-        fieldValues:
-          deprecated: true
-          description: Use schemaFields instead.
-          items:
-            $ref: '#/components/schemas/UpdateFieldValueInput'
-          type: array
-        folderId:
-          type: string
-        name:
-          type: string
-        phase:
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        subtype:
+          description: 'Optional subtype constraint — if present, the referenced schema must be of this
+
+            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
           enum:
-          - DESIGN
-          - EXECUTION
-          - COMPLETE
-          type: string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
       type: object
-    CreateStudyInput:
-      additionalProperties: false
-      example:
-        authorIds:
-        - ent_a0SApq3z
-        description: Study Description
-        designEntryId: etr_kT6BHBdZ
-        displayId: STUDY-001
-        folderId: lib_o2thOLlq
-        name: Study Name
-        schemaFields:
-          boolean_field_system_name:
-            value: true
-          date_field_system_name:
-            value: '2025-01-01'
-          datetime_field_system_name:
-            value: '2025-01-01T00:00:00Z'
-          dropdown_field_system_name:
-            value: sfso_UcQuhAwx
-          entity_field_system_name:
-            value:
-            - bfi_jdf8BV24
-            - bfi_laGnl8vB
-          inventory_field_system_name:
-            value: con_YvTFCWmh
-          json_field_system_name:
-            value:
-              key: value
-          number_field_system_name:
-            value: 123
-          text_field_system_name:
-            value: Text value
-        schemaId: stdysch_ztQQGSSF
+    BooleanValue:
+      description: A type that represents boolean values.
       properties:
-        authorIds:
-          description: The IDs of the users or apps to set as study authors. Omit to default to the creator. Pass an empty array to create the study without authors.
-          items:
-            type: string
-          type: array
-        description:
+        __typename:
           type: string
-        designEntryId:
-          description: The ID of an entry to use as the study design entry. Each study must have a unique design entry. Custom Studies require a design entry. Should be omitted for all other study types.
-          type: string
-        displayId:
-          description: The ID to assign to the study. Only allowed when the study schema is configured for manual ID assignment (i.e., `idGenerationMode` is `MANUAL`). Must be unique within the tenant.
-          type: string
-        folderId:
-          description: The ID of the folder to create the study in.
-          type: string
-        name:
-          description: The name of the study. Should be omitted if using a study schema with a naming template.
-          type: string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          description: The ID of the schema to associate with this object.
-          type: string
-        studySchemaId:
-          deprecated: true
-          description: Deprecated. Use `schemaId` instead. The ID of the study schema.
-          type: string
-        tags:
-          deprecated: true
-          description: 'Deprecated. Use `schemaFields` instead. Schema fields to set on the study. Must correspond with the study schema''s field definitions. Every field should have its display name (not system name) or API ID as a key, mapping to the value of the field. See the example for the supported field value types and formatting. For date and datetime fields, use the RFC 3339 format. For single link fields, supply a single object specifying the id of the item you want to link, (eg. `{''targetFiles'': [{''id'': ''bfi_jdf8BV24''}]}`). For multi-link fields, supply an array of objects specifying the ids of the items you want to link, (eg. `{''targetFiles'': [{''id'': ''bfi_jdf8BV24''}, {''id'': ''bfi_laGnl8vB''}]}`). Exactly one of `schemaFields` or the deprecated `tags` must be specified.'
-          type: object
-      required:
-      - description
-      - folderId
+        value:
+          description: The boolean value.
+          type: boolean
       type: object
-    AppInstallation:
-      description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    LegacyAppInstallation:
+      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
 
-        App installations store tenant-specific configuration values and feature bindings. As a
+        are configured directly with webhook URLs and configuration specs rather than through
 
-        Principal, app installations can be attributed as actors for API operations and auditing.'
+        app definition versions. This type is maintained for backward compatibility with older
+
+        app integrations. For new apps, see `AppInstallation`.'
       properties:
         __typename:
           type: string
@@ -892,6 +549,10 @@ components:
           - string
         archived:
           type: boolean
+        configurationSpecs:
+          items:
+            $ref: '#/components/schemas/AppConfigOption'
+          type: array
         configurationValues:
           format: uri
           type: string
@@ -904,12 +565,30 @@ components:
           oneOf:
           - $ref: '#/components/schemas/PrincipalRef'
           - type: 'null'
+        description:
+          type:
+          - 'null'
+          - string
+        featureSpecs:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CanvasFeatureSpec'
+            - $ref: '#/components/schemas/AssayRunFeatureSpec'
+            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
+            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
+            discriminator:
+              propertyName: __typename
+          type: array
         featureValues:
           items:
             $ref: '#/components/schemas/AssayRunFeatureValue'
           type: array
         id:
           type: string
+        messageSubscriptions:
+          items:
+            $ref: '#/components/schemas/AppMessageSubscription'
+          type: array
         modifiedAt:
           format: datetime
           type:
@@ -917,25 +596,35 @@ components:
           - string
         name:
           type: string
+        publicKey:
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          type:
+          - 'null'
+          - string
+        webhookUrl:
+          type:
+          - 'null'
+          - string
       type: object
-    IntegerValue:
-      description: A type that represents integer values.
+    TextAppConfigSpec:
+      description: Specifies that an app configuration field should accept a text string.
       properties:
         __typename:
           type: string
-        value:
-          description: The integer value.
-          type: integer
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
-          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these strings.
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
       type: object
     UpdateFieldValueInput:
       additionalProperties: false
@@ -948,17 +637,17 @@ components:
       - value
       - fieldDefinitionId
       type: object
-    AppHomepageFeatureSpec:
-      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
+    SecureTextAppConfigSpec:
+      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
 
-        the Benchling application for the app''s functionality.'
+        Used for sensitive data like API keys or credentials.'
       properties:
         __typename:
           type: string
-        featureId:
-          type: string
-        name:
-          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
       type: object
     UpdateStudyInputWithPathParams:
       additionalProperties: false
@@ -1029,6 +718,692 @@ components:
       required:
       - id
       type: object
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    UpdateStudyInput:
+      additionalProperties: false
+      example:
+        archiveReason: Archived
+        archived: true
+        authorIds:
+        - ent_a0SApq3z
+        - ent_t40Vb4aA
+        description: Updated Study Description
+        displayId: CSWNAR1
+        folderId: lib_o2thOLlq
+        name: Updated Study Name
+        phase: EXECUTION
+        schemaFields:
+          boolean_field_system_name:
+            value: false
+          date_field_system_name:
+            value: '2025-06-15'
+          datetime_field_system_name:
+            value: '2025-06-15T09:00:00Z'
+          dropdown_field_system_name:
+            value: sfso_UcQuhAwx
+          entity_field_system_name:
+            value:
+            - bfi_jdf8BV24
+          number_field_system_name:
+            value: 456
+          text_field_system_name:
+            value: Updated text value
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        authorIds:
+          description: The IDs of the users or apps to set as study authors. Omit to leave authors unchanged. Pass an empty array to clear all authors.
+          items:
+            type: string
+          type: array
+        description:
+          type: string
+        displayId:
+          type: string
+        fieldValues:
+          deprecated: true
+          description: Use schemaFields instead.
+          items:
+            $ref: '#/components/schemas/UpdateFieldValueInput'
+          type: array
+        folderId:
+          type: string
+        name:
+          type: string
+        phase:
+          enum:
+          - DESIGN
+          - EXECUTION
+          - COMPLETE
+          type: string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+      type: object
+    WorkflowTaskSchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a workflow task schema.
+
+        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        output:
+          description: Output field definitions for the workflow task schema.
+          oneOf:
+          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    SchemaFieldValue:
+      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
+
+        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
+
+        date, or link to another object). The value may be null if no value has been set. Used within
+
+        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
+
+        custom field values defined by the object''s schema.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinition:
+          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
+        id:
+          type: string
+        linkedEntityId:
+          type:
+          - 'null'
+          - string
+        value:
+          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
+          oneOf:
+          - anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            - $ref: '#/components/schemas/ArrayValue'
+            discriminator:
+              propertyName: __typename
+          - type: 'null'
+      type: object
+    AssayRunFeatureSpec:
+      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+
+        lab automation run data.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
+          type: string
+      type: object
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+
+        tenant. The featureId identifies the feature from the app definition, and resourceId
+
+        references the tenant-specific resource it''s bound to.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
+          type: string
+        resourceId:
+          type:
+          - 'null'
+          - string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    User:
+      description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
+
+        Users belong to one or more Organizations and may be members of Teams within those
+
+        organizations. As an Owner, users can own Projects, Folders, and other resources.
+
+        As a Principal, users can be assigned as reviewers, authors, or collaborators on
+
+        various items. Users have attributes like email and username for identification.
+
+        Users are distinct from `ServicePrincipal`, which represents non-human service
+
+        accounts used for integrations.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        email:
+          type: string
+        id:
+          type: string
+        lastSeen:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        status:
+          enum:
+          - ACTIVE
+          - SUSPENDED
+          type: string
+        username:
+          type: string
+      type: object
+    PrincipalUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Principal'
+          type: array
+      type: object
+    ArrayAppConfigOption:
+      description: 'A config option nested within an array-type app configuration field. Structurally
+
+        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
+
+        accepts the same config types as the top level except nested arrays (see
+
+        ArrayAppConfigElementSpec).'
+      properties:
+        __typename:
+          type: string
+        configSpec:
+          anyOf:
+          - $ref: '#/components/schemas/BooleanAppConfigSpec'
+          - $ref: '#/components/schemas/IntegerAppConfigSpec'
+          - $ref: '#/components/schemas/FloatAppConfigSpec'
+          - $ref: '#/components/schemas/TextAppConfigSpec'
+          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
+          - $ref: '#/components/schemas/DateAppConfigSpec'
+          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
+          - $ref: '#/components/schemas/JsonAppConfigSpec'
+          - $ref: '#/components/schemas/DropdownAppConfigSpec'
+          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
+          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+          - $ref: '#/components/schemas/SchemaAppConfigSpec'
+          - $ref: '#/components/schemas/ResourceAppConfigSpec'
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          discriminator:
+            propertyName: __typename
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    ServicePrincipal:
+      description: 'Represents a non-human identity used for system integrations and automated processes
+
+        within Benchling. Service principals act as the identity for service accounts that
+
+        perform actions via APIs or background processes without human intervention. Unlike
+
+        `User`, which represents a human user, ServicePrincipal is used when an integration
+
+        or automated system needs to be attributed as the actor for auditing and attribution
+
+        purposes. Service principals implement the Principal interface, allowing them to
+
+        appear as creators or actors on domain objects. Also known as "service account" in
+
+        some contexts.'
+      properties:
+        __typename:
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type:
+          - 'null'
+          - string
+      type: object
+    BooleanAppConfigSpec:
+      description: Specifies that an app configuration field should accept a boolean value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    SchemaFieldDefinitionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AppInstallation:
+      description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
+
+        App installations store tenant-specific configuration values and feature bindings. As a
+
+        Principal, app installations can be attributed as actors for API operations and auditing.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationValues:
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    StudyPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Study'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    JsonAppConfigSpec:
+      description: Specifies that an app configuration field should accept a JSON value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppConfigDropdownOption:
+      description: Defines an option within a dropdown-type app configuration field.
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    DateTimeAppConfigSpec:
+      description: Specifies that an app configuration field should accept a datetime value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    CanvasFeatureSpec:
+      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+
+        entries or templates. Canvases allow apps to render custom interactive content.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        locations:
+          oneOf:
+          - items:
+              enum:
+              - ENTRY
+              - ENTRY_TEMPLATE
+              - APP_HOME
+              type: string
+            type: array
+          - type: 'null'
+        name:
+          type: string
+      type: object
+    FloatAppConfigSpec:
+      description: Specifies that an app configuration field should accept a floating-point number.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these floats.
+          oneOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppMessageSubscription:
+      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
+
+        how notifications should be delivered (see `DeliveryMethod`).'
+      properties:
+        __typename:
+          type: string
+        deliveryMethod:
+          enum:
+          - WEBHOOK
+          - WEBHOOK_INTERNAL
+          type: string
+        type:
+          enum:
+          - V2_BETA_CANVAS_CREATED
+          - V2_CANVAS_CREATED
+          - V2_CANVAS_USER_INTERACTED
+          - V2_CANVAS_INITIALIZED
+          - V2_APP_ACTIVATE_REQUESTED
+          - V2_APP_DEACTIVATED
+          - V2_APP_INSTALLED
+          - V2_BETA_APP_CONFIGURATION_UPDATED
+          - V2_ASSAY_RUN_CREATED
+          - V2_ASSAY_RUN_UPDATED_FIELDS
+          - V2_ENTITY_REGISTERED
+          - V2_ENTRY_CREATED
+          - V2_ENTRY_UPDATED_FIELDS
+          - V2_ENTRY_UPDATED_REVIEW_RECORD
+          - V2_REQUEST_CREATED
+          - V2_REQUEST_UPDATED_FIELDS
+          - V2_REQUEST_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_GROUP_CREATED
+          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
+          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
+          - V2_WORKFLOW_TASK_CREATED
+          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
+          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
+          - V2_WORKFLOW_TASK_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_UPDATED_FIELDS
+          - V2_WORKFLOW_OUTPUT_CREATED
+          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
+          - V3_CUSTOM_ENTITY_CREATED
+          - V3_CUSTOM_ENTITY_UPDATED
+          - V3_DNA_OLIGO_CREATED
+          - V3_DNA_OLIGO_UPDATED
+          - V3_DNA_SEQUENCE_CREATED
+          - V3_DNA_SEQUENCE_UPDATED
+          - V3_ENTRY_CREATED
+          - V3_PROJECT_CREATED
+          - V3_PROJECT_UPDATED
+          - V3_RNA_OLIGO_CREATED
+          - V3_RNA_OLIGO_UPDATED
+          - V3_RNA_SEQUENCE_CREATED
+          - V3_RNA_SEQUENCE_UPDATED
+          - V3_RUN_CREATED
+          type: string
+      type: object
+    DateAppConfigSpec:
+      description: Specifies that an app configuration field should accept a date value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppConfigWorkflowTaskSchemaOutput:
+      description: Defines the output field structure for a workflow task schema configuration.
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+      type: object
+    AppConfigFieldDefinition:
+      description: 'Defines a field within an app configuration that references schema fields. Specifies the
+
+        field name, type, whether it accepts multiple values, and whether it is required.'
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        isMulti:
+          description: Whether the field must be multi-valued — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        isRequired:
+          description: Whether the field must be required — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          description: Type constraint for the field — null means any type is acceptable.
+          enum:
+          - DNA_SEQUENCE_LINK
+          - AA_SEQUENCE_LINK
+          - CUSTOM_ENTITY_LINK
+          - ENTITY_LINK
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - DROPDOWN
+          - PART_LINK
+          - AA_PART_LINK
+          - TRANSLATION_LINK
+          - BLOB_LINK
+          - TEXT
+          - LONG_TEXT
+          - BATCH_LINK
+          - STORAGE_LINK
+          - ENTRY_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BOOLEAN
+          - FLOAT
+          - INTEGER
+          - DATETIME
+          - DATE
+          - JSON
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    StudySchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
     SchemaAppConfigSpec:
       description: 'Specifies that an app configuration field should reference one of the schema types
 
@@ -1096,93 +1471,14 @@ components:
           - 'null'
           - string
       type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
-      properties:
-        __typename:
-          type: string
-        value:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
-            discriminator:
-              propertyName: __typename
-          type: array
-      type: object
-    AssayRunFeatureValue:
-      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
-
-        tenant. The featureId identifies the feature from the app definition, and resourceId
-
-        references the tenant-specific resource it''s bound to.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          description: Developer-specified feature ID as defined in the app manifest / app definition version
-          type: string
-        resourceId:
-          type:
-          - 'null'
-          - string
-      type: object
-    CanvasFeatureSpec:
-      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
-
-        entries or templates. Canvases allow apps to render custom interactive content.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        locations:
-          oneOf:
-          - items:
-              enum:
-              - ENTRY
-              - ENTRY_TEMPLATE
-              - APP_HOME
-              type: string
-            type: array
-          - type: 'null'
-        name:
-          type: string
-      type: object
-    AppConfigDropdownOption:
-      description: Defines an option within a dropdown-type app configuration field.
-      properties:
-        __typename:
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    StudyPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Study'
-          type: array
-        nextToken:
-          type: string
+    Principal:
+      anyOf:
+      - $ref: '#/components/schemas/AppInstallation'
+      - $ref: '#/components/schemas/LegacyAppInstallation'
+      - $ref: '#/components/schemas/ServicePrincipal'
+      - $ref: '#/components/schemas/User'
+      discriminator:
+        propertyName: __typename
       type: object
     EntryRef:
       properties:
@@ -1192,34 +1488,7 @@ components:
           format: api_id
           type: string
       type: object
-    JsonAppConfigSpec:
-      description: Specifies that an app configuration field should accept a JSON value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    DateValue:
-      description: A type that represents date values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The date value.
-          format: date
-          type: string
-      type: object
-    StudySchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
+    AnyType: {}
     Study:
       description: 'A structured unit used to plan and organize research in Benchling.
 
@@ -1303,99 +1572,111 @@ components:
           deprecated: true
           description: Use schema instead. The schema of the study.
       type: object
-    LegacyAppInstallation:
-      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
-
-        are configured directly with webhook URLs and configuration specs rather than through
-
-        app definition versions. This type is maintained for backward compatibility with older
-
-        app integrations. For new apps, see `AppInstallation`.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        configurationSpecs:
-          items:
-            $ref: '#/components/schemas/AppConfigOption'
-          type: array
-        configurationValues:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        description:
-          type:
-          - 'null'
-          - string
-        featureSpecs:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CanvasFeatureSpec'
-            - $ref: '#/components/schemas/AssayRunFeatureSpec'
-            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
-            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
-            discriminator:
-              propertyName: __typename
-          type: array
-        featureValues:
-          items:
-            $ref: '#/components/schemas/AssayRunFeatureValue'
-          type: array
-        id:
-          type: string
-        messageSubscriptions:
-          items:
-            $ref: '#/components/schemas/AppMessageSubscription'
-          type: array
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        publicKey:
-          type:
-          - 'null'
-          - string
-        versionNumber:
-          type:
-          - 'null'
-          - string
-        webhookUrl:
-          type:
-          - 'null'
-          - string
-      type: object
-    FieldValueInput:
+    CreateStudyInput:
       additionalProperties: false
+      example:
+        authorIds:
+        - ent_a0SApq3z
+        description: Study Description
+        designEntryId: etr_kT6BHBdZ
+        displayId: STUDY-001
+        folderId: lib_o2thOLlq
+        name: Study Name
+        schemaFields:
+          boolean_field_system_name:
+            value: true
+          date_field_system_name:
+            value: '2025-01-01'
+          datetime_field_system_name:
+            value: '2025-01-01T00:00:00Z'
+          dropdown_field_system_name:
+            value: sfso_UcQuhAwx
+          entity_field_system_name:
+            value:
+            - bfi_jdf8BV24
+            - bfi_laGnl8vB
+          inventory_field_system_name:
+            value: con_YvTFCWmh
+          json_field_system_name:
+            value:
+              key: value
+          number_field_system_name:
+            value: 123
+          text_field_system_name:
+            value: Text value
+        schemaId: stdysch_ztQQGSSF
       properties:
-        value:
-          $ref: '#/components/schemas/AnyType'
+        authorIds:
+          description: The IDs of the users or apps to set as study authors. Omit to default to the creator. Pass an empty array to create the study without authors.
+          items:
+            type: string
+          type: array
+        description:
+          type: string
+        designEntryId:
+          description: The ID of an entry to use as the study design entry. Each study must have a unique design entry. Custom Studies require a design entry. Should be omitted for all other study types.
+          type: string
+        displayId:
+          description: The ID to assign to the study. Only allowed when the study schema is configured for manual ID assignment (i.e., `idGenerationMode` is `MANUAL`). Must be unique within the tenant.
+          type: string
+        folderId:
+          description: The ID of the folder to create the study in.
+          type: string
+        name:
+          description: The name of the study. Should be omitted if using a study schema with a naming template.
+          type: string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          description: The ID of the schema to associate with this object.
+          type: string
+        studySchemaId:
+          deprecated: true
+          description: Deprecated. Use `schemaId` instead. The ID of the study schema.
+          type: string
+        tags:
+          deprecated: true
+          description: 'Deprecated. Use `schemaFields` instead. Schema fields to set on the study. Must correspond with the study schema''s field definitions. Every field should have its display name (not system name) or API ID as a key, mapping to the value of the field. See the example for the supported field value types and formatting. For date and datetime fields, use the RFC 3339 format. For single link fields, supply a single object specifying the id of the item you want to link, (eg. `{''targetFiles'': [{''id'': ''bfi_jdf8BV24''}]}`). For multi-link fields, supply an array of objects specifying the ids of the items you want to link, (eg. `{''targetFiles'': [{''id'': ''bfi_jdf8BV24''}, {''id'': ''bfi_laGnl8vB''}]}`). Exactly one of `schemaFields` or the deprecated `tags` must be specified.'
+          type: object
       required:
-      - value
+      - description
+      - folderId
       type: object
-    BooleanValue:
-      description: A type that represents boolean values.
+    DropdownAppConfigSpec:
+      description: Specifies that an app configuration field should be a dropdown with predefined options.
       properties:
         __typename:
           type: string
-        value:
-          description: The boolean value.
-          type: boolean
+        options:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigDropdownOption'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
       type: object
     ResourceAppConfigSpec:
       description: 'Specifies that an app configuration field should reference a Benchling object instance.
@@ -1458,10 +1739,27 @@ components:
           - 'null'
           - string
       type: object
-    AssayRunFeatureSpec:
-      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    AppHomepageFeatureSpec:
+      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
 
-        lab automation run data.'
+        the Benchling application for the app''s functionality.'
       properties:
         __typename:
           type: string
@@ -1470,353 +1768,115 @@ components:
         name:
           type: string
       type: object
-    SchemaFieldDefinitionRef:
+    FieldValueInput:
+      additionalProperties: false
       properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AnyType: {}
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
+        value:
+          $ref: '#/components/schemas/AnyType'
       required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
+      - value
       type: object
-    PrincipalRef:
+    ArrayAppConfigSpec:
+      description: Specifies that an app configuration field should accept an array of values.
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    TextAndUrlValue:
-      description: A type that represents text (string) values with an associated URL.
-      properties:
-        __typename:
-          type: string
-        url:
-          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+        elementDefinition:
+          description: Defines the named config options allowed within this array and their type constraints.
           items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
+            $ref: '#/components/schemas/ArrayAppConfigOption'
           type: array
-      type: object
-    FolderRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
-          type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
+        maxElements:
+          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
           type:
           - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
+          - integer
+        minElements:
+          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
           type:
           - 'null'
-          - string
-      type: object
-    ServicePrincipal:
-      description: 'Represents a non-human identity used for system integrations and automated processes
-
-        within Benchling. Service principals act as the identity for service accounts that
-
-        perform actions via APIs or background processes without human intervention. Unlike
-
-        `User`, which represents a human user, ServicePrincipal is used when an integration
-
-        or automated system needs to be attributed as the actor for auditing and attribution
-
-        purposes. Service principals implement the Principal interface, allowing them to
-
-        appear as creators or actors on domain objects. Also known as "service account" in
-
-        some contexts.'
-      properties:
-        __typename:
-          type: string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type:
-          - 'null'
-          - string
-      type: object
-    User:
-      description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
-
-        Users belong to one or more Organizations and may be members of Teams within those
-
-        organizations. As an Owner, users can own Projects, Folders, and other resources.
-
-        As a Principal, users can be assigned as reviewers, authors, or collaborators on
-
-        various items. Users have attributes like email and username for identification.
-
-        Users are distinct from `ServicePrincipal`, which represents non-human service
-
-        accounts used for integrations.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        email:
-          type: string
-        id:
-          type: string
-        lastSeen:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-        status:
-          enum:
-          - ACTIVE
-          - SUSPENDED
-          type: string
-        username:
-          type: string
-      type: object
-    TextAppConfigSpec:
-      description: Specifies that an app configuration field should accept a text string.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these strings.
-          oneOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
+          - integer
         requiredConfig:
           type:
           - 'null'
           - boolean
       type: object
-    DateAppConfigSpec:
-      description: Specifies that an app configuration field should accept a date value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    DropdownAppConfigSpec:
-      description: Specifies that an app configuration field should be a dropdown with predefined options.
-      properties:
-        __typename:
-          type: string
-        options:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigDropdownOption'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    EntitySchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference an entity schema.
-
-        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        subtype:
-          description: 'Optional subtype constraint — if present, the referenced schema must be of this
-
-            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
-          enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    IntegerAppConfigSpec:
-      description: Specifies that an app configuration field should accept an integer value.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these integers.
-          oneOf:
-          - items:
-              type: integer
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ArrayAppConfigOption:
-      description: 'A config option nested within an array-type app configuration field. Structurally
-
-        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
-
-        accepts the same config types as the top level except nested arrays (see
-
-        ArrayAppConfigElementSpec).'
-      properties:
-        __typename:
-          type: string
-        configSpec:
-          anyOf:
-          - $ref: '#/components/schemas/BooleanAppConfigSpec'
-          - $ref: '#/components/schemas/IntegerAppConfigSpec'
-          - $ref: '#/components/schemas/FloatAppConfigSpec'
-          - $ref: '#/components/schemas/TextAppConfigSpec'
-          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
-          - $ref: '#/components/schemas/DateAppConfigSpec'
-          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
-          - $ref: '#/components/schemas/JsonAppConfigSpec'
-          - $ref: '#/components/schemas/DropdownAppConfigSpec'
-          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
-          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
-          - $ref: '#/components/schemas/SchemaAppConfigSpec'
-          - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
-          discriminator:
-            propertyName: __typename
-        description:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-      type: object
-    ObjectLinkValue:
-      description: A type that represents links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          $ref: '#/components/schemas/ObjectRef'
-          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
-      type: object
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
   parameters:
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf.caseSensitive
+      name: archiveReason.anyOf
       schema:
         items:
           type: string
-        maxItems: 100
+        maxItems: 10
         type: array
     returning:
       description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
       name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
       schema:
         items:
           type: string
@@ -1828,16 +1888,26 @@ components:
       schema:
         format: datetime
         type: string
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: archiveReason.anyOf
+      name: modifiedAt.gte
       schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
     archived.anyOf:
       description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
       explode: false
@@ -1848,13 +1918,6 @@ components:
           type: boolean
         maxItems: 2
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -1862,10 +1925,10 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.gt
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
@@ -1879,13 +1942,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
     name.anyOf:
       description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
@@ -1903,72 +1959,16 @@ components:
       schema:
         format: datetime
         type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: omit
+      name: name.anyOf.caseSensitive
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

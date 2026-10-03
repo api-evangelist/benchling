@@ -495,12 +495,150 @@ webhooks:
       - Project
 components:
   schemas:
-    Group:
-      anyOf:
-      - $ref: '#/components/schemas/Organization'
-      - $ref: '#/components/schemas/Team'
-      discriminator:
-        propertyName: __typename
+    PrincipalCollaboratorInfo:
+      description: Represents a Principal that is the subject for a Collaboration.
+      properties:
+        __typename:
+          type: string
+        collaborator:
+          $ref: '#/components/schemas/PrincipalRef'
+      type: object
+    GroupCollaboratorInfo:
+      description: 'Represents a Group that is the subject of a Collaboration, along with sub-group information.
+
+        In Group Collaborations, the Resource may be shared with a sub-group of the Group, e.g.
+
+        the Admins of a Team.'
+      properties:
+        __typename:
+          type: string
+        collaborator:
+          $ref: '#/components/schemas/Group'
+        role:
+          enum:
+          - MEMBER
+          - ADMIN
+          type: string
+      type: object
+    WebhookApp:
+      description: The Benchling App the webhook was delivered to.
+      properties:
+        id:
+          description: API ID of the app.
+          examples:
+          - app_1jdbvuo2740aslk
+          type: string
+      required:
+      - id
+      type: object
+    WebhookAppDefinition:
+      description: The app definition the receiving app was installed from.
+      properties:
+        id:
+          description: API ID of the app definition.
+          examples:
+          - appdef_1jdbvuo2740aslk
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          description: Version of the app definition the receiving app is installed at.
+          examples:
+          - 0.0.1
+          type: string
+      required:
+      - id
+      - versionNumber
+      type: object
+    ReviewProcess:
+      description: 'Defines a review process configuration that specifies how entries and other
+
+        reviewable items should be reviewed. A ReviewProcess belongs to an Organization
+
+        and can be associated with one or more Projects. When a review is initiated,
+
+        it follows the stages defined in the current `ReviewProcessVersion`. Review
+
+        processes enable organizations to enforce compliance requirements by defining
+
+        who must review, in what order, and what actions are required. Also known as
+
+        "Review Lifecycle" in the backend.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          description: Timestamp when this review process was created
+          format: datetime
+          type: string
+        currentVersion:
+          description: Current version of this review process
+          oneOf:
+          - $ref: '#/components/schemas/ReviewProcessVersion'
+          - type: 'null'
+        id:
+          description: ID of the review process
+          type: string
+        modifiedAt:
+          description: Timestamp when this review process was last modified
+          format: datetime
+          type: string
+        name:
+          description: Title of the review process
+          type:
+          - 'null'
+          - string
+        organization:
+          description: The organization that owns this review process
+          oneOf:
+          - $ref: '#/components/schemas/OrganizationRef'
+          - type: 'null'
+        projects:
+          description: All projects that point to this review process
+          format: uri
+          type: string
+      type: object
+    ReviewProcessUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewProcess'
+          type: array
+      type: object
+    UpdateProjectInputWithPathParams:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          type:
+          - 'null'
+          - string
+        hideParentFolderNamesForSharedItems:
+          type: boolean
+        id:
+          type: string
+        lockSequences:
+          type: boolean
+        name:
+          type: string
+        ownerId:
+          type: string
+        public:
+          type: boolean
+      required:
+      - id
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     Organization:
       description: 'Represents a group of users within Benchling, typically corresponding to a company,
@@ -580,33 +718,89 @@ components:
           - SELF_REVIEWED
           type: string
       type: object
-    PrincipalCollaboratorInfo:
-      description: Represents a Principal that is the subject for a Collaboration.
+    V3UpdateEventBase:
+      allOf:
+      - $ref: '#/components/schemas/V3EventBase'
+      - properties:
+          properties:
+            description: Names of the properties that changed.
+            examples:
+            - - name
+              - folderId
+            items:
+              type: string
+            type: array
+        required:
+        - properties
+        type: object
+      description: Fields common to every v3 update event message.
+    UpdateProjectInput:
+      additionalProperties: false
       properties:
-        __typename:
+        archiveReason:
           type: string
-        collaborator:
-          $ref: '#/components/schemas/PrincipalRef'
-      type: object
-    WebhookAppDefinition:
-      description: The app definition the receiving app was installed from.
-      properties:
-        id:
-          description: API ID of the app definition.
-          examples:
-          - appdef_1jdbvuo2740aslk
+        archived:
+          type: boolean
+        description:
           type:
           - 'null'
           - string
-        versionNumber:
-          description: Version of the app definition the receiving app is installed at.
-          examples:
-          - 0.0.1
+        hideParentFolderNamesForSharedItems:
+          type: boolean
+        lockSequences:
+          type: boolean
+        name:
+          type: string
+        ownerId:
+          type: string
+        public:
+          type: boolean
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
           type: string
       required:
-      - id
-      - versionNumber
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
+    ProjectUpdatedWebhookV3:
+      allOf:
+      - $ref: '#/components/schemas/V3UpdateEventBase'
+      - properties:
+          type:
+            description: The event type.
+            enum:
+            - v3.project.updated
+            type: string
+        required:
+        - type
+        type: object
+      description: Message body of a `v3.project.updated` event.
     OwnerRef:
       properties:
         __typename:
@@ -615,60 +809,20 @@ components:
           format: api_id
           type: string
       type: object
-    Team:
-      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
-
-        management and data sharing. Teams belong to exactly one organization, and users may
-
-        only join a team if they are already members of that team''s parent organization. Each
-
-        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
-
-        team membership, while members receive standard access. Unlike Organizations, teams
-
-        cannot directly own Projects or Folders—they are used for collaboration and access
-
-        control purposes. Teams can be configured with `provisionedCapabilities` to grant
-
-        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
-
-        flag controls whether team members can create and modify certain schema types.'
+    Group:
+      anyOf:
+      - $ref: '#/components/schemas/Organization'
+      - $ref: '#/components/schemas/Team'
+      discriminator:
+        propertyName: __typename
+      type: object
+    PrincipalRef:
       properties:
         __typename:
           type: string
-        createdAt:
-          format: datetime
-          type: string
-        description:
-          type: string
         id:
+          format: api_id
           type: string
-        membersAreAdministratorsOfSchemas:
-          description: 'Indicates that members of the team are able to create and modify schemas that do not implement the
-
-            Collaboratable interface.'
-          type: boolean
-        memberships:
-          format: uri
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        organization:
-          $ref: '#/components/schemas/OrganizationRef'
-      type: object
-    WebhookApp:
-      description: The Benchling App the webhook was delivered to.
-      properties:
-        id:
-          description: API ID of the app.
-          examples:
-          - app_1jdbvuo2740aslk
-          type: string
-      required:
-      - id
       type: object
     InternalServerError:
       properties:
@@ -696,99 +850,6 @@ components:
       - status
       - instance
       type: object
-    OrganizationRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ReviewProcess:
-      description: 'Defines a review process configuration that specifies how entries and other
-
-        reviewable items should be reviewed. A ReviewProcess belongs to an Organization
-
-        and can be associated with one or more Projects. When a review is initiated,
-
-        it follows the stages defined in the current `ReviewProcessVersion`. Review
-
-        processes enable organizations to enforce compliance requirements by defining
-
-        who must review, in what order, and what actions are required. Also known as
-
-        "Review Lifecycle" in the backend.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          description: Timestamp when this review process was created
-          format: datetime
-          type: string
-        currentVersion:
-          description: Current version of this review process
-          oneOf:
-          - $ref: '#/components/schemas/ReviewProcessVersion'
-          - type: 'null'
-        id:
-          description: ID of the review process
-          type: string
-        modifiedAt:
-          description: Timestamp when this review process was last modified
-          format: datetime
-          type: string
-        name:
-          description: Title of the review process
-          type:
-          - 'null'
-          - string
-        organization:
-          description: The organization that owns this review process
-          oneOf:
-          - $ref: '#/components/schemas/OrganizationRef'
-          - type: 'null'
-        projects:
-          description: All projects that point to this review process
-          format: uri
-          type: string
-      type: object
-    PolicyRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProjectCreatedWebhookV3:
-      allOf:
-      - $ref: '#/components/schemas/V3EventBase'
-      - properties:
-          type:
-            description: The event type.
-            enum:
-            - v3.project.created
-            type: string
-        required:
-        - type
-        type: object
-      description: Message body of a `v3.project.created` event.
     ProjectPaginatedList:
       additionalProperties: false
       properties:
@@ -799,35 +860,34 @@ components:
         nextToken:
           type: string
       type: object
-    WebhookEnvelopeBaseV0:
-      description: Fields common to every webhook request body. The event itself is carried in the `message` property of the event-specific payload.
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
       properties:
-        app:
-          $ref: '#/components/schemas/WebhookApp'
-        appDefinition:
-          $ref: '#/components/schemas/WebhookAppDefinition'
-        baseURL:
-          description: Base URL of the tenant the webhook was sent from.
-          examples:
-          - https://mytenant.benchling.com
-          type: string
-        tenantId:
-          description: Global ID of the tenant the webhook was sent from.
-          examples:
-          - ten_7fbo183
-          type: string
-        version:
-          description: Version of the webhook envelope shape. Always `0`.
-          enum:
-          - '0'
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
           type: string
       required:
-      - version
-      - baseURL
-      - tenantId
-      - app
-      - appDefinition
+      - fileId
       type: object
+    ReviewProcessStageRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProjectUpdatedWebhookEnvelopeV3:
+      allOf:
+      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
+      - properties:
+          message:
+            $ref: '#/components/schemas/ProjectUpdatedWebhookV3'
+        required:
+        - message
+        type: object
+      description: Request body Benchling sends for a `v3.project.updated` event.
     Collaboration:
       description: 'A Collaboration indicates that a Principal or Group is granted a Policy on a Resource.
 
@@ -861,22 +921,16 @@ components:
         resource:
           $ref: '#/components/schemas/CollaboratableRef'
       type: object
-    V3UpdateEventBase:
+    ProjectCreatedWebhookEnvelopeV3:
       allOf:
-      - $ref: '#/components/schemas/V3EventBase'
+      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
       - properties:
-          properties:
-            description: Names of the properties that changed.
-            examples:
-            - - name
-              - folderId
-            items:
-              type: string
-            type: array
+          message:
+            $ref: '#/components/schemas/ProjectCreatedWebhookV3'
         required:
-        - properties
+        - message
         type: object
-      description: Fields common to every v3 update event message.
+      description: Request body Benchling sends for a `v3.project.created` event.
     V3EventBase:
       description: Fields common to every v3 event message.
       properties:
@@ -916,108 +970,6 @@ components:
       - stability
       - deprecated
       type: object
-    ProjectUpdatedWebhookEnvelopeV3:
-      allOf:
-      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
-      - properties:
-          message:
-            $ref: '#/components/schemas/ProjectUpdatedWebhookV3'
-        required:
-        - message
-        type: object
-      description: Request body Benchling sends for a `v3.project.updated` event.
-    ProjectCreatedWebhookEnvelopeV3:
-      allOf:
-      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
-      - properties:
-          message:
-            $ref: '#/components/schemas/ProjectCreatedWebhookV3'
-        required:
-        - message
-        type: object
-      description: Request body Benchling sends for a `v3.project.created` event.
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    CollaboratableRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GroupCollaboratorInfo:
-      description: 'Represents a Group that is the subject of a Collaboration, along with sub-group information.
-
-        In Group Collaborations, the Resource may be shared with a sub-group of the Group, e.g.
-
-        the Admins of a Team.'
-      properties:
-        __typename:
-          type: string
-        collaborator:
-          $ref: '#/components/schemas/Group'
-        role:
-          enum:
-          - MEMBER
-          - ADMIN
-          type: string
-      type: object
-    CollaborationUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Collaboration'
-          type: array
-      type: object
-    ProjectUpdatedWebhookV3:
-      allOf:
-      - $ref: '#/components/schemas/V3UpdateEventBase'
-      - properties:
-          type:
-            description: The event type.
-            enum:
-            - v3.project.updated
-            type: string
-        required:
-        - type
-        type: object
-      description: Message body of a `v3.project.updated` event.
-    UpdateProjectInputWithPathParams:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          type:
-          - 'null'
-          - string
-        hideParentFolderNamesForSharedItems:
-          type: boolean
-        id:
-          type: string
-        lockSequences:
-          type: boolean
-        name:
-          type: string
-        ownerId:
-          type: string
-        public:
-          type: boolean
-      required:
-      - id
-      type: object
     CreateProjectInput:
       additionalProperties: false
       properties:
@@ -1038,6 +990,43 @@ components:
       required:
       - name
       - ownerId
+      type: object
+    PolicyRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    WebhookEnvelopeBaseV0:
+      description: Fields common to every webhook request body. The event itself is carried in the `message` property of the event-specific payload.
+      properties:
+        app:
+          $ref: '#/components/schemas/WebhookApp'
+        appDefinition:
+          $ref: '#/components/schemas/WebhookAppDefinition'
+        baseURL:
+          description: Base URL of the tenant the webhook was sent from.
+          examples:
+          - https://mytenant.benchling.com
+          type: string
+        tenantId:
+          description: Global ID of the tenant the webhook was sent from.
+          examples:
+          - ten_7fbo183
+          type: string
+        version:
+          description: Version of the webhook envelope shape. Always `0`.
+          enum:
+          - '0'
+          type: string
+      required:
+      - version
+      - baseURL
+      - tenantId
+      - app
+      - appDefinition
       type: object
     Project:
       description: 'A top-level organizational container in Benchling that groups related work and controls
@@ -1107,15 +1096,64 @@ components:
           format: uri
           type: string
       type: object
-    ReviewProcessUnpaginatedList:
-      additionalProperties: false
+    ProjectCreatedWebhookV3:
+      allOf:
+      - $ref: '#/components/schemas/V3EventBase'
+      - properties:
+          type:
+            description: The event type.
+            enum:
+            - v3.project.created
+            type: string
+        required:
+        - type
+        type: object
+      description: Message body of a `v3.project.created` event.
+    Team:
+      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
+
+        management and data sharing. Teams belong to exactly one organization, and users may
+
+        only join a team if they are already members of that team''s parent organization. Each
+
+        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
+
+        team membership, while members receive standard access. Unlike Organizations, teams
+
+        cannot directly own Projects or Folders—they are used for collaboration and access
+
+        control purposes. Teams can be configured with `provisionedCapabilities` to grant
+
+        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
+
+        flag controls whether team members can create and modify certain schema types.'
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewProcess'
-          type: array
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: 'Indicates that members of the team are able to create and modify schemas that do not implement the
+
+            Collaboratable interface.'
+          type: boolean
+        memberships:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
       type: object
-    ReviewProcessStageRef:
+    CollaboratableRef:
       properties:
         __typename:
           type: string
@@ -1123,53 +1161,82 @@ components:
           format: api_id
           type: string
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    UpdateProjectInput:
+    CollaborationUnpaginatedList:
       additionalProperties: false
       properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          type:
-          - 'null'
-          - string
-        hideParentFolderNamesForSharedItems:
-          type: boolean
-        lockSequences:
-          type: boolean
-        name:
-          type: string
-        ownerId:
-          type: string
-        public:
-          type: boolean
+        items:
+          items:
+            $ref: '#/components/schemas/Collaboration'
+          type: array
       type: object
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   parameters:
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    reviewProcess.eq:
+      description: ID of a ReviewProcess.
+      in: query
+      name: reviewProcess.eq
+      schema:
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -1180,16 +1247,12 @@ components:
           type: string
         maxItems: 100
         type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
+    nextToken:
+      description: Token for pagination
       in: query
-      name: name.anyOf.caseSensitive
+      name: nextToken
       schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
+        type: string
     returning:
       description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
@@ -1199,28 +1262,24 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
-      name: archived.anyOf
+      name: omit
       schema:
         items:
-          type: boolean
-        maxItems: 2
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
         type: array
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
@@ -1239,29 +1298,16 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
       explode: false
       in: query
-      name: archiveReason.anyOf
+      name: archived.anyOf
       schema:
         items:
-          type: string
-        maxItems: 10
+          type: boolean
+        maxItems: 2
         type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -1269,52 +1315,6 @@ components:
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    reviewProcess.eq:
-      description: ID of a ReviewProcess.
-      in: query
-      name: reviewProcess.eq
-      schema:
-        type: string
-  responses:
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

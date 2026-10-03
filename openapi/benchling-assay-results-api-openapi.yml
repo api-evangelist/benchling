@@ -436,50 +436,98 @@ paths:
       - Assay Results
 components:
   schemas:
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    AssayResultsCreateErrorResponse:
+    AssayResultIdsResponse:
       properties:
-        assayResults:
-          default: null
+        assayResultIds:
           items:
-            type: object
-          type:
-          - array
-          - 'null'
-        errors:
-          items:
-            properties:
-              fields:
-                type: object
-              global:
-                items:
-                  type: string
-                type: array
-            type: object
+            format: uuid
+            type: string
           type: array
       type: object
-    ArchiveRecord:
+    AssayResultsBulkCreateRequest:
+      additionalProperties: false
       properties:
-        reason:
-          example: Made in error
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResultCreate'
+          type: array
+      required:
+      - assayResults
+      type: object
+    AssayResultsBulkGet:
+      properties:
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResult'
+          type: array
+      type: object
+    AssayResultsArchive:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AssayResultIdsRequest'
+      - properties:
+          reason:
+            description: The reason for archiving the provided results. Accepted reasons may differ based on tenant configuration
+            enum:
+            - Made in error
+            - Archived
+            - Other
+            type: string
+        type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
           type: string
       type: object
-    AssayResultsBulkCreateInTableRequest:
-      allOf:
-      - $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
-      - properties:
-          tableId:
-            example: strtbl_IakA58In
-            type: string
-        required:
-        - assayResults
-        type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AssayResultCreate:
+      properties:
+        fieldValidation:
+          additionalProperties:
+            $ref: '#/components/schemas/UserValidation'
+          description: 'Dictionary mapping field names to UserValidation Resources.
+
+            '
+          type: object
+        fields:
+          anyOf:
+          - $ref: '#/components/schemas/Fields'
+          - $ref: '#/components/schemas/AssayFieldsCreate'
+          description: 'Dictionary of result fields. Please note the field keys must be the field''s system name, not display name.
+
+            '
+          example:
+            my_entity_link:
+              value: bfi_a0B1cd23
+            my_text_field:
+              value: some text
+        id:
+          description: UUID
+          type: string
+        projectId:
+          description: 'The project that the assay result should be uploaded to. Only users with read access to the project will be able to read the assay result. Leaving this empty will result in only the creator having read access.
+
+            '
+          type:
+          - string
+          - 'null'
+        schemaId:
+          description: ID of result schema under which to upload this result
+          type: string
+      required:
+      - schemaId
+      - fields
+      type: object
     AssayResultsPaginatedList:
       properties:
         assayResults:
@@ -487,6 +535,48 @@ components:
             $ref: '#/components/schemas/AssayResult'
           type: array
         nextToken:
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
           type: string
       type: object
     AssayResultIdsRequest:
@@ -500,17 +590,8 @@ components:
       required:
       - assayResultIds
       type: object
-    AssayResultsBulkGet:
-      properties:
-        assayResults:
-          items:
-            $ref: '#/components/schemas/AssayResult'
-          type: array
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
+    AssayFieldsCreate:
+      additionalProperties: true
       type: object
     AssayResult:
       properties:
@@ -588,25 +669,18 @@ components:
           readOnly: true
           type: string
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
       type: object
-    BadRequestError:
+    BaseError:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
       type: object
     AssayResultTransactionCreateResponse:
       properties:
@@ -614,19 +688,6 @@ components:
           format: uuid
           type: string
       type: object
-    AssayResultsArchive:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/AssayResultIdsRequest'
-      - properties:
-          reason:
-            description: The reason for archiving the provided results. Accepted reasons may differ based on tenant configuration
-            enum:
-            - Made in error
-            - Archived
-            - Other
-            type: string
-        type: object
     FieldType:
       enum:
       - dna_sequence_link
@@ -656,69 +717,36 @@ components:
       - date
       - json
       type: string
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    AssayResultsBulkCreateRequest:
-      additionalProperties: false
+    AssayResultsBulkCreateInTableRequest:
+      allOf:
+      - $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
+      - properties:
+          tableId:
+            example: strtbl_IakA58In
+            type: string
+        required:
+        - assayResults
+        type: object
+    AssayResultsCreateResponse:
       properties:
         assayResults:
-          items:
-            $ref: '#/components/schemas/AssayResultCreate'
-          type: array
-      required:
-      - assayResults
-      type: object
-    AssayResultCreate:
-      properties:
-        fieldValidation:
-          additionalProperties:
-            $ref: '#/components/schemas/UserValidation'
-          description: 'Dictionary mapping field names to UserValidation Resources.
-
-            '
-          type: object
-        fields:
-          anyOf:
-          - $ref: '#/components/schemas/Fields'
-          - $ref: '#/components/schemas/AssayFieldsCreate'
-          description: 'Dictionary of result fields. Please note the field keys must be the field''s system name, not display name.
-
-            '
-          example:
-            my_entity_link:
-              value: bfi_a0B1cd23
-            my_text_field:
-              value: some text
-        id:
-          description: UUID
-          type: string
-        projectId:
-          description: 'The project that the assay result should be uploaded to. Only users with read access to the project will be able to read the assay result. Leaving this empty will result in only the creator having read access.
-
-            '
-          type:
-          - string
-          - 'null'
-        schemaId:
-          description: ID of result schema under which to upload this result
-          type: string
-      required:
-      - schemaId
-      - fields
-      type: object
-    AssayResultIdsResponse:
-      properties:
-        assayResultIds:
           items:
             format: uuid
             type: string
           type: array
+        errors:
+          default: null
+          type:
+          - object
+          - 'null'
       type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
     UserValidation:
       properties:
         validationComment:
@@ -736,71 +764,43 @@ components:
           - PARTIALLY_VALID
           type: string
       type: object
-    Field:
-      properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    AssayFieldsCreate:
-      additionalProperties: true
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    AssayResultsCreateResponse:
+    AssayResultsCreateErrorResponse:
       properties:
         assayResults:
-          items:
-            format: uuid
-            type: string
-          type: array
-        errors:
           default: null
+          items:
+            type: object
           type:
-          - object
+          - array
           - 'null'
+        errors:
+          items:
+            properties:
+              fields:
+                type: object
+              global:
+                items:
+                  type: string
+                type: array
+            type: object
+          type: array
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

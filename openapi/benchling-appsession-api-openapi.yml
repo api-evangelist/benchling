@@ -394,31 +394,44 @@ paths:
       - AppSession
       x-bnch-rate-limit-tier: 2
 components:
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   parameters:
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: id.anyOf
+      name: createdAt.gte
       schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
+        format: datetime
         type: string
     modifiedAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
@@ -427,17 +440,10 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -448,37 +454,41 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
       name: pageSize
       schema:
         type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
       in: query
-      name: modifiedAt.lte
+      name: id.anyOf
       schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    nextToken:
+      description: Token for pagination
       in: query
-      name: createdAt.gte
+      name: nextToken
       schema:
-        format: datetime
         type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
       in: query
-      name: createdAt.gt
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -491,12 +501,80 @@ components:
         items:
           type: string
         type: array
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
   schemas:
-    UpdateAppSessionInputWithPathParams:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    AppSessionMessageInput:
       additionalProperties: false
       properties:
-        id:
+        content:
           type: string
+        style:
+          description: Visual style for this message. Defaults to NONE if omitted.
+          enum:
+          - NONE
+          - INFO
+          - WARNING
+          - SUCCESS
+          - ERROR
+          type: string
+      required:
+      - content
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UpdateAppSessionInput:
+      additionalProperties: false
+      properties:
         messages:
           description: Replace the current messages with this list. If omitted, the existing messages are carried forward unchanged.
           items:
@@ -512,8 +590,6 @@ components:
         timeoutSeconds:
           description: New timeout in seconds. Must be greater than or equal to the current timeout.
           type: integer
-      required:
-      - id
       type: object
     InternalServerError:
       properties:
@@ -541,40 +617,25 @@ components:
       - status
       - instance
       type: object
-    AsyncTaskLink:
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
       properties:
-        pollingUri:
-          format: uri
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
           type: string
-        taskId:
-          type: string
+      required:
+      - fileId
       type: object
-    IAppInstallationRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    UpdateAppSessionInput:
+    AppSessionPaginatedList:
       additionalProperties: false
       properties:
-        messages:
-          description: Replace the current messages with this list. If omitted, the existing messages are carried forward unchanged.
+        items:
           items:
-            $ref: '#/components/schemas/AppSessionMessageInput'
+            $ref: '#/components/schemas/AppSession'
           type: array
-        status:
-          description: Transition the session to a terminal status (SUCCEEDED, FAILED, or COMPLETED_WITH_WARNINGS).
-          enum:
-          - SUCCEEDED
-          - FAILED
-          - COMPLETED_WITH_WARNINGS
+        nextToken:
           type: string
-        timeoutSeconds:
-          description: New timeout in seconds. Must be greater than or equal to the current timeout.
-          type: integer
       type: object
     CreateAppSessionInput:
       additionalProperties: false
@@ -598,32 +659,36 @@ components:
       - name
       - timeoutSeconds
       type: object
-    AppSessionPaginatedList:
+    UpdateAppSessionInputWithPathParams:
       additionalProperties: false
       properties:
-        items:
+        id:
+          type: string
+        messages:
+          description: Replace the current messages with this list. If omitted, the existing messages are carried forward unchanged.
           items:
-            $ref: '#/components/schemas/AppSession'
+            $ref: '#/components/schemas/AppSessionMessageInput'
           type: array
-        nextToken:
-          type: string
-      type: object
-    AppSessionMessageInput:
-      additionalProperties: false
-      properties:
-        content:
-          type: string
-        style:
-          description: Visual style for this message. Defaults to NONE if omitted.
+        status:
+          description: Transition the session to a terminal status (SUCCEEDED, FAILED, or COMPLETED_WITH_WARNINGS).
           enum:
-          - NONE
-          - INFO
-          - WARNING
-          - SUCCESS
-          - ERROR
+          - SUCCEEDED
+          - FAILED
+          - COMPLETED_WITH_WARNINGS
           type: string
+        timeoutSeconds:
+          description: New timeout in seconds. Must be greater than or equal to the current timeout.
+          type: integer
       required:
-      - content
+      - id
+      type: object
+    IAppInstallationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     AppSessionMessage:
       description: 'A status message displayed to the user within an app session. Messages convey progress,
@@ -648,16 +713,6 @@ components:
           - SUCCESS
           - ERROR
           type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
       type: object
     AppSession:
       description: 'Represents a running or completed session for a Benchling App. App sessions track
@@ -705,61 +760,6 @@ components:
             age exceeds this value and the session has not been finalized, its status becomes TIMEOUT.'
           type: integer
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-  responses:
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

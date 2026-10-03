@@ -370,18 +370,29 @@ paths:
       - Blobs
 components:
   schemas:
-    EmptyObject:
-      type: object
-    BadRequestError:
+    BlobsBulkGet:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        blobs:
+          items:
+            $ref: '#/components/schemas/Blob'
+          type: array
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    BlobComplete:
+      additionalProperties: false
+      properties:
+        parts:
+          items:
+            $ref: '#/components/schemas/BlobPart'
+          type: array
       type: object
     BlobCreate:
       additionalProperties: false
@@ -418,15 +429,6 @@ components:
       - data64
       - md5
       type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
     BlobMultipartCreate:
       additionalProperties: false
       properties:
@@ -451,6 +453,19 @@ components:
       - name
       - type
       type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     BlobPart:
       properties:
         eTag:
@@ -471,40 +486,7 @@ components:
           description: The unix time that the download URL expires at.
           type: integer
       type: object
-    BlobsBulkGet:
-      properties:
-        blobs:
-          items:
-            $ref: '#/components/schemas/Blob'
-          type: array
-      type: object
-    BlobPartCreate:
-      additionalProperties: false
-      properties:
-        data64:
-          format: bytes
-          type: string
-        md5:
-          type: string
-        partNumber:
-          description: 'An integer between 1 to 10,000, inclusive. The part number must be unique per part and indicates the ordering of the part inside the final blob. The part numbers do not need to be consecutive.
-
-            '
-          maximum: 10000
-          minimum: 1
-          type: integer
-      required:
-      - partNumber
-      - data64
-      - md5
-      type: object
-    BlobComplete:
-      additionalProperties: false
-      properties:
-        parts:
-          items:
-            $ref: '#/components/schemas/BlobPart'
-          type: array
+    EmptyObject:
       type: object
     Blob:
       properties:
@@ -538,14 +520,32 @@ components:
           - ABORTED
           type: string
       type: object
-    NotFoundError:
+    BlobPartCreate:
+      additionalProperties: false
+      properties:
+        data64:
+          format: bytes
+          type: string
+        md5:
+          type: string
+        partNumber:
+          description: 'An integer between 1 to 10,000, inclusive. The part number must be unique per part and indicates the ordering of the part inside the final blob. The part numbers do not need to be consecutive.
+
+            '
+          maximum: 10000
+          minimum: 1
+          type: integer
+      required:
+      - partNumber
+      - data64
+      - md5
+      type: object
+    BadRequestError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
-              invalidId:
-                type: string
               type:
                 enum:
                 - invalid_request_error

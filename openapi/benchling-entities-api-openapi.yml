@@ -69,6 +69,12 @@ paths:
       - Entities
 components:
   schemas:
+    AaSequenceBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/AaSequenceBaseRequest'
+      - required:
+        - aminoAcids
+        - name
     ArchiveRecordSet:
       additionalProperties: false
       description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
@@ -76,12 +82,23 @@ components:
       type:
       - object
       - 'null'
-    CustomEntityBaseRequestForCreate:
+    DnaAnnotation:
       allOf:
-      - $ref: '#/components/schemas/CustomEntityBaseRequest'
-      - required:
-        - name
-        - schemaId
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            maximum: 1
+            minimum: -1
+            type: integer
+          type:
+            type: string
+        type: object
     Translation:
       allOf:
       - $ref: '#/components/schemas/SequenceFeatureBase'
@@ -141,10 +158,63 @@ components:
             example: 1
             type: integer
         type: object
-    MoleculeBulkUpsertRequest:
+    EntitiesBulkUpsertRequest:
+      additionalProperties: false
+      properties:
+        aaSequences:
+          items:
+            $ref: '#/components/schemas/AaSequenceBulkUpsertRequest'
+          type: array
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkUpsertRequest'
+          type: array
+        dnaOligos:
+          items:
+            $ref: '#/components/schemas/OligoBulkUpsertRequest'
+          type: array
+        dnaSequences:
+          items:
+            $ref: '#/components/schemas/DnaSequenceBulkUpsertRequest'
+          type: array
+        molecules:
+          items:
+            $ref: '#/components/schemas/MoleculeBulkUpsertRequest'
+          type: array
+        rnaOligos:
+          items:
+            $ref: '#/components/schemas/OligoBulkUpsertRequest'
+          type: array
+      type: object
+    OligoBulkUpsertRequest:
       allOf:
       - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
+      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    CustomEntityBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      - required:
+        - name
+        - schemaId
     MoleculeBaseRequest:
       additionalProperties: false
       properties:
@@ -192,22 +262,149 @@ components:
             '
           type: string
       type: object
-    DnaSequenceBulkUpsertRequest:
+    MoleculeBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/MoleculeBaseRequest'
+      - required:
+        - name
+        - chemicalStructure
+    CustomEntityBulkUpsertRequest:
       allOf:
       - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
-      - required:
-        - annotations
-        - primers
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
     AsyncTaskLink:
       properties:
         taskId:
           type: string
       type: object
-    OligoBulkUpsertRequest:
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+      properties:
+        name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
+      type: object
+    EntityBulkUpsertBaseRequest:
       allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/OligoBaseRequestForCreate'
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    MoleculeStructure:
+      additionalProperties: false
+      properties:
+        structureFormat:
+          description: 'Format of the chemical structure.
+
+            - smiles
+
+            - molfile
+
+            '
+          enum:
+          - smiles
+          - molfile
+          type: string
+        value:
+          description: Chemical structure in SMILES or molfile format.
+          example: Nc1nc(=O)n([H:1])cc1C1CC1
+          type: string
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    Primer:
+      properties:
+        bases:
+          readOnly: true
+          type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    OligoBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/OligoBaseRequest'
+      - required:
+        - name
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
     AaAnnotation:
       properties:
         color:
@@ -233,83 +430,6 @@ components:
           maxLength: 255
           type: string
       type: object
-    FieldWithResolution:
-      allOf:
-      - $ref: '#/components/schemas/Field'
-      - properties:
-          value:
-            allOf:
-            - $ref: '#/components/schemas/FieldValueWithResolution'
-        type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
-          type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-      type: object
-    AaSequenceBulkUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/AaSequenceBaseRequestForCreate'
-      - required:
-        - annotations
-    DnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            maximum: 1
-            minimum: -1
-            type: integer
-          type:
-            type: string
-        type: object
-    DnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: -1
-            type: integer
-        type: object
-    AaSequenceBaseRequestForCreate:
-      allOf:
-      - $ref: '#/components/schemas/AaSequenceBaseRequest'
-      - required:
-        - aminoAcids
-        - name
     EntityUpsertBaseRequest:
       properties:
         archiveRecord:
@@ -327,18 +447,22 @@ components:
       - name
       - schemaId
       type: object
-    NucleotideSequencePart:
-      properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          example: seq_VfVOART1
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
           type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-      type: object
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
     FieldType:
       enum:
       - dna_sequence_link
@@ -368,6 +492,89 @@ components:
       - date
       - json
       type: string
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    DnaSequenceBulkUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/DnaSequenceBaseRequestForCreate'
+      - required:
+        - annotations
+        - primers
+    MoleculeBulkUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
+    DnaSequenceBaseRequestForCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
+      - required:
+        - bases
+        - isCircular
+        - name
+    NucleotideSequencePart:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+      type: object
+    OligoBaseRequest:
+      properties:
+        aliases:
+          description: Aliases to add to the Oligo
+          items:
+            type: string
+          type: array
+        authorIds:
+          description: IDs of users to set as the Oligo's authors.
+          items:
+            type: string
+          type: array
+        bases:
+          description: 'Base pairs of the oligo.
+
+            '
+          type: string
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the Oligo. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Fields to set on the Oligo. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: 'ID of the folder containing the Oligo.
+
+            '
+          type: string
+        name:
+          description: 'Name of the Oligo.
+
+            '
+          type: string
+        schemaId:
+          description: 'ID of the oligo''s schema.
+
+            '
+          type: string
+      type: object
     FieldsWithResolution:
       additionalProperties:
         $ref: '#/components/schemas/FieldWithResolution'
@@ -382,110 +589,104 @@ components:
           - entityRegistryId: STRAIN001
           - entityRegistryId: STRAIN002
       type: object
-    FieldValueWithResolution:
-      oneOf:
-      - type: string
-      - type: boolean
-      - type: number
-      - items:
-          type: string
-        type: array
-      - additionalProperties: false
-        description: Look up an entity by its entity registry ID
-        properties:
-          entityRegistryId:
-            type: string
-        required:
-        - entityRegistryId
-        type: object
-    MoleculeBaseRequestForCreate:
+    DnaSequencePart:
       allOf:
-      - $ref: '#/components/schemas/MoleculeBaseRequest'
-      - required:
-        - name
-        - chemicalStructure
-    EntitiesBulkUpsertRequest:
-      additionalProperties: false
-      properties:
-        aaSequences:
-          items:
-            $ref: '#/components/schemas/AaSequenceBulkUpsertRequest'
-          type: array
-        customEntities:
-          items:
-            $ref: '#/components/schemas/CustomEntityBulkUpsertRequest'
-          type: array
-        dnaOligos:
-          items:
-            $ref: '#/components/schemas/OligoBulkUpsertRequest'
-          type: array
-        dnaSequences:
-          items:
-            $ref: '#/components/schemas/DnaSequenceBulkUpsertRequest'
-          type: array
-        molecules:
-          items:
-            $ref: '#/components/schemas/MoleculeBulkUpsertRequest'
-          type: array
-        rnaOligos:
-          items:
-            $ref: '#/components/schemas/OligoBulkUpsertRequest'
-          type: array
-      type: object
-    EntityBulkUpsertBaseRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/NucleotideSequencePart'
       - properties:
-          entityRegistryId:
-            description: Registry ID of the entity in Benchling.
-            type: string
-      - required:
-        - entityRegistryId
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
-      properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    OligoBaseRequestForCreate:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: -1
+            type: integer
+        type: object
+    AaSequenceBulkUpsertRequest:
       allOf:
-      - $ref: '#/components/schemas/OligoBaseRequest'
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/AaSequenceBaseRequestForCreate'
       - required:
-        - name
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
-    CustomField:
+        - annotations
+    CustomEntityBaseRequest:
       properties:
-        value:
-          type: string
-      type: object
-    MoleculeStructure:
-      additionalProperties: false
-      properties:
-        structureFormat:
-          description: 'Format of the chemical structure.
-
-            - smiles
-
-            - molfile
+        aliases:
+          description: Aliases to add to the custom entity
+          items:
+            type: string
+          type: array
+        authorIds:
+          description: IDs of users to set as the custom entity's authors.
+          items:
+            type: string
+          type: array
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the custom entity. Every field should have its name as a key, mapping to an object with information about the value of the field.
 
             '
-          enum:
-          - smiles
-          - molfile
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Schema fields to set on the custom entity. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: ID of the folder that the entity is moved into
           type: string
-        value:
-          description: Chemical structure in SMILES or molfile format.
-          example: Nc1nc(=O)n([H:1])cc1C1CC1
+        name:
+          type: string
+        schemaId:
+          type: string
+      type: object
+    AaSequenceBaseRequest:
+      properties:
+        aliases:
+          description: Aliases to add to the AA sequence
+          items:
+            type: string
+          type: array
+        aminoAcids:
+          description: 'Amino acids for the AA sequence.
+
+            '
+          type: string
+        annotations:
+          description: 'Annotations to create on the AA sequence.
+
+            '
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        authorIds:
+          description: IDs of users to set as the AA sequence's authors.
+          items:
+            type: string
+          type: array
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the AA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Fields to set on the AA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: 'ID of the folder containing the AA sequence.
+
+            '
+          type: string
+        name:
+          description: 'Name of the AA sequence.
+
+            '
+          type: string
+        schemaId:
+          description: 'ID of the AA sequence''s schema.
+
+            '
           type: string
       type: object
     DnaSequenceBaseRequest:
@@ -560,225 +761,24 @@ components:
             $ref: '#/components/schemas/Translation'
           type: array
       type: object
-    CustomEntityBaseRequest:
-      properties:
-        aliases:
-          description: Aliases to add to the custom entity
-          items:
-            type: string
-          type: array
-        authorIds:
-          description: IDs of users to set as the custom entity's authors.
-          items:
-            type: string
-          type: array
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: 'Custom fields to add to the custom entity. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Schema fields to set on the custom entity. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        folderId:
-          description: ID of the folder that the entity is moved into
-          type: string
-        name:
-          type: string
-        schemaId:
-          type: string
-      type: object
-    CustomEntityBulkUpsertRequest:
+    FieldWithResolution:
       allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
-    DnaSequenceBaseRequestForCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/DnaSequenceBaseRequest'
-      - required:
-        - bases
-        - isCircular
-        - name
-    Field:
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+        type: object
+    BadRequestError:
       properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
+        error:
           allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    AaSequenceBaseRequest:
-      properties:
-        aliases:
-          description: Aliases to add to the AA sequence
-          items:
-            type: string
-          type: array
-        aminoAcids:
-          description: 'Amino acids for the AA sequence.
-
-            '
-          type: string
-        annotations:
-          description: 'Annotations to create on the AA sequence.
-
-            '
-          items:
-            $ref: '#/components/schemas/AaAnnotation'
-          type: array
-        authorIds:
-          description: IDs of users to set as the AA sequence's authors.
-          items:
-            type: string
-          type: array
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: 'Custom fields to add to the AA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Fields to set on the AA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        folderId:
-          description: 'ID of the folder containing the AA sequence.
-
-            '
-          type: string
-        name:
-          description: 'Name of the AA sequence.
-
-            '
-          type: string
-        schemaId:
-          description: 'ID of the AA sequence''s schema.
-
-            '
-          type: string
-      type: object
-    Primer:
-      properties:
-        bases:
-          readOnly: true
-          type: string
-        bindPosition:
-          readOnly: true
-          type: integer
-        color:
-          readOnly: true
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        name:
-          readOnly: true
-          type: string
-        oligoId:
-          type: string
-        overhangLength:
-          readOnly: true
-          type: integer
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          type: integer
-      type: object
-    OligoBaseRequest:
-      properties:
-        aliases:
-          description: Aliases to add to the Oligo
-          items:
-            type: string
-          type: array
-        authorIds:
-          description: IDs of users to set as the Oligo's authors.
-          items:
-            type: string
-          type: array
-        bases:
-          description: 'Base pairs of the oligo.
-
-            '
-          type: string
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: 'Custom fields to add to the Oligo. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Fields to set on the Oligo. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        folderId:
-          description: 'ID of the folder containing the Oligo.
-
-            '
-          type: string
-        name:
-          description: 'Name of the Oligo.
-
-            '
-          type: string
-        schemaId:
-          description: 'ID of the oligo''s schema.
-
-            '
-          type: string
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

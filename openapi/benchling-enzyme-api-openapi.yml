@@ -141,6 +141,37 @@ paths:
       - Enzyme
       x-bnch-rate-limit-tier: 4
 components:
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
     EnzymeUnpaginatedList:
       additionalProperties: false
@@ -149,44 +180,6 @@ components:
           items:
             $ref: '#/components/schemas/Enzyme'
           type: array
-      type: object
-    Enzyme:
-      description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
-
-        enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
-
-        that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
-
-        has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
-
-        details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
-
-        site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
-
-        pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
-
-        during cloning workflow design.'
-      properties:
-        __typename:
-          type: string
-        cutSites:
-          description: Either one (for single cutters) or two (for double cutters) cut details.
-          items:
-            $ref: '#/components/schemas/CutSiteDetail'
-          type: array
-        id:
-          description: Id of the Enzyme
-          type: string
-        isoschizomers:
-          description: Other enzymes in the catalog that recognize the same restriction site.
-          format: uri
-          type: string
-        name:
-          description: The name of the Enzyme, like EcoRI.
-          type: string
-        restrictionSiteBases:
-          description: The DNA bases recognized by the Enzyme.
-          type: string
       type: object
     CutSiteDetail:
       description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
@@ -209,6 +202,16 @@ components:
         position:
           description: Location, relative to the restriction site bases, where the 5' cut is made.
           type: integer
+      type: object
+    EnzymePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Enzyme'
+          type: array
+        nextToken:
+          type: string
       type: object
     GeneralError:
       properties:
@@ -260,22 +263,65 @@ components:
       - status
       - instance
       type: object
-    EnzymePaginatedList:
-      additionalProperties: false
+    Enzyme:
+      description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+
+        enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+        that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+        has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+        details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+        site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+        pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+        during cloning workflow design.'
       properties:
-        items:
+        __typename:
+          type: string
+        cutSites:
+          description: Either one (for single cutters) or two (for double cutters) cut details.
           items:
-            $ref: '#/components/schemas/Enzyme'
+            $ref: '#/components/schemas/CutSiteDetail'
           type: array
-        nextToken:
+        id:
+          description: Id of the Enzyme
+          type: string
+        isoschizomers:
+          description: Other enzymes in the catalog that recognize the same restriction site.
+          format: uri
+          type: string
+        name:
+          description: The name of the Enzyme, like EcoRI.
+          type: string
+        restrictionSiteBases:
+          description: The DNA bases recognized by the Enzyme.
           type: string
       type: object
   parameters:
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
-      name: id.anyOf
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
       schema:
         items:
           type: string
@@ -290,12 +336,12 @@ components:
         items:
           type: string
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: pageSize
+      name: nextToken
       schema:
-        type: integer
+        type: string
     name.anyOf:
       description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
@@ -306,62 +352,16 @@ components:
           type: string
         maxItems: 100
         type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf.caseSensitive
+      name: id.anyOf
       schema:
         items:
           type: string
         maxItems: 100
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

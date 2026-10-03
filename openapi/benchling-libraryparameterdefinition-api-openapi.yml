@@ -468,7 +468,82 @@ paths:
       - LibraryParameterDefinition
       x-bnch-rate-limit-tier: 2
 components:
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   parameters:
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -479,15 +554,36 @@ components:
           type: string
         maxItems: 100
         type: array
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: creator.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -499,45 +595,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
@@ -555,20 +612,30 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
       explode: false
       in: query
-      name: archiveReason.anyOf
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
       schema:
         items:
           type: string
-        maxItems: 10
+        maxItems: 100
         type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.lt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -579,43 +646,83 @@ components:
       schema:
         format: datetime
         type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
   schemas:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateLibraryParameterDefinitionInput:
+      additionalProperties: false
+      example:
+        dataType: FLOAT
+        description: The temperature at which the sample is incubated during the reaction step.
+        name: Incubation Temperature
+        unitTypeId: qnty_k8Rt4vNp
+      properties:
+        creatorId:
+          deprecated: true
+          description: Deprecated. This field is ignored — the creator is always set to the authenticated user.
+          type: string
+        dataType:
+          description: 'The data type of values recorded for this parameter. Determines which additional fields are required: `FLOAT` requires `unitTypeId`, `DROPDOWN` requires `schemaFieldSelectorId`. Cannot be changed after creation.'
+          enum:
+          - FLOAT
+          - DATETIME
+          - TEXT
+          - DROPDOWN
+          type: string
+        description:
+          description: A description of what this parameter measures or represents. Maximum 2048 characters.
+          type: string
+        name:
+          description: Display name for the parameter definition. Must contain at least one alphanumeric character. Maximum 44 characters.
+          type: string
+        unitTypeId:
+          description: 'The ID of the unit type for this parameter. Required when `dataType` is `FLOAT`, forbidden otherwise. Use `GET /benchling/unit-type/items` to list available unit types. Format: `qnty_XXXXXXXX`.'
+          type:
+          - 'null'
+          - string
+      required:
+      - name
+      - description
+      - dataType
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -642,12 +749,63 @@ components:
       - status
       - instance
       type: object
-    AsyncTaskLink:
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
       properties:
-        pollingUri:
-          format: uri
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
           type: string
-        taskId:
+      required:
+      - fileId
+      type: object
+    UpdateLibraryParameterDefinitionInputWithPathParams:
+      additionalProperties: false
+      example:
+        description: The temperature at which the sample is incubated, measured in Celsius.
+        id: pardef_mG7kLpQw
+        name: Incubation Temperature (Updated)
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Updated description. Maximum 2048 characters.
+          type: string
+        id:
+          type: string
+        name:
+          description: Updated display name. Must contain at least one alphanumeric character. Maximum 44 characters.
+          type: string
+      required:
+      - id
+      type: object
+    UpdateLibraryParameterDefinitionInput:
+      additionalProperties: false
+      example:
+        description: The temperature at which the sample is incubated, measured in Celsius.
+        name: Incubation Temperature (Updated)
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Updated description. Maximum 2048 characters.
+          type: string
+        name:
+          description: Updated display name. Must contain at least one alphanumeric character. Maximum 44 characters.
+          type: string
+      type: object
+    LibraryParameterDefinitionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/LibraryParameterDefinition'
+          type: array
+        nextToken:
           type: string
       type: object
     LibraryParameterDefinition:
@@ -726,133 +884,6 @@ components:
           - $ref: '#/components/schemas/UnitTypeRef'
           - type: 'null'
       type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    UpdateLibraryParameterDefinitionInput:
-      additionalProperties: false
-      example:
-        description: The temperature at which the sample is incubated, measured in Celsius.
-        name: Incubation Temperature (Updated)
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          description: Updated description. Maximum 2048 characters.
-          type: string
-        name:
-          description: Updated display name. Must contain at least one alphanumeric character. Maximum 44 characters.
-          type: string
-      type: object
-    LibraryParameterDefinitionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/LibraryParameterDefinition'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    CreateLibraryParameterDefinitionInput:
-      additionalProperties: false
-      example:
-        dataType: FLOAT
-        description: The temperature at which the sample is incubated during the reaction step.
-        name: Incubation Temperature
-        unitTypeId: qnty_k8Rt4vNp
-      properties:
-        creatorId:
-          deprecated: true
-          description: Deprecated. This field is ignored — the creator is always set to the authenticated user.
-          type: string
-        dataType:
-          description: 'The data type of values recorded for this parameter. Determines which additional fields are required: `FLOAT` requires `unitTypeId`, `DROPDOWN` requires `schemaFieldSelectorId`. Cannot be changed after creation.'
-          enum:
-          - FLOAT
-          - DATETIME
-          - TEXT
-          - DROPDOWN
-          type: string
-        description:
-          description: A description of what this parameter measures or represents. Maximum 2048 characters.
-          type: string
-        name:
-          description: Display name for the parameter definition. Must contain at least one alphanumeric character. Maximum 44 characters.
-          type: string
-        unitTypeId:
-          description: 'The ID of the unit type for this parameter. Required when `dataType` is `FLOAT`, forbidden otherwise. Use `GET /benchling/unit-type/items` to list available unit types. Format: `qnty_XXXXXXXX`.'
-          type:
-          - 'null'
-          - string
-      required:
-      - name
-      - description
-      - dataType
-      type: object
-    UpdateLibraryParameterDefinitionInputWithPathParams:
-      additionalProperties: false
-      example:
-        description: The temperature at which the sample is incubated, measured in Celsius.
-        id: pardef_mG7kLpQw
-        name: Incubation Temperature (Updated)
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          description: Updated description. Maximum 2048 characters.
-          type: string
-        id:
-          type: string
-        name:
-          description: Updated display name. Must contain at least one alphanumeric character. Maximum 44 characters.
-          type: string
-      required:
-      - id
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
     UnitTypeRef:
       properties:
         __typename:
@@ -861,37 +892,6 @@ components:
           format: api_id
           type: string
       type: object
-  responses:
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -642,34 +642,43 @@ paths:
       - RNA Sequences
 components:
   schemas:
-    RnaSequenceCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/RnaSequenceBaseRequestForCreate'
-      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
-    RegistrationOrigin:
+    RnaSequenceRequestRegistryFields:
       properties:
-        originEntryId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
+        entityRegistryId:
           type: string
       type: object
-    UserSummary:
+    RnaAnnotation:
       allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    ArchiveRecord:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 0
+            type: integer
+          type:
+            type: string
+        type: object
+    SchemaSummary:
       properties:
-        reason:
-          example: Made in error
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
           type: string
       type: object
     Translation:
@@ -731,94 +740,6 @@ components:
             example: 1
             type: integer
         type: object
-    RnaSequenceBaseRequest:
-      allOf:
-      - properties:
-          aliases:
-            description: Aliases to add to the RNA sequence
-            items:
-              type: string
-            type: array
-          annotations:
-            description: 'Annotations to create on the RNA sequence.
-
-              '
-            items:
-              $ref: '#/components/schemas/RnaAnnotation'
-            type: array
-          authorIds:
-            description: IDs of users to set as the RNA sequence's authors.
-            items:
-              type: string
-            type: array
-          bases:
-            description: 'Base pairs for the RNA sequence.
-
-              '
-            type: string
-          customFields:
-            allOf:
-            - $ref: '#/components/schemas/CustomFields'
-            description: 'Custom fields to add to the RNA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-              '
-          fields:
-            allOf:
-            - $ref: '#/components/schemas/Fields'
-            description: 'Fields to set on the RNA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-              '
-          folderId:
-            description: 'ID of the folder containing the RNA sequence.
-
-              '
-            type: string
-          helm:
-            description: Representation of the RNA sequence in HELM syntax, including any chemical modifications
-            example: RNA1{r(A)p.r([impr2G])p.r(G)[Ssp].r(A)p.r(U)p.r(U)p}$$$$V2.0
-            type: string
-          isCircular:
-            description: 'Whether the RNA sequence is circular or linear. RNA sequences can only be linear
-
-              '
-            example: false
-            type: boolean
-          name:
-            description: 'Name of the RNA sequence.
-
-              '
-            type: string
-          parts:
-            items:
-              $ref: '#/components/schemas/RnaSequencePart'
-            type: array
-          primers:
-            items:
-              $ref: '#/components/schemas/Primer'
-            type: array
-          schemaId:
-            description: 'ID of the RNA sequence''s schema.
-
-              '
-            type: string
-          translations:
-            description: 'Translations to create on the RNA sequence. Translations are specified by either a combination of ''start'' and ''end'' fields, or a list of regions. Both cannot be provided.
-
-              '
-            items:
-              $ref: '#/components/schemas/Translation'
-            type: array
-      - $ref: '#/components/schemas/CustomNotationRequest'
-      type: object
-    CustomNotationRequest:
-      properties:
-        customNotation:
-          description: Representation of the sequence or oligo in the custom notation specified by customNotationId
-          type: string
-        customNotationId:
-          description: ID of the notation used to interpret the string provided in the customNotation field
-          type: string
-      type: object
     NamingStrategy:
       description: 'Specifies the behavior for automatically generated names when registering an entity.
 
@@ -846,14 +767,32 @@ components:
       - KEEP_NAMES
       - REPLACE_ID_AND_NAME_FROM_PARTS
       type: string
-    RnaSequencesArchivalChange:
-      description: 'IDs of all RNA Sequences that were archived or unarchived, grouped by resource type.
-
-        '
+    SequenceFeatureBase:
       properties:
-        rnaSequenceIds:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
           items:
-            type: string
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    RnaSequencesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        rnaSequences:
+          items:
+            $ref: '#/components/schemas/RnaSequenceBulkCreate'
+          maxItems: 1000
           type: array
       type: object
     RnaSequence:
@@ -963,50 +902,20 @@ components:
           readOnly: true
           type: string
       type: object
-    AsyncTaskLink:
+    RnaSequencesPaginatedList:
       properties:
-        taskId:
+        nextToken:
           type: string
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
+        rnaSequences:
           items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
+            $ref: '#/components/schemas/RnaSequence'
           type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
       type: object
+    RnaSequenceCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
     RnaSequencesArchive:
       additionalProperties: false
       description: 'The request body for archiving RNA sequences.
@@ -1023,31 +932,227 @@ components:
       - reason
       - rnaSequenceIds
       type: object
-    NucleotideSequencePart:
+    Field:
       properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          example: seq_VfVOART1
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
       type: object
-    RnaSequenceRequestRegistryFields:
+    AsyncTaskLink:
       properties:
-        entityRegistryId:
+        taskId:
           type: string
       type: object
-    RnaSequencesBulkUpdateRequest:
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+      properties:
+        name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
+      type: object
+    MatchBasesRequest:
       additionalProperties: false
+      properties:
+        archiveReason:
+          default: NOT_ARCHIVED
+          enum:
+          - NOT_ARCHIVED
+          - Other
+          - Archived
+          type: string
+        bases:
+          type: string
+        nextToken:
+          type: string
+        pageSize:
+          default: 50
+          maximum: 100
+          minimum: 0
+          type: integer
+        registryId:
+          description: 'ID of a registry. Restricts results to those registered in this registry. Specifying `null` returns unregistered items.
+
+            '
+          type:
+          - string
+          - 'null'
+        sort:
+          default: modifiedAt:desc
+          enum:
+          - modifiedAt:asc
+          - modifiedAt:desc
+          - name:asc
+          - name:desc
+          type: string
+      required:
+      - bases
+      type: object
+    RnaSequenceBaseRequestForCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
+      - required:
+        - name
+    RnaSequencesBulkGet:
       properties:
         rnaSequences:
           items:
-            $ref: '#/components/schemas/RnaSequenceBulkUpdate'
+            $ref: '#/components/schemas/RnaSequence'
           type: array
       type: object
+    RnaSequencesArchivalChange:
+      description: 'IDs of all RNA Sequences that were archived or unarchived, grouped by resource type.
+
+        '
+      properties:
+        rnaSequenceIds:
+          items:
+            type: string
+          type: array
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    RnaSequenceUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
+      - $ref: '#/components/schemas/RnaSequenceRequestRegistryFields'
+    Primer:
+      properties:
+        bases:
+          readOnly: true
+          type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    AutoAnnotateRnaSequences:
+      additionalProperties: false
+      properties:
+        featureLibraryIds:
+          description: Array of feature library IDs.
+          items:
+            type: string
+          type: array
+        rnaSequenceIds:
+          description: Array of RNA sequence IDs.
+          items:
+            type: string
+          maxItems: 1000
+          type: array
+      required:
+      - rnaSequenceIds
+      - featureLibraryIds
+      type: object
+    RnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 1
+            type: integer
+        type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    RnaSequenceBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/RnaSequenceCreate'
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
     FieldType:
       enum:
       - dna_sequence_link
@@ -1077,6 +1182,22 @@ components:
       - date
       - json
       type: string
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    CustomNotationRequest:
+      properties:
+        customNotation:
+          description: Representation of the sequence or oligo in the custom notation specified by customNotationId
+          type: string
+        customNotationId:
+          description: ID of the notation used to interpret the string provided in the customNotation field
+          type: string
+      type: object
     SearchBasesRequest:
       additionalProperties: false
       properties:
@@ -1123,34 +1244,28 @@ components:
       required:
       - bases
       type: object
-    RnaSequencesBulkGet:
-      properties:
-        rnaSequences:
-          items:
-            $ref: '#/components/schemas/RnaSequence'
-          type: array
-      type: object
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    RnaSequenceBaseRequestForCreate:
-      additionalProperties: false
+    UserSummary:
       allOf:
-      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
-      - required:
-        - name
-    AutoAnnotateRnaSequences:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    NucleotideSequencePart:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+      type: object
+    AutofillRnaSequences:
       additionalProperties: false
       properties:
-        featureLibraryIds:
-          description: Array of feature library IDs.
-          items:
-            type: string
-          type: array
         rnaSequenceIds:
           description: Array of RNA sequence IDs.
           items:
@@ -1159,48 +1274,6 @@ components:
           type: array
       required:
       - rnaSequenceIds
-      - featureLibraryIds
-      type: object
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
-      properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    RnaSequenceUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/RnaSequenceBaseRequest'
-      - $ref: '#/components/schemas/RnaSequenceRequestRegistryFields'
-    RnaSequenceBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/RnaSequenceCreate'
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    RnaSequencesPaginatedList:
-      properties:
-        nextToken:
-          type: string
-        rnaSequences:
-          items:
-            $ref: '#/components/schemas/RnaSequence'
-          type: array
       type: object
     RnaSequencesUnarchive:
       additionalProperties: false
@@ -1215,48 +1288,6 @@ components:
       required:
       - rnaSequenceIds
       type: object
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    MatchBasesRequest:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          default: NOT_ARCHIVED
-          enum:
-          - NOT_ARCHIVED
-          - Other
-          - Archived
-          type: string
-        bases:
-          type: string
-        nextToken:
-          type: string
-        pageSize:
-          default: 50
-          maximum: 100
-          minimum: 0
-          type: integer
-        registryId:
-          description: 'ID of a registry. Restricts results to those registered in this registry. Specifying `null` returns unregistered items.
-
-            '
-          type:
-          - string
-          - 'null'
-        sort:
-          default: modifiedAt:desc
-          enum:
-          - modifiedAt:asc
-          - modifiedAt:desc
-          - name:asc
-          - name:desc
-          type: string
-      required:
-      - bases
-      type: object
     RnaSequenceBulkUpdate:
       additionalProperties: false
       allOf:
@@ -1265,109 +1296,106 @@ components:
             type: string
         type: object
       - $ref: '#/components/schemas/RnaSequenceBaseRequest'
-    EntityArchiveReason:
-      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+    RnaSequenceBaseRequest:
+      allOf:
+      - properties:
+          aliases:
+            description: Aliases to add to the RNA sequence
+            items:
+              type: string
+            type: array
+          annotations:
+            description: 'Annotations to create on the RNA sequence.
 
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Expended
-      - Shipped
-      - Contaminated
-      - Expired
-      - Missing
-      - Other
-      type: string
-    RnaSequencesBulkCreateRequest:
+              '
+            items:
+              $ref: '#/components/schemas/RnaAnnotation'
+            type: array
+          authorIds:
+            description: IDs of users to set as the RNA sequence's authors.
+            items:
+              type: string
+            type: array
+          bases:
+            description: 'Base pairs for the RNA sequence.
+
+              '
+            type: string
+          customFields:
+            allOf:
+            - $ref: '#/components/schemas/CustomFields'
+            description: 'Custom fields to add to the RNA sequence. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+              '
+          fields:
+            allOf:
+            - $ref: '#/components/schemas/Fields'
+            description: 'Fields to set on the RNA sequence. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+              '
+          folderId:
+            description: 'ID of the folder containing the RNA sequence.
+
+              '
+            type: string
+          helm:
+            description: Representation of the RNA sequence in HELM syntax, including any chemical modifications
+            example: RNA1{r(A)p.r([impr2G])p.r(G)[Ssp].r(A)p.r(U)p.r(U)p}$$$$V2.0
+            type: string
+          isCircular:
+            description: 'Whether the RNA sequence is circular or linear. RNA sequences can only be linear
+
+              '
+            example: false
+            type: boolean
+          name:
+            description: 'Name of the RNA sequence.
+
+              '
+            type: string
+          parts:
+            items:
+              $ref: '#/components/schemas/RnaSequencePart'
+            type: array
+          primers:
+            items:
+              $ref: '#/components/schemas/Primer'
+            type: array
+          schemaId:
+            description: 'ID of the RNA sequence''s schema.
+
+              '
+            type: string
+          translations:
+            description: 'Translations to create on the RNA sequence. Translations are specified by either a combination of ''start'' and ''end'' fields, or a list of regions. Both cannot be provided.
+
+              '
+            items:
+              $ref: '#/components/schemas/Translation'
+            type: array
+      - $ref: '#/components/schemas/CustomNotationRequest'
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    RnaSequencesBulkUpdateRequest:
       additionalProperties: false
       properties:
         rnaSequences:
           items:
-            $ref: '#/components/schemas/RnaSequenceBulkCreate'
-          maxItems: 1000
+            $ref: '#/components/schemas/RnaSequenceBulkUpdate'
           type: array
       type: object
-    AutofillRnaSequences:
-      additionalProperties: false
+    ArchiveRecord:
       properties:
-        rnaSequenceIds:
-          description: Array of RNA sequence IDs.
-          items:
-            type: string
-          maxItems: 1000
-          type: array
-      required:
-      - rnaSequenceIds
-      type: object
-    Field:
-      properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
+        reason:
+          example: Made in error
           type: string
       type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    RnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 0
-            type: integer
-          type:
-            type: string
-        type: object
     CreateEntityIntoRegistry:
       properties:
         entityRegistryId:
@@ -1391,44 +1419,16 @@ components:
             '
           type: string
       type: object
-    RnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 1
-            type: integer
-        type: object
-    Primer:
+    BadRequestError:
       properties:
-        bases:
-          readOnly: true
-          type: string
-        bindPosition:
-          readOnly: true
-          type: integer
-        color:
-          readOnly: true
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        name:
-          readOnly: true
-          type: string
-        oligoId:
-          type: string
-        overhangLength:
-          readOnly: true
-          type: integer
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          type: integer
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

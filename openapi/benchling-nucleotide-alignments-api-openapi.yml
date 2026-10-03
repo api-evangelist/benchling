@@ -256,54 +256,27 @@ paths:
       - Nucleotide Alignments
 components:
   schemas:
-    NucleotideAlignmentSummary:
+    BaseError:
       properties:
-        apiURL:
-          description: The canonical url of the Alignment in the API.
-          example: https://benchling.com/api/v2/alignments/seqanl_6ZVdX98t
-          format: uri
+        message:
           type: string
-        createdAt:
-          description: DateTime the Alignment was created
-          format: date-time
+        type:
           type: string
-        id:
-          example: seqanl_6ZVdX98t
-          type: string
-        modifiedAt:
-          description: DateTime the Alignment was last modified
-          format: date-time
-          type: string
-        name:
-          type: string
-        referenceSequenceId:
-          description: The ID of the template or consensus Sequence associated with the Alignment
-          example: seq_MYmsnS1u
-          type: string
-        webURL:
-          description: The Benchling web UI url to view the Alignment
-          format: uri
+        userMessage:
           type: string
       type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+    NucleotideAlignmentsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          alignments:
+            items:
+              $ref: '#/components/schemas/NucleotideAlignmentSummary'
+            type: array
       type: object
-    EmptyObject:
-      type: object
-    NucleotideAlignmentFile:
+    AsyncTaskLink:
       properties:
-        data:
-          format: byte
-          type: string
-        name:
+        taskId:
           type: string
       type: object
     NucleotideTemplateAlignmentCreate:
@@ -317,6 +290,39 @@ components:
         required:
         - templateSequenceId
         type: object
+    AlignedNucleotideSequence:
+      properties:
+        bases:
+          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
+          type: string
+        dnaSequenceId:
+          deprecated: true
+          example: seq_MYmsnS1u
+          type:
+          - string
+          - 'null'
+        name:
+          example: Gene001
+          type: string
+        pairwiseIdentity:
+          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
+
+            '
+          example: 0.505
+          format: float
+          type: number
+        sequenceId:
+          example: seq_MYmsnS1u
+          type:
+          - string
+          - 'null'
+        trimEnd:
+          example: 60
+          type: integer
+        trimStart:
+          example: 0
+          type: integer
+      type: object
     NucleotideConsensusAlignmentCreate:
       additionalProperties: false
       allOf:
@@ -422,23 +428,26 @@ components:
       - algorithm
       - files
       type: object
-    BaseError:
+    NotFoundError:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
-    NucleotideAlignmentsPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          alignments:
-            items:
-              $ref: '#/components/schemas/NucleotideAlignmentSummary'
-            type: array
+    NucleotideAlignmentFile:
+      properties:
+        data:
+          format: byte
+          type: string
+        name:
+          type: string
       type: object
     NucleotideAlignment:
       allOf:
@@ -450,56 +459,47 @@ components:
             type: array
         type: object
       type: object
-    AlignedNucleotideSequence:
-      properties:
-        bases:
-          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-          type: string
-        dnaSequenceId:
-          deprecated: true
-          example: seq_MYmsnS1u
-          type:
-          - string
-          - 'null'
-        name:
-          example: Gene001
-          type: string
-        pairwiseIdentity:
-          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
-
-            '
-          example: 0.505
-          format: float
-          type: number
-        sequenceId:
-          example: seq_MYmsnS1u
-          type:
-          - string
-          - 'null'
-        trimEnd:
-          example: 60
-          type: integer
-        trimStart:
-          example: 0
-          type: integer
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
     Pagination:
       properties:
         nextToken:
           type: string
-    NotFoundError:
+    NucleotideAlignmentSummary:
+      properties:
+        apiURL:
+          description: The canonical url of the Alignment in the API.
+          example: https://benchling.com/api/v2/alignments/seqanl_6ZVdX98t
+          format: uri
+          type: string
+        createdAt:
+          description: DateTime the Alignment was created
+          format: date-time
+          type: string
+        id:
+          example: seqanl_6ZVdX98t
+          type: string
+        modifiedAt:
+          description: DateTime the Alignment was last modified
+          format: date-time
+          type: string
+        name:
+          type: string
+        referenceSequenceId:
+          description: The ID of the template or consensus Sequence associated with the Alignment
+          example: seq_MYmsnS1u
+          type: string
+        webURL:
+          description: The Benchling web UI url to view the Alignment
+          format: uri
+          type: string
+      type: object
+    EmptyObject:
+      type: object
+    BadRequestError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
-              invalidId:
-                type: string
               type:
                 enum:
                 - invalid_request_error

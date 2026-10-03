@@ -483,12 +483,58 @@ paths:
       x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    Group:
-      anyOf:
-      - $ref: '#/components/schemas/Organization'
-      - $ref: '#/components/schemas/Team'
-      discriminator:
-        propertyName: __typename
+    PrincipalCollaboratorInfo:
+      description: Represents a Principal that is the subject for a Collaboration.
+      properties:
+        __typename:
+          type: string
+        collaborator:
+          $ref: '#/components/schemas/PrincipalRef'
+      type: object
+    GroupCollaboratorInfo:
+      description: 'Represents a Group that is the subject of a Collaboration, along with sub-group information.
+
+        In Group Collaborations, the Resource may be shared with a sub-group of the Group, e.g.
+
+        the Admins of a Team.'
+      properties:
+        __typename:
+          type: string
+        collaborator:
+          $ref: '#/components/schemas/Group'
+        role:
+          enum:
+          - MEMBER
+          - ADMIN
+          type: string
+      type: object
+    UpdateCollaborationInput:
+      additionalProperties: false
+      properties:
+        accessPolicyId:
+          type: string
+        isAuditor:
+          type: boolean
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    UpdateCollaborationInputWithPathParams:
+      additionalProperties: false
+      properties:
+        accessPolicyId:
+          type: string
+        id:
+          type: string
+        isAuditor:
+          type: boolean
+      required:
+      - id
       type: object
     Organization:
       description: 'Represents a group of users within Benchling, typically corresponding to a company,
@@ -529,13 +575,176 @@ components:
           - 'null'
           - string
       type: object
-    PrincipalCollaboratorInfo:
-      description: Represents a Principal that is the subject for a Collaboration.
+    CollaboratorReferenceInput:
+      additionalProperties: false
+      properties:
+        collaboratorId:
+          type: string
+        role:
+          enum:
+          - MEMBER
+          - ADMIN
+          type: string
+      required:
+      - collaboratorId
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    Group:
+      anyOf:
+      - $ref: '#/components/schemas/Organization'
+      - $ref: '#/components/schemas/Team'
+      discriminator:
+        propertyName: __typename
+      type: object
+    PrincipalRef:
       properties:
         __typename:
           type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DeleteCollaborationInputWithPathParams:
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+    CollaborationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Collaboration'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    CreateCollaborationInput:
+      additionalProperties: false
+      properties:
+        accessPolicyId:
+          type: string
         collaborator:
-          $ref: '#/components/schemas/PrincipalRef'
+          $ref: '#/components/schemas/CollaboratorReferenceInput'
+        isAuditor:
+          type: boolean
+        itemId:
+          type: string
+      required:
+      - itemId
+      - collaborator
+      - accessPolicyId
+      type: object
+    Collaboration:
+      description: 'A Collaboration indicates that a Principal or Group is granted a Policy on a Resource.
+
+        Some Collaborations represent Ownership, while others indicate that a Resource was shared with the Principal
+
+        or Group.'
+      properties:
+        __typename:
+          type: string
+        accessPolicy:
+          $ref: '#/components/schemas/PolicyRef'
+        collaboratorInfo:
+          anyOf:
+          - $ref: '#/components/schemas/PrincipalCollaboratorInfo'
+          - $ref: '#/components/schemas/GroupCollaboratorInfo'
+          description: Union of PrincipalCollaboratorInfo, GroupCollaboratorInfo
+          discriminator:
+            propertyName: __typename
+        createdAt:
+          format: datetime
+          type: string
+        fromOwnership:
+          type: boolean
+        id:
+          type: string
+        isAuditor:
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type: string
+        resource:
+          $ref: '#/components/schemas/CollaboratableRef'
+      type: object
+    PolicyRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     Team:
       description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
@@ -581,151 +790,6 @@ components:
         organization:
           $ref: '#/components/schemas/OrganizationRef'
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    UpdateCollaborationInputWithPathParams:
-      additionalProperties: false
-      properties:
-        accessPolicyId:
-          type: string
-        id:
-          type: string
-        isAuditor:
-          type: boolean
-      required:
-      - id
-      type: object
-    OrganizationRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DeleteCollaborationInputWithPathParams:
-      additionalProperties: false
-      properties:
-        id:
-          type: string
-      required:
-      - id
-      type: object
-    PolicyRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    Collaboration:
-      description: 'A Collaboration indicates that a Principal or Group is granted a Policy on a Resource.
-
-        Some Collaborations represent Ownership, while others indicate that a Resource was shared with the Principal
-
-        or Group.'
-      properties:
-        __typename:
-          type: string
-        accessPolicy:
-          $ref: '#/components/schemas/PolicyRef'
-        collaboratorInfo:
-          anyOf:
-          - $ref: '#/components/schemas/PrincipalCollaboratorInfo'
-          - $ref: '#/components/schemas/GroupCollaboratorInfo'
-          description: Union of PrincipalCollaboratorInfo, GroupCollaboratorInfo
-          discriminator:
-            propertyName: __typename
-        createdAt:
-          format: datetime
-          type: string
-        fromOwnership:
-          type: boolean
-        id:
-          type: string
-        isAuditor:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type: string
-        resource:
-          $ref: '#/components/schemas/CollaboratableRef'
-      type: object
-    CreateCollaborationInput:
-      additionalProperties: false
-      properties:
-        accessPolicyId:
-          type: string
-        collaborator:
-          $ref: '#/components/schemas/CollaboratorReferenceInput'
-        isAuditor:
-          type: boolean
-        itemId:
-          type: string
-      required:
-      - itemId
-      - collaborator
-      - accessPolicyId
-      type: object
-    UpdateCollaborationInput:
-      additionalProperties: false
-      properties:
-        accessPolicyId:
-          type: string
-        isAuditor:
-          type: boolean
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
     CollaboratableRef:
       properties:
         __typename:
@@ -734,71 +798,72 @@ components:
           format: api_id
           type: string
       type: object
-    CollaborationPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Collaboration'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    GroupCollaboratorInfo:
-      description: 'Represents a Group that is the subject of a Collaboration, along with sub-group information.
-
-        In Group Collaborations, the Resource may be shared with a sub-group of the Group, e.g.
-
-        the Admins of a Team.'
-      properties:
-        __typename:
-          type: string
-        collaborator:
-          $ref: '#/components/schemas/Group'
-        role:
-          enum:
-          - MEMBER
-          - ADMIN
-          type: string
-      type: object
-    CollaboratorReferenceInput:
-      additionalProperties: false
-      properties:
-        collaboratorId:
-          type: string
-        role:
-          enum:
-          - MEMBER
-          - ADMIN
-          type: string
-      required:
-      - collaboratorId
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   parameters:
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -809,6 +874,12 @@ components:
           type: string
         maxItems: 100
         type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     returning:
       description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
@@ -818,19 +889,6 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
@@ -838,6 +896,15 @@ components:
       schema:
         format: datetime
         type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
@@ -855,56 +922,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
     collaboratorId.anyOf:
       description: Restricts results to collaborations for any of the specified collaborator IDs. Comma-separated list.
       explode: false
@@ -915,37 +932,20 @@ components:
           type: string
         maxItems: 100
         type: array
-  responses:
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

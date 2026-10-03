@@ -343,88 +343,102 @@ paths:
       - Dropdown
       x-bnch-rate-limit-tier: 2
 components:
-  parameters:
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
+  responses:
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   schemas:
+    DropdownPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Dropdown'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    DropdownOptionUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DropdownOption'
+          type: array
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UpdateDropdownOptionInput:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -451,39 +465,37 @@ components:
       - status
       - instance
       type: object
-    RegistryRef:
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
       properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    CreateDropdownOptionInput:
-      additionalProperties: false
-      properties:
-        name:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
           type: string
       required:
-      - name
+      - fileId
       type: object
-    DropdownPaginatedList:
+    UpdateDropdownInputWithPathParams:
       additionalProperties: false
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Dropdown'
-          type: array
-        nextToken:
+        archiveReason:
           type: string
+        archived:
+          type: boolean
+        id:
+          type: string
+        name:
+          description: Name of the dropdown
+          type: string
+        options:
+          description: Array of dropdown options
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CreateDropdownOptionInput'
+            - $ref: '#/components/schemas/UpdateDropdownOptionInput'
+          type: array
+      required:
+      - id
       type: object
     Dropdown:
       description: 'A configurable list of predefined values used for standardizing data entry in schema fields.
@@ -522,6 +534,24 @@ components:
           $ref: '#/components/schemas/RegistryRef'
           description: The registry that the dropdown belongs to
       type: object
+    UpdateDropdownInput:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        name:
+          description: Name of the dropdown
+          type: string
+        options:
+          description: Array of dropdown options
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CreateDropdownOptionInput'
+            - $ref: '#/components/schemas/UpdateDropdownOptionInput'
+          type: array
+      type: object
     DropdownOption:
       description: 'An individual selectable value within a Dropdown. Each DropdownOption represents one valid
 
@@ -546,55 +576,21 @@ components:
         name:
           type: string
       type: object
-    UpdateDropdownInputWithPathParams:
-      additionalProperties: false
+    RegistryRef:
       properties:
-        archiveReason:
+        __typename:
           type: string
-        archived:
-          type: boolean
         id:
+          format: api_id
           type: string
-        name:
-          description: Name of the dropdown
-          type: string
-        options:
-          description: Array of dropdown options
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CreateDropdownOptionInput'
-            - $ref: '#/components/schemas/UpdateDropdownOptionInput'
-          type: array
-      required:
-      - id
       type: object
-    UpdateDropdownInput:
+    CreateDropdownOptionInput:
       additionalProperties: false
       properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
         name:
-          description: Name of the dropdown
-          type: string
-        options:
-          description: Array of dropdown options
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CreateDropdownOptionInput'
-            - $ref: '#/components/schemas/UpdateDropdownOptionInput'
-          type: array
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
           type: string
       required:
-      - fileId
+      - name
       type: object
     CreateDropdownInput:
       additionalProperties: false
@@ -614,83 +610,87 @@ components:
       - registryId
       - options
       type: object
-    UpdateDropdownOptionInput:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        id:
-          type: string
-        name:
-          type: string
-      required:
-      - id
-      type: object
-    DropdownOptionUnpaginatedList:
-      additionalProperties: false
-      properties:
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
         items:
-          items:
-            $ref: '#/components/schemas/DropdownOption'
-          type: array
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
+        maxItems: 10
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
           type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-  responses:
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
+        maxItems: 100
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
