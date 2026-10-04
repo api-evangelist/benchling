@@ -296,31 +296,94 @@ paths:
       - Assay Runs
 components:
   schemas:
-    AssayRunUpdate:
-      additionalProperties: false
+    AssayRunCreate:
       properties:
-        equipmentId:
-          description: The equipment that the assay run should be associated with.  This attribute is only supported if the equipment feature is enabled for the tenant; otherwise, supplying it leads to a 400 request error
-          type:
-          - string
-          - 'null'
         fields:
-          $ref: '#/components/schemas/Fields'
-      type: object
-    SchemaSummary:
-      properties:
+          anyOf:
+          - $ref: '#/components/schemas/Fields'
+          - $ref: '#/components/schemas/AssayFieldsCreate'
+          description: Object of assay run fields
         id:
+          description: ID of assay run
           type: string
-        name:
+        projectId:
+          description: 'The project that the assay run should be uploaded to. Only users with read access to the project will be able to read the assay run. Leaving this empty will result in only the creator having read access.
+
+            '
           type: string
+        schemaId:
+          description: ID of assay schema that assay run conforms to
+          type: string
+        validationComment:
+          description: Additional information about the validation status
+          type: string
+        validationStatus:
+          $ref: '#/components/schemas/AssayRunValidationStatus'
+      required:
+      - schemaId
+      - fields
       type: object
-    AssayRunsBulkGet:
+    AssayRunsArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Assay Runs.
+
+        '
       properties:
-        assayRuns:
+        assayRunIds:
           items:
-            $ref: '#/components/schemas/AssayRun'
+            type: string
           type: array
+        reason:
+          description: 'The reason for archiving the provided Assay Runs. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Archived
+          - Made in error
+          - Other
+          type: string
+      required:
+      - reason
+      - assayRunIds
       type: object
+    AutomationOutputProcessor:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Output Processor in the API.
+            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          archiveRecord:
+            allOf:
+            - $ref: '#/components/schemas/ArchiveRecord'
+          completeWithErrors:
+            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
+            type: boolean
+          createdAt:
+            description: DateTime the Automation Output Processor was created
+            format: date-time
+            type: string
+          errorFile:
+            allOf:
+            - $ref: '#/components/schemas/Blob'
+          id:
+            example: aop_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Output Processor was last modified
+            format: date-time
+            type: string
+          progressStats:
+            $ref: '#/components/schemas/AutomationProgressStats'
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+            type: array
+        type: object
     PartySummary:
       properties:
         handle:
@@ -330,6 +393,173 @@ components:
         name:
           type: string
       type: object
+    AutomationFile:
+      properties:
+        assayRunId:
+          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          type: string
+        automationFileConfig:
+          properties:
+            name:
+              example: MyInstrumentName
+              type: string
+          type: object
+        file:
+          allOf:
+          - $ref: '#/components/schemas/Blob'
+        id:
+          type: string
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+          - NOT_STARTED
+          - RUNNING
+          type: string
+      type: object
+    Blob:
+      properties:
+        id:
+          description: The universally unique identifier (UUID) for the blob.
+          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
+          format: uuid
+          type: string
+        mimeType:
+          description: eg. application/jpeg
+          example: text/csv
+          maxLength: 100
+          type: string
+        name:
+          description: Name of the blob
+          example: MyInstrumentInputFile.csv
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - COMPLETE
+          - ABORTED
+          type: string
+      type: object
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    LabAutomationBenchlingAppErrors:
+      properties:
+        topLevelErrors:
+          items:
+            properties:
+              errorMessage:
+                type: string
+            type: object
+          type: array
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    AssayRunsBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRunCreate'
+          type: array
+      required:
+      - assayRuns
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    AssayFieldsCreate:
+      additionalProperties: true
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
     AssayRun:
       properties:
         apiURL:
@@ -388,16 +618,6 @@ components:
         validationStatus:
           $ref: '#/components/schemas/AssayRunValidationStatus'
       type: object
-    LabAutomationBenchlingAppErrors:
-      properties:
-        topLevelErrors:
-          items:
-            properties:
-              errorMessage:
-                type: string
-            type: object
-          type: array
-      type: object
     AssayRunsBulkCreateResponse:
       properties:
         assayRuns:
@@ -410,75 +630,74 @@ components:
           - object
           - 'null'
       type: object
+    AssayRunUpdate:
+      additionalProperties: false
+      properties:
+        equipmentId:
+          description: The equipment that the assay run should be associated with.  This attribute is only supported if the equipment feature is enabled for the tenant; otherwise, supplying it leads to a 400 request error
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+      type: object
+    AutomationFileInputsPaginatedList:
+      properties:
+        automationInputGenerators:
+          items:
+            $ref: '#/components/schemas/AutomationInputGenerator'
+          type: array
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+      type: object
     AssayRunValidationStatus:
       description: Must be either VALID or INVALID
       enum:
       - VALID
       - INVALID
       type: string
-    Field:
+    AssayRunsUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving Assay Runs.
+
+        '
       properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
+        assayRunIds:
+          items:
+            type: string
+          type: array
       required:
-      - value
+      - assayRunIds
       type: object
-    AutomationFile:
+    SchemaSummary:
       properties:
-        assayRunId:
-          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
-          type: string
-        automationFileConfig:
-          properties:
-            name:
-              example: MyInstrumentName
-              type: string
-          type: object
-        file:
-          allOf:
-          - $ref: '#/components/schemas/Blob'
         id:
           type: string
-        status:
-          enum:
-          - SUCCEEDED
-          - FAILED
-          - NOT_STARTED
-          - RUNNING
+        name:
           type: string
       type: object
-    AssayFieldsCreate:
-      additionalProperties: true
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    AssayRunsBulkGet:
+      properties:
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRun'
+          type: array
+      type: object
+    AssayRunsPaginatedList:
+      properties:
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRun'
+          type: array
+        nextToken:
+          type: string
       type: object
     LabAutomationTransform:
       properties:
@@ -522,14 +741,35 @@ components:
           - SUCCEEDED
           type: string
       type: object
-    AssayRunsPaginatedList:
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    AssayRunsBulkCreateErrorResponse:
       properties:
         assayRuns:
+          default: null
           items:
-            $ref: '#/components/schemas/AssayRun'
+            type: object
+          type:
+          - array
+          - 'null'
+        errors:
+          items:
+            properties:
+              fields:
+                type: object
+              global:
+                items:
+                  type: string
+                type: array
+            type: object
           type: array
-        nextToken:
-          type: string
       type: object
     AutomationInputGenerator:
       allOf:
@@ -570,9 +810,15 @@ components:
         rowsUnprocessed:
           type: integer
       type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
+    AssayRunsArchivalChange:
+      description: 'IDs of all Assay Runs that were archived / unarchived.
+
+        '
+      properties:
+        assayRunIds:
+          items:
+            type: string
+          type: array
       type: object
     DeprecatedAutomationOutputProcessorsPaginatedList:
       description: Deprecated - A paginated list of automation output processors
@@ -584,252 +830,6 @@ components:
         nextToken:
           example: Im5ldyB0ZXN0Ig==
           type: string
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    AutomationFileInputsPaginatedList:
-      properties:
-        automationInputGenerators:
-          items:
-            $ref: '#/components/schemas/AutomationInputGenerator'
-          type: array
-        nextToken:
-          example: Im5ldyB0ZXN0Ig==
-          type: string
-      type: object
-    AutomationOutputProcessor:
-      allOf:
-      - $ref: '#/components/schemas/AutomationFile'
-      - properties:
-          apiURL:
-            description: The canonical url of the Automation Output Processor in the API.
-            example: https://benchling.com/api/v2/automation-output-processors/aop_C3wGA9HF
-            format: uri
-            readOnly: true
-            type: string
-          archiveRecord:
-            allOf:
-            - $ref: '#/components/schemas/ArchiveRecord'
-          completeWithErrors:
-            description: Specifies whether file processing should complete with errors. False means any error in output file processing will result in no actions being committed. True means that if row-level errors occur, then failing rows and their errors will be saved to errorFile, and actions from successful rows will be committed.
-            type: boolean
-          createdAt:
-            description: DateTime the Automation Output Processor was created
-            format: date-time
-            type: string
-          errorFile:
-            allOf:
-            - $ref: '#/components/schemas/Blob'
-          id:
-            example: aop_C3wGA9HF
-            type: string
-          modifiedAt:
-            description: DateTime the Automation Output Processor was last modified
-            format: date-time
-            type: string
-          progressStats:
-            $ref: '#/components/schemas/AutomationProgressStats'
-          transforms:
-            items:
-              allOf:
-              - $ref: '#/components/schemas/LabAutomationTransform'
-            type: array
-        type: object
-    AssayRunCreate:
-      properties:
-        fields:
-          anyOf:
-          - $ref: '#/components/schemas/Fields'
-          - $ref: '#/components/schemas/AssayFieldsCreate'
-          description: Object of assay run fields
-        id:
-          description: ID of assay run
-          type: string
-        projectId:
-          description: 'The project that the assay run should be uploaded to. Only users with read access to the project will be able to read the assay run. Leaving this empty will result in only the creator having read access.
-
-            '
-          type: string
-        schemaId:
-          description: ID of assay schema that assay run conforms to
-          type: string
-        validationComment:
-          description: Additional information about the validation status
-          type: string
-        validationStatus:
-          $ref: '#/components/schemas/AssayRunValidationStatus'
-      required:
-      - schemaId
-      - fields
-      type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    Blob:
-      properties:
-        id:
-          description: The universally unique identifier (UUID) for the blob.
-          example: c33fe52d-fe6a-4c98-adcd-211bdf6778f7
-          format: uuid
-          type: string
-        mimeType:
-          description: eg. application/jpeg
-          example: text/csv
-          maxLength: 100
-          type: string
-        name:
-          description: Name of the blob
-          example: MyInstrumentInputFile.csv
-          maxLength: 1000
-          type: string
-        type:
-          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
-
-            '
-          enum:
-          - RAW_FILE
-          - VISUALIZATION
-          type: string
-        uploadStatus:
-          enum:
-          - IN_PROGRESS
-          - COMPLETE
-          - ABORTED
-          type: string
-      type: object
-    AssayRunsUnarchive:
-      additionalProperties: false
-      description: 'The request body for unarchiving Assay Runs.
-
-        '
-      properties:
-        assayRunIds:
-          items:
-            type: string
-          type: array
-      required:
-      - assayRunIds
-      type: object
-    AssayRunsArchivalChange:
-      description: 'IDs of all Assay Runs that were archived / unarchived.
-
-        '
-      properties:
-        assayRunIds:
-          items:
-            type: string
-          type: array
-      type: object
-    AssayRunsBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        assayRuns:
-          items:
-            $ref: '#/components/schemas/AssayRunCreate'
-          type: array
-      required:
-      - assayRuns
-      type: object
-    AssayRunsBulkCreateErrorResponse:
-      properties:
-        assayRuns:
-          default: null
-          items:
-            type: object
-          type:
-          - array
-          - 'null'
-        errors:
-          items:
-            properties:
-              fields:
-                type: object
-              global:
-                items:
-                  type: string
-                type: array
-            type: object
-          type: array
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    AssayRunsArchive:
-      additionalProperties: false
-      description: 'The request body for archiving Assay Runs.
-
-        '
-      properties:
-        assayRunIds:
-          items:
-            type: string
-          type: array
-        reason:
-          description: 'The reason for archiving the provided Assay Runs. Accepted reasons may differ based on tenant configuration.
-
-            '
-          enum:
-          - Archived
-          - Made in error
-          - Other
-          type: string
-      required:
-      - reason
-      - assayRunIds
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

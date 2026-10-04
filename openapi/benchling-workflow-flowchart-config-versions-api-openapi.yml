@@ -45,56 +45,21 @@ paths:
       - Workflow Flowchart Config Versions
 components:
   schemas:
-    WorkflowFlowchartNodeConfig:
+    WorkflowOutputNodeDetails:
+      additionalProperties: false
       properties:
         id:
-          description: The ID of the workflow flowchart node config
+          description: The ID of the workflow output node config details
+          example: wfond_hbVNQcEM
           readOnly: true
           type: string
-        nodeDetails:
-          discriminator:
-            mapping:
-              END: '#/components/schemas/WorkflowEndNodeDetails'
-              OUTPUT: '#/components/schemas/WorkflowOutputNodeDetails'
-              ROOT: '#/components/schemas/WorkflowRootNodeDetails'
-              ROUTER: '#/components/schemas/WorkflowRouterNodeDetails'
-              TASK: '#/components/schemas/WorkflowTaskNodeDetails'
-            propertyName: nodeType
-          oneOf:
-          - $ref: '#/components/schemas/WorkflowRootNodeDetails'
-          - $ref: '#/components/schemas/WorkflowOutputNodeDetails'
-          - $ref: '#/components/schemas/WorkflowTaskNodeDetails'
-          - $ref: '#/components/schemas/WorkflowRouterNodeDetails'
-          - $ref: '#/components/schemas/WorkflowEndNodeDetails'
         nodeType:
-          description: The type associated with the node config
+          description: The type of the node
           enum:
-          - ROOT
           - OUTPUT
-          - TASK
-          - ROUTER
-          - END
           type: string
-      type: object
-    WorkflowFlowchartConfigVersion:
-      properties:
-        createdAt:
-          description: The ISO formatted date and time that the flowchart config version was created
-          example: '2020-08-01T00:00:00.000Z'
-          type: string
-        id:
-          description: The ID of the workflow flowchart config version
-          example: wffccv_giVNQcAF
-          readOnly: true
-          type: string
-        modifiedAt:
-          description: The ISO formatted date and time that the flowchart config version was last modified
-          example: '2020-08-01T00:00:00.000Z'
-          type: string
-        templateFlowchart:
-          allOf:
-          - $ref: '#/components/schemas/WorkflowFlowchart'
-          description: The default flowchart that tasks using this flowchart configuration will use.
+        outputSchema:
+          $ref: '#/components/schemas/SchemaSummary'
       type: object
     WorkflowRouterFunction:
       additionalProperties: false
@@ -117,15 +82,6 @@ components:
           readOnly: true
           type: string
       type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
     WorkflowTaskSchemaSummary:
       properties:
         id:
@@ -134,6 +90,19 @@ components:
         name:
           description: The name of the workflow task schema
           type: string
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     WorkflowTaskNodeDetails:
       additionalProperties: false
       properties:
@@ -150,28 +119,43 @@ components:
         taskSchema:
           $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
       type: object
-    SchemaSummary:
+    WorkflowFlowchartEdgeConfig:
       properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    WorkflowRootNodeDetails:
-      additionalProperties: false
-      properties:
-        id:
-          description: The ID of the workflow root node config details
-          example: wfrnd_hbVNQcEM
+        fromNodeConfigId:
+          description: The ID of the source workflow flowchart node config of this edge
+          example: wffcnc_giVNQcTL
           readOnly: true
           type: string
-        nodeType:
-          description: The type of the node
-          enum:
-          - ROOT
+        id:
+          description: The ID of the workflow flowchart edge config
+          example: wffcec_giVNQcTL
+          readOnly: true
           type: string
-        rootTaskSchema:
-          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+        toNodeConfigId:
+          description: The ID of the destination workflow flowchart node config of this edge
+          example: wffcnc_giVNQcAF
+          readOnly: true
+          type: string
+      type: object
+    WorkflowFlowchartConfigVersion:
+      properties:
+        createdAt:
+          description: The ISO formatted date and time that the flowchart config version was created
+          example: '2020-08-01T00:00:00.000Z'
+          type: string
+        id:
+          description: The ID of the workflow flowchart config version
+          example: wffccv_giVNQcAF
+          readOnly: true
+          type: string
+        modifiedAt:
+          description: The ISO formatted date and time that the flowchart config version was last modified
+          example: '2020-08-01T00:00:00.000Z'
+          type: string
+        templateFlowchart:
+          allOf:
+          - $ref: '#/components/schemas/WorkflowFlowchart'
+          description: The default flowchart that tasks using this flowchart configuration will use.
       type: object
     WorkflowRouterNodeDetails:
       additionalProperties: false
@@ -197,19 +181,6 @@ components:
             $ref: '#/components/schemas/WorkflowRouterFunction'
           readOnly: true
           type: array
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
       type: object
     WorkflowFlowchart:
       properties:
@@ -253,22 +224,60 @@ components:
           readOnly: true
           type: array
       type: object
-    WorkflowFlowchartEdgeConfig:
+    WorkflowRootNodeDetails:
+      additionalProperties: false
       properties:
-        fromNodeConfigId:
-          description: The ID of the source workflow flowchart node config of this edge
-          example: wffcnc_giVNQcTL
-          readOnly: true
-          type: string
         id:
-          description: The ID of the workflow flowchart edge config
-          example: wffcec_giVNQcTL
+          description: The ID of the workflow root node config details
+          example: wfrnd_hbVNQcEM
           readOnly: true
           type: string
-        toNodeConfigId:
-          description: The ID of the destination workflow flowchart node config of this edge
-          example: wffcnc_giVNQcAF
+        nodeType:
+          description: The type of the node
+          enum:
+          - ROOT
+          type: string
+        rootTaskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowFlowchartNodeConfig:
+      properties:
+        id:
+          description: The ID of the workflow flowchart node config
           readOnly: true
+          type: string
+        nodeDetails:
+          discriminator:
+            mapping:
+              END: '#/components/schemas/WorkflowEndNodeDetails'
+              OUTPUT: '#/components/schemas/WorkflowOutputNodeDetails'
+              ROOT: '#/components/schemas/WorkflowRootNodeDetails'
+              ROUTER: '#/components/schemas/WorkflowRouterNodeDetails'
+              TASK: '#/components/schemas/WorkflowTaskNodeDetails'
+            propertyName: nodeType
+          oneOf:
+          - $ref: '#/components/schemas/WorkflowRootNodeDetails'
+          - $ref: '#/components/schemas/WorkflowOutputNodeDetails'
+          - $ref: '#/components/schemas/WorkflowTaskNodeDetails'
+          - $ref: '#/components/schemas/WorkflowRouterNodeDetails'
+          - $ref: '#/components/schemas/WorkflowEndNodeDetails'
+        nodeType:
+          description: The type associated with the node config
+          enum:
+          - ROOT
+          - OUTPUT
+          - TASK
+          - ROUTER
+          - END
           type: string
       type: object
     WorkflowEndNodeDetails:
@@ -290,21 +299,12 @@ components:
           - END
           type: string
       type: object
-    WorkflowOutputNodeDetails:
-      additionalProperties: false
+    SchemaSummary:
       properties:
         id:
-          description: The ID of the workflow output node config details
-          example: wfond_hbVNQcEM
-          readOnly: true
           type: string
-        nodeType:
-          description: The type of the node
-          enum:
-          - OUTPUT
+        name:
           type: string
-        outputSchema:
-          $ref: '#/components/schemas/SchemaSummary'
       type: object
   securitySchemes:
     basicApiKeyAuth:

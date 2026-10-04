@@ -501,6 +501,241 @@ paths:
       - Molecules
 components:
   schemas:
+    EntityBulkUpsertBaseRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    MoleculesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Molecules.
+
+        '
+      properties:
+        moleculeIds:
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Molecules. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Retired
+          - Expended
+          - Shipped
+          - Contaminated
+          - Expired
+          - Missing
+          - Other
+          type: string
+      required:
+      - reason
+      - moleculeIds
+      type: object
+    MoleculesPaginatedList:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          molecules:
+            items:
+              $ref: '#/components/schemas/Molecule'
+            type: array
+    MoleculesArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of Molecules along with any IDs of batches that were archived / unarchived.
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        moleculeIds:
+          items:
+            type: string
+          type: array
+      type: object
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    MoleculeCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    EntityUpsertBaseRequest:
+      properties:
+        archiveRecord:
+          $ref: '#/components/schemas/ArchiveRecordSet'
+        fields:
+          $ref: '#/components/schemas/FieldsWithResolution'
+        name:
+          type: string
+        registryId:
+          type: string
+        schemaId:
+          type: string
+      required:
+      - registryId
+      - name
+      - schemaId
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    MoleculeBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/MoleculeUpdate'
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    FieldsWithResolution:
+      additionalProperties:
+        $ref: '#/components/schemas/FieldWithResolution'
+      example:
+        Linked Peptide:
+          value: prtn_ObbdtGhC
+        Linked Sequence:
+          value:
+            entityRegistryId: DNA001
+        Linked Strains:
+          value:
+          - entityRegistryId: STRAIN001
+          - entityRegistryId: STRAIN002
+      type: object
+    MoleculeBaseRequest:
+      additionalProperties: false
+      properties:
+        aliases:
+          description: Aliases to add to the Molecule.
+          items:
+            type: string
+          type: array
+        authorIds:
+          description: IDs of users to set as the Molecule's authors.
+          items:
+            type: string
+          type: array
+        chemicalStructure:
+          allOf:
+          - $ref: '#/components/schemas/MoleculeStructure'
+          description: 'Chemical structure of the Molecule.
+
+            '
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: 'Custom fields to add to the Molecule. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Fields to set on the Molecule. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
+
+            '
+        folderId:
+          description: 'ID of the folder containing the Molecule.
+
+            '
+          type: string
+        name:
+          description: 'Name of the Molecule.
+
+            '
+          type: string
+        schemaId:
+          description: 'ID of the Molecule''s schema.
+
+            '
+          type: string
+      type: object
+    FieldWithResolution:
+      allOf:
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+        type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    MoleculesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        molecules:
+          items:
+            $ref: '#/components/schemas/MoleculeCreate'
+          type: array
+      type: object
+    MoleculeUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
     Molecule:
       additionalProperties: false
       properties:
@@ -585,332 +820,45 @@ components:
           readOnly: true
           type: string
       type: object
-    ArchiveRecordSet:
-      additionalProperties: false
-      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
-      example: null
-      type:
-      - object
-      - 'null'
-    MoleculeUpdate:
-      additionalProperties: false
-      allOf:
-      - properties:
-          entityRegistryId:
-            type: string
-        type: object
-      - $ref: '#/components/schemas/MoleculeBaseRequest'
-    MoleculesPaginatedList:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          molecules:
-            items:
-              $ref: '#/components/schemas/Molecule'
-            type: array
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    MoleculesBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        molecules:
-          items:
-            $ref: '#/components/schemas/MoleculeCreate'
-          type: array
-      type: object
-    MoleculesArchivalChange:
-      additionalProperties: false
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of Molecules along with any IDs of batches that were archived / unarchived.
-
-        '
-      properties:
-        batchIds:
-          items:
-            type: string
-          type: array
-        moleculeIds:
-          items:
-            type: string
-          type: array
-      type: object
-    NamingStrategy:
-      description: 'Specifies the behavior for automatically generated names when registering an entity.
-
-        - NEW_IDS: Generate new registry IDs
-
-        - IDS_FROM_NAMES: Generate registry IDs based on entity names
-
-        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
-
-        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
-
-        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
-
-        - KEEP_NAMES: Keep existing entity names as registry IDs
-
-        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
-
-        '
-      enum:
-      - NEW_IDS
-      - IDS_FROM_NAMES
-      - DELETE_NAMES
-      - SET_FROM_NAME_PARTS
-      - REPLACE_NAMES_FROM_PARTS
-      - KEEP_NAMES
-      - REPLACE_ID_AND_NAME_FROM_PARTS
-      type: string
-    Pagination:
-      properties:
-        nextToken:
-          type: string
     MoleculeBaseRequestForCreate:
       allOf:
       - $ref: '#/components/schemas/MoleculeBaseRequest'
       - required:
         - name
         - chemicalStructure
-    MoleculeBaseRequest:
-      additionalProperties: false
-      properties:
-        aliases:
-          description: Aliases to add to the Molecule.
-          items:
-            type: string
-          type: array
-        authorIds:
-          description: IDs of users to set as the Molecule's authors.
-          items:
-            type: string
-          type: array
-        chemicalStructure:
-          allOf:
-          - $ref: '#/components/schemas/MoleculeStructure'
-          description: 'Chemical structure of the Molecule.
-
-            '
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: 'Custom fields to add to the Molecule. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Fields to set on the Molecule. Must correspond with the schema''s field definitions. Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        folderId:
-          description: 'ID of the folder containing the Molecule.
-
-            '
-          type: string
-        name:
-          description: 'Name of the Molecule.
-
-            '
-          type: string
-        schemaId:
-          description: 'ID of the Molecule''s schema.
-
-            '
-          type: string
-      type: object
-    MoleculeBulkUpdate:
-      additionalProperties: false
+    UserSummary:
       allOf:
-      - properties:
-          id:
-            type: string
-        type: object
-      - $ref: '#/components/schemas/MoleculeUpdate'
-    Field:
-      properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
       type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    EntityBulkUpsertBaseRequest:
+    MoleculeBulkUpsertRequest:
       allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - properties:
-          entityRegistryId:
-            description: Registry ID of the entity in Benchling.
-            type: string
-      - required:
-        - entityRegistryId
-    MoleculeStructure:
-      additionalProperties: false
-      properties:
-        structureFormat:
-          description: 'Format of the chemical structure.
-
-            - smiles
-
-            - molfile
-
-            '
-          enum:
-          - smiles
-          - molfile
-          type: string
-        value:
-          description: Chemical structure in SMILES or molfile format.
-          example: Nc1nc(=O)n([H:1])cc1C1CC1
-          type: string
-      type: object
-    CustomField:
-      properties:
-        value:
-          type: string
-      type: object
-    MoleculeCreate:
-      additionalProperties: false
-      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
       - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
-      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
-    RegistrationOrigin:
+    BadRequestError:
       properties:
-        originEntryId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     Fields:
       additionalProperties:
         $ref: '#/components/schemas/Field'
       type: object
-    MoleculeUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    MoleculesArchive:
-      additionalProperties: false
-      description: 'The request body for archiving Molecules.
-
-        '
-      properties:
-        moleculeIds:
-          items:
-            type: string
-          type: array
-        reason:
-          description: 'The reason for archiving the provided Molecules. Accepted reasons may differ based on tenant configuration.
-
-            '
-          enum:
-          - Made in error
-          - Retired
-          - Expended
-          - Shipped
-          - Contaminated
-          - Expired
-          - Missing
-          - Other
-          type: string
-      required:
-      - reason
-      - moleculeIds
-      type: object
-    EntityUpsertBaseRequest:
-      properties:
-        archiveRecord:
-          $ref: '#/components/schemas/ArchiveRecordSet'
-        fields:
-          $ref: '#/components/schemas/FieldsWithResolution'
-        name:
-          type: string
-        registryId:
-          type: string
-        schemaId:
-          type: string
-      required:
-      - registryId
-      - name
-      - schemaId
-      type: object
-    FieldValueWithResolution:
-      oneOf:
-      - type: string
-      - type: boolean
-      - type: number
-      - items:
-          type: string
-        type: array
-      - additionalProperties: false
-        description: Look up an entity by its entity registry ID
-        properties:
-          entityRegistryId:
-            type: string
-        required:
-        - entityRegistryId
-        type: object
     FieldType:
       enum:
       - dna_sequence_link
@@ -940,91 +888,31 @@ components:
       - date
       - json
       type: string
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
-    MoleculeBulkUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/MoleculeBaseRequestForCreate'
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    MoleculesBulkUpsertRequest:
-      additionalProperties: false
-      maxItems: 1000
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
+          type: string
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
+    AsyncTaskLink:
       properties:
-        molecules:
-          items:
-            $ref: '#/components/schemas/MoleculeBulkUpsertRequest'
-          type: array
-      required:
-      - molecules
-      type: object
-    MoleculesBulkUpdateRequest:
-      additionalProperties: false
-      properties:
-        molecules:
-          items:
-            $ref: '#/components/schemas/MoleculeBulkUpdate'
-          type: array
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
+        taskId:
           type: string
       type: object
-    FieldsWithResolution:
-      additionalProperties:
-        $ref: '#/components/schemas/FieldWithResolution'
-      example:
-        Linked Peptide:
-          value: prtn_ObbdtGhC
-        Linked Sequence:
-          value:
-            entityRegistryId: DNA001
-        Linked Strains:
-          value:
-          - entityRegistryId: STRAIN001
-          - entityRegistryId: STRAIN002
-      type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    MoleculesUnarchive:
-      additionalProperties: false
-      description: 'The request body for unarchiving Molecules.
-
-        '
+    Pagination:
       properties:
-        moleculeIds:
-          items:
-            type: string
-          type: array
-      required:
-      - moleculeIds
-      type: object
-    FieldWithResolution:
-      allOf:
-      - $ref: '#/components/schemas/Field'
-      - properties:
-          value:
-            allOf:
-            - $ref: '#/components/schemas/FieldValueWithResolution'
-        type: object
+        nextToken:
+          type: string
     CreateEntityIntoRegistry:
       properties:
         entityRegistryId:
@@ -1048,17 +936,129 @@ components:
             '
           type: string
       type: object
-    BadRequestError:
+    MoleculeUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          entityRegistryId:
+            type: string
+        type: object
+      - $ref: '#/components/schemas/MoleculeBaseRequest'
+    MoleculeStructure:
+      additionalProperties: false
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        structureFormat:
+          description: 'Format of the chemical structure.
+
+            - smiles
+
+            - molfile
+
+            '
+          enum:
+          - smiles
+          - molfile
+          type: string
+        value:
+          description: Chemical structure in SMILES or molfile format.
+          example: Nc1nc(=O)n([H:1])cc1C1CC1
+          type: string
       type: object
+    MoleculesUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving Molecules.
+
+        '
+      properties:
+        moleculeIds:
+          items:
+            type: string
+          type: array
+      required:
+      - moleculeIds
+      type: object
+    MoleculesBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        molecules:
+          items:
+            $ref: '#/components/schemas/MoleculeBulkUpdate'
+          type: array
+      type: object
+    MoleculesBulkUpsertRequest:
+      additionalProperties: false
+      maxItems: 1000
+      properties:
+        molecules:
+          items:
+            $ref: '#/components/schemas/MoleculeBulkUpsertRequest'
+          type: array
+      required:
+      - molecules
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    ArchiveRecordSet:
+      additionalProperties: false
+      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
+      example: null
+      type:
+      - object
+      - 'null'
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -171,17 +171,163 @@ paths:
       - LegacyAppInstallation
       x-bnch-rate-limit-tier: 4
 components:
+  parameters:
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   schemas:
-    IntegerAppConfigSpec:
-      description: Specifies that an app configuration field should accept an integer value.
+    DropdownAppConfigSpec:
+      description: Specifies that an app configuration field should be a dropdown with predefined options.
       properties:
         __typename:
           type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these integers.
+        options:
           oneOf:
           - items:
-              type: integer
+              $ref: '#/components/schemas/AppConfigDropdownOption'
             type: array
           - type: 'null'
         requiredConfig:
@@ -189,95 +335,13 @@ components:
           - 'null'
           - boolean
       type: object
-    IntegerAppConfigValue:
-      description: Stores an integer value in an app configuration field.
+    PrincipalRef:
       properties:
         __typename:
           type: string
-        value:
-          type:
-          - 'null'
-          - integer
-      type: object
-    AppConfigValueUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/AppConfigValue'
-          type: array
-      type: object
-    EntitySchemaAppConfigValue:
-      description: 'Stores a reference to an entity schema in an app configuration field.
-
-        Kept separate from ResourceAppConfigValue because it carries a subtype
-
-        identifying the kind of entity (DNA sequence, AA sequence, etc.).'
-      properties:
-        __typename:
+        id:
+          format: api_id
           type: string
-        subtype:
-          description: Identifies the entity subtype of the configured schema (e.g. DNA_SEQUENCE, AA_SEQUENCE).
-          enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
-          type:
-          - 'null'
-          - string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    AppConfigOption:
-      description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
-
-        optional description, and a configSpec defining the expected value type and validation.'
-      properties:
-        __typename:
-          type: string
-        configSpec:
-          anyOf:
-          - $ref: '#/components/schemas/BooleanAppConfigSpec'
-          - $ref: '#/components/schemas/IntegerAppConfigSpec'
-          - $ref: '#/components/schemas/FloatAppConfigSpec'
-          - $ref: '#/components/schemas/TextAppConfigSpec'
-          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
-          - $ref: '#/components/schemas/DateAppConfigSpec'
-          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
-          - $ref: '#/components/schemas/JsonAppConfigSpec'
-          - $ref: '#/components/schemas/ArrayAppConfigSpec'
-          - $ref: '#/components/schemas/DropdownAppConfigSpec'
-          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
-          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
-          - $ref: '#/components/schemas/SchemaAppConfigSpec'
-          - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
-          discriminator:
-            propertyName: __typename
-        description:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-      type: object
-    JsonAppConfigSpec:
-      description: Specifies that an app configuration field should accept a JSON value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
       type: object
     WorkflowTaskSchemaAppConfigSpec:
       description: 'Specifies that an app configuration field should reference a workflow task schema.
@@ -301,6 +365,238 @@ components:
           type:
           - 'null'
           - boolean
+      type: object
+    SchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference one of the schema types
+
+        that share a common structure: container_schema, plate_schema, location_schema,
+
+        box_schema, run_schema, result_schema, legacy_request_schema, or entry_schema.
+
+        The type field identifies which schema kind is required. For entity_schema use
+
+        EntitySchemaAppConfigSpec; for workflow_task_schema use WorkflowTaskSchemaAppConfigSpec.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    ArrayAppConfigSpec:
+      description: Specifies that an app configuration field should accept an array of values.
+      properties:
+        __typename:
+          type: string
+        elementDefinition:
+          description: Defines the named config options allowed within this array and their type constraints.
+          items:
+            $ref: '#/components/schemas/ArrayAppConfigOption'
+          type: array
+        maxElements:
+          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
+          type:
+          - 'null'
+          - integer
+        minElements:
+          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
+          type:
+          - 'null'
+          - integer
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppConfigValueUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AppConfigValue'
+          type: array
+      type: object
+    FloatAppConfigValue:
+      description: Stores a floating-point number value in an app configuration field.
+      properties:
+        __typename:
+          type: string
+        value:
+          type:
+          - 'null'
+          - number
+      type: object
+    ArrayElementAppConfigValue:
+      description: Stores an element value within an array-type app configuration.
+      properties:
+        __typename:
+          type: string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    DateAppConfigValue:
+      description: Stores a date value in an app configuration field.
+      properties:
+        __typename:
+          type: string
+        value:
+          format: date
+          type:
+          - 'null'
+          - string
+      type: object
+    EntitySchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference an entity schema.
+
+        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        subtype:
+          description: 'Optional subtype constraint — if present, the referenced schema must be of this
+
+            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
+          enum:
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    SecureTextAppConfigValue:
+      description: 'Stores a secure (encrypted) text value in an app configuration field.
+
+        Used for sensitive data like API keys or credentials.'
+      properties:
+        __typename:
+          type: string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    AssayRunFeatureSpec:
+      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+
+        lab automation run data.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
+          type: string
+      type: object
+    AppConfigDropdownOption:
+      description: Defines an option within a dropdown-type app configuration field.
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     AppConfigValue:
       description: 'Represents a configured value for a Benchling App on a specific tenant. Each config
@@ -354,41 +650,26 @@ components:
               propertyName: __typename
           - type: 'null'
       type: object
-    LegacyAppInstallationPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/LegacyAppInstallation'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    AppConfigDropdownOption:
-      description: Defines an option within a dropdown-type app configuration field.
+    JsonAppConfigSpec:
+      description: Specifies that an app configuration field should accept a JSON value.
       properties:
         __typename:
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        name:
           type: string
         requiredConfig:
           type:
           - 'null'
           - boolean
       type: object
-    DropdownAppConfigSpec:
-      description: Specifies that an app configuration field should be a dropdown with predefined options.
+    IntegerAppConfigSpec:
+      description: Specifies that an app configuration field should accept an integer value.
       properties:
         __typename:
           type: string
-        options:
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these integers.
           oneOf:
           - items:
-              $ref: '#/components/schemas/AppConfigDropdownOption'
+              type: integer
             type: array
           - type: 'null'
         requiredConfig:
@@ -396,49 +677,25 @@ components:
           - 'null'
           - boolean
       type: object
-    AssayRunFeatureSpec:
-      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
-
-        lab automation run data.'
+    FloatAppConfigSpec:
+      description: Specifies that an app configuration field should accept a floating-point number.
       properties:
         __typename:
           type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    AssayRunFeatureValue:
-      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
-
-        tenant. The featureId identifies the feature from the app definition, and resourceId
-
-        references the tenant-specific resource it''s bound to.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          description: Developer-specified feature ID as defined in the app manifest / app definition version
-          type: string
-        resourceId:
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these floats.
+          oneOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+        requiredConfig:
           type:
           - 'null'
-          - string
+          - boolean
       type: object
-    ArrayElementAppConfigValue:
-      description: Stores an element value within an array-type app configuration.
-      properties:
-        __typename:
-          type: string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    EntitySchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference an entity schema.
-
-        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+    AppConfigWorkflowTaskSchemaOutput:
+      description: Defines the output field structure for a workflow task schema configuration.
       properties:
         __typename:
           type: string
@@ -448,37 +705,85 @@ components:
               $ref: '#/components/schemas/AppConfigFieldDefinition'
             type: array
           - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        subtype:
-          description: 'Optional subtype constraint — if present, the referenced schema must be of this
-
-            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
-          enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
+      type: object
+    JsonAppConfigValue:
+      description: Stores a JSON value (as a string) in an app configuration field.
+      properties:
+        __typename:
+          type: string
+        value:
           type:
           - 'null'
           - string
       type: object
-    DateTimeAppConfigSpec:
-      description: Specifies that an app configuration field should accept a datetime value.
+    ResourceAppConfigValue:
+      description: 'Stores a reference to any Benchling object or schema that is identified by a resource
+
+        ID. The type field identifies what kind of resource is referenced, matching the
+
+        BenchlingAppType values used in app manifests. Covers all linked resource types except
+
+        EntitySchema (which has a subtype) and array elements.'
       properties:
         __typename:
           type: string
-        requiredConfig:
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
           type:
           - 'null'
-          - boolean
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    IntegerAppConfigValue:
+      description: Stores an integer value in an app configuration field.
+      properties:
+        __typename:
+          type: string
+        value:
+          type:
+          - 'null'
+          - integer
       type: object
     GeneralError:
       properties:
@@ -504,109 +809,127 @@ components:
       - status
       - instance
       type: object
-    TextAppConfigValue:
-      description: Stores a text string value in an app configuration field.
-      properties:
-        __typename:
-          type: string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    FloatAppConfigValue:
-      description: Stores a floating-point number value in an app configuration field.
-      properties:
-        __typename:
-          type: string
-        value:
-          type:
-          - 'null'
-          - number
-      type: object
-    CanvasFeatureSpec:
-      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+    AppMessageSubscription:
+      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
 
-        entries or templates. Canvases allow apps to render custom interactive content.'
+        how notifications should be delivered (see `DeliveryMethod`).'
       properties:
         __typename:
           type: string
-        featureId:
+        deliveryMethod:
+          enum:
+          - WEBHOOK
+          - WEBHOOK_INTERNAL
           type: string
-        locations:
-          oneOf:
-          - items:
-              enum:
-              - ENTRY
-              - ENTRY_TEMPLATE
-              - APP_HOME
-              type: string
-            type: array
-          - type: 'null'
-        name:
+        type:
+          enum:
+          - V2_BETA_CANVAS_CREATED
+          - V2_CANVAS_CREATED
+          - V2_CANVAS_USER_INTERACTED
+          - V2_CANVAS_INITIALIZED
+          - V2_APP_ACTIVATE_REQUESTED
+          - V2_APP_DEACTIVATED
+          - V2_APP_INSTALLED
+          - V2_BETA_APP_CONFIGURATION_UPDATED
+          - V2_ASSAY_RUN_CREATED
+          - V2_ASSAY_RUN_UPDATED_FIELDS
+          - V2_ENTITY_REGISTERED
+          - V2_ENTRY_CREATED
+          - V2_ENTRY_UPDATED_FIELDS
+          - V2_ENTRY_UPDATED_REVIEW_RECORD
+          - V2_REQUEST_CREATED
+          - V2_REQUEST_UPDATED_FIELDS
+          - V2_REQUEST_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_GROUP_CREATED
+          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
+          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
+          - V2_WORKFLOW_TASK_CREATED
+          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
+          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
+          - V2_WORKFLOW_TASK_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_UPDATED_FIELDS
+          - V2_WORKFLOW_OUTPUT_CREATED
+          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
+          - V3_CUSTOM_ENTITY_CREATED
+          - V3_CUSTOM_ENTITY_UPDATED
+          - V3_DNA_OLIGO_CREATED
+          - V3_DNA_OLIGO_UPDATED
+          - V3_DNA_SEQUENCE_CREATED
+          - V3_DNA_SEQUENCE_UPDATED
+          - V3_ENTRY_CREATED
+          - V3_PROJECT_CREATED
+          - V3_PROJECT_UPDATED
+          - V3_RNA_OLIGO_CREATED
+          - V3_RNA_OLIGO_UPDATED
+          - V3_RNA_SEQUENCE_CREATED
+          - V3_RNA_SEQUENCE_UPDATED
+          - V3_RUN_CREATED
           type: string
       type: object
-    DateAppConfigValue:
-      description: Stores a date value in an app configuration field.
+    ResourceAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a Benchling object instance.
+
+        The type field identifies the kind of object required, matching the BenchlingAppType
+
+        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
+
+        reference types with no additional spec constraints beyond requiredConfig. For schema
+
+        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
       properties:
         __typename:
           type: string
-        value:
-          format: date
-          type:
-          - 'null'
-          - string
-      type: object
-    FloatAppConfigSpec:
-      description: Specifies that an app configuration field should accept a floating-point number.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these floats.
-          oneOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
         requiredConfig:
           type:
           - 'null'
           - boolean
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
+          type:
+          - 'null'
+          - string
       type: object
     LegacyAppInstallation:
       description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
@@ -685,6 +1008,104 @@ components:
           - 'null'
           - string
       type: object
+    TextAppConfigSpec:
+      description: Specifies that an app configuration field should accept a text string.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these strings.
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    BooleanAppConfigSpec:
+      description: Specifies that an app configuration field should accept a boolean value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    BooleanAppConfigValue:
+      description: Stores a boolean value in an app configuration field.
+      properties:
+        __typename:
+          type: string
+        value:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    TextAppConfigValue:
+      description: Stores a text string value in an app configuration field.
+      properties:
+        __typename:
+          type: string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    DateAppConfigSpec:
+      description: Specifies that an app configuration field should accept a date value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    EntitySchemaAppConfigValue:
+      description: 'Stores a reference to an entity schema in an app configuration field.
+
+        Kept separate from ResourceAppConfigValue because it carries a subtype
+
+        identifying the kind of entity (DNA sequence, AA sequence, etc.).'
+      properties:
+        __typename:
+          type: string
+        subtype:
+          description: Identifies the entity subtype of the configured schema (e.g. DNA_SEQUENCE, AA_SEQUENCE).
+          enum:
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    SecureTextAppConfigSpec:
+      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
+
+        Used for sensitive data like API keys or credentials.'
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
     ArrayAppConfigOption:
       description: 'A config option nested within an array-type app configuration field. Structurally
 
@@ -721,265 +1142,28 @@ components:
         name:
           type: string
       type: object
-    ResourceAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a Benchling object instance.
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
 
-        The type field identifies the kind of object required, matching the BenchlingAppType
+        tenant. The featureId identifies the feature from the app definition, and resourceId
 
-        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
-
-        reference types with no additional spec constraints beyond requiredConfig. For schema
-
-        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    DateAppConfigSpec:
-      description: Specifies that an app configuration field should accept a date value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AppMessageSubscription:
-      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
-
-        how notifications should be delivered (see `DeliveryMethod`).'
-      properties:
-        __typename:
-          type: string
-        deliveryMethod:
-          enum:
-          - WEBHOOK
-          - WEBHOOK_INTERNAL
-          type: string
-        type:
-          enum:
-          - V2_BETA_CANVAS_CREATED
-          - V2_CANVAS_CREATED
-          - V2_CANVAS_USER_INTERACTED
-          - V2_CANVAS_INITIALIZED
-          - V2_APP_ACTIVATE_REQUESTED
-          - V2_APP_DEACTIVATED
-          - V2_APP_INSTALLED
-          - V2_BETA_APP_CONFIGURATION_UPDATED
-          - V2_ASSAY_RUN_CREATED
-          - V2_ASSAY_RUN_UPDATED_FIELDS
-          - V2_ENTITY_REGISTERED
-          - V2_ENTRY_CREATED
-          - V2_ENTRY_UPDATED_FIELDS
-          - V2_ENTRY_UPDATED_REVIEW_RECORD
-          - V2_REQUEST_CREATED
-          - V2_REQUEST_UPDATED_FIELDS
-          - V2_REQUEST_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_GROUP_CREATED
-          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
-          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
-          - V2_WORKFLOW_TASK_CREATED
-          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
-          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
-          - V2_WORKFLOW_TASK_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_UPDATED_FIELDS
-          - V2_WORKFLOW_OUTPUT_CREATED
-          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
-          - V3_CUSTOM_ENTITY_CREATED
-          - V3_CUSTOM_ENTITY_UPDATED
-          - V3_DNA_OLIGO_CREATED
-          - V3_DNA_OLIGO_UPDATED
-          - V3_DNA_SEQUENCE_CREATED
-          - V3_DNA_SEQUENCE_UPDATED
-          - V3_ENTRY_CREATED
-          - V3_PROJECT_CREATED
-          - V3_PROJECT_UPDATED
-          - V3_RNA_OLIGO_CREATED
-          - V3_RNA_OLIGO_UPDATED
-          - V3_RNA_SEQUENCE_CREATED
-          - V3_RNA_SEQUENCE_UPDATED
-          - V3_RUN_CREATED
-          type: string
-      type: object
-    SecureTextAppConfigValue:
-      description: 'Stores a secure (encrypted) text value in an app configuration field.
-
-        Used for sensitive data like API keys or credentials.'
-      properties:
-        __typename:
-          type: string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    JsonAppConfigValue:
-      description: Stores a JSON value (as a string) in an app configuration field.
-      properties:
-        __typename:
-          type: string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    AppHomepageFeatureSpec:
-      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
-
-        the Benchling application for the app''s functionality.'
+        references the tenant-specific resource it''s bound to.'
       properties:
         __typename:
           type: string
         featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
           type: string
-        name:
-          type: string
-      type: object
-    TextAppConfigSpec:
-      description: Specifies that an app configuration field should accept a text string.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these strings.
-          oneOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AppConfigWorkflowTaskSchemaOutput:
-      description: Defines the output field structure for a workflow task schema configuration.
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-      type: object
-    BooleanAppConfigValue:
-      description: Stores a boolean value in an app configuration field.
-      properties:
-        __typename:
-          type: string
-        value:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ResourceAppConfigValue:
-      description: 'Stores a reference to any Benchling object or schema that is identified by a resource
-
-        ID. The type field identifies what kind of resource is referenced, matching the
-
-        BenchlingAppType values used in app manifests. Covers all linked resource types except
-
-        EntitySchema (which has a subtype) and array elements.'
-      properties:
-        __typename:
-          type: string
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
+        resourceId:
           type:
           - 'null'
           - string
+      type: object
+    DateTimeAppConfigValue:
+      description: Stores a datetime value in an app configuration field.
+      properties:
+        __typename:
+          type: string
         value:
           type:
           - 'null'
@@ -1045,122 +1229,73 @@ components:
           - 'null'
           - string
       type: object
-    DateTimeAppConfigValue:
-      description: Stores a datetime value in an app configuration field.
+    AppConfigOption:
+      description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
+
+        optional description, and a configSpec defining the expected value type and validation.'
       properties:
         __typename:
           type: string
-        value:
+        configSpec:
+          anyOf:
+          - $ref: '#/components/schemas/BooleanAppConfigSpec'
+          - $ref: '#/components/schemas/IntegerAppConfigSpec'
+          - $ref: '#/components/schemas/FloatAppConfigSpec'
+          - $ref: '#/components/schemas/TextAppConfigSpec'
+          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
+          - $ref: '#/components/schemas/DateAppConfigSpec'
+          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
+          - $ref: '#/components/schemas/JsonAppConfigSpec'
+          - $ref: '#/components/schemas/ArrayAppConfigSpec'
+          - $ref: '#/components/schemas/DropdownAppConfigSpec'
+          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
+          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+          - $ref: '#/components/schemas/SchemaAppConfigSpec'
+          - $ref: '#/components/schemas/ResourceAppConfigSpec'
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          discriminator:
+            propertyName: __typename
+        description:
           type:
           - 'null'
           - string
+        name:
+          type: string
       type: object
-    BooleanAppConfigSpec:
-      description: Specifies that an app configuration field should accept a boolean value.
+    CanvasFeatureSpec:
+      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+
+        entries or templates. Canvases allow apps to render custom interactive content.'
       properties:
         __typename:
           type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ArrayAppConfigSpec:
-      description: Specifies that an app configuration field should accept an array of values.
-      properties:
-        __typename:
+        featureId:
           type: string
-        elementDefinition:
-          description: Defines the named config options allowed within this array and their type constraints.
-          items:
-            $ref: '#/components/schemas/ArrayAppConfigOption'
-          type: array
-        maxElements:
-          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
-          type:
-          - 'null'
-          - integer
-        minElements:
-          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
-          type:
-          - 'null'
-          - integer
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    SchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference one of the schema types
-
-        that share a common structure: container_schema, plate_schema, location_schema,
-
-        box_schema, run_schema, result_schema, legacy_request_schema, or entry_schema.
-
-        The type field identifies which schema kind is required. For entity_schema use
-
-        EntitySchemaAppConfigSpec; for workflow_task_schema use WorkflowTaskSchemaAppConfigSpec.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
+        locations:
           oneOf:
           - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
+              enum:
+              - ENTRY
+              - ENTRY_TEMPLATE
+              - APP_HOME
+              type: string
             type: array
           - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
-          type:
-          - 'null'
-          - string
+        name:
+          type: string
       type: object
-    SecureTextAppConfigSpec:
-      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
-
-        Used for sensitive data like API keys or credentials.'
+    LegacyAppInstallationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/LegacyAppInstallation'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    DateTimeAppConfigSpec:
+      description: Specifies that an app configuration field should accept a datetime value.
       properties:
         __typename:
           type: string
@@ -1169,7 +1304,25 @@ components:
           - 'null'
           - boolean
       type: object
+    AppHomepageFeatureSpec:
+      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
+
+        the Benchling application for the app''s functionality.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
+          type: string
+      type: object
   responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
     InternalServerError:
       content:
         application/problem+json:
@@ -1182,12 +1335,6 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
     BadRequest:
       content:
         application/problem+json:
@@ -1200,153 +1347,6 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
-  parameters:
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -111,6 +111,95 @@ paths:
       - ProcedureMethodDefinitionVersion
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   schemas:
     ProcedureMaterialOutputSetting:
       description: 'Configures a material output within a method, linking to a parameter definition
@@ -124,65 +213,13 @@ components:
         version:
           $ref: '#/components/schemas/ProcedureParameterVersionRef'
       type: object
-    ProcedureStepGroup:
-      description: 'Groups procedure steps by their execution phase within a method. Each method contains
-
-        multiple step groups (see `ProcedureStepGroupType`), and each group contains an ordered
-
-        list of steps (see `steps` and `ProcedureStepDefinitionVersion`) to be executed in sequence.'
+    ProcedureParameterPlannedValueRef:
       properties:
         __typename:
           type: string
-        group:
-          enum:
-          - PRE_RUN
-          - RUN
-          - POST_RUN
+        id:
+          format: api_id
           type: string
-        steps:
-          items:
-            $ref: '#/components/schemas/ProcedureStepDefinitionVersionRef'
-          type: array
-      type: object
-    ProcedureEquipmentSetting:
-      description: 'Configures equipment usage within a method, linking a parameter definition
-
-        (`ProcedureParameterVersion`) with its planned values. Equipment settings specify
-
-        instruments or devices required to perform the method step.'
-      properties:
-        __typename:
-          type: string
-        values:
-          items:
-            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
-          type: array
-        version:
-          $ref: '#/components/schemas/ProcedureParameterVersionRef'
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     InternalServerError:
       properties:
@@ -210,13 +247,37 @@ components:
       - status
       - instance
       type: object
-    ProcedureParameterPlannedValueRef:
+    ProcedureEquipmentSetting:
+      description: 'Configures equipment usage within a method, linking a parameter definition
+
+        (`ProcedureParameterVersion`) with its planned values. Equipment settings specify
+
+        instruments or devices required to perform the method step.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        values:
+          items:
+            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
+          type: array
+        version:
+          $ref: '#/components/schemas/ProcedureParameterVersionRef'
+      type: object
+    ProcedureDataParameterSetting:
+      description: 'Configures a data parameter within a method, linking a parameter definition
+
+        (`ProcedureParameterVersion`) with its planned values. Data parameters capture experimental
+
+        measurements or observations during procedure execution.'
+      properties:
+        __typename:
           type: string
+        values:
+          items:
+            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
+          type: array
+        version:
+          $ref: '#/components/schemas/ProcedureParameterVersionRef'
       type: object
     ProcedureParameterVersionRef:
       properties:
@@ -226,12 +287,46 @@ components:
           format: api_id
           type: string
       type: object
-    ProcedureDataParameterSetting:
-      description: 'Configures a data parameter within a method, linking a parameter definition
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureMethodDefinitionVersionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureMethodDefinitionVersion'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ProcedureMaterialInputSetting:
+      description: 'Configures a material input within a method, linking a parameter definition
 
-        (`ProcedureParameterVersion`) with its planned values. Data parameters capture experimental
+        (`ProcedureParameterVersion`) with its planned values. Material inputs specify reagents,
 
-        measurements or observations during procedure execution.'
+        samples, or other substances consumed by the method step.'
       properties:
         __typename:
           type: string
@@ -250,15 +345,25 @@ components:
           format: api_id
           type: string
       type: object
-    ProcedureMethodDefinitionVersionPaginatedList:
-      additionalProperties: false
+    ProcedureStepGroup:
+      description: 'Groups procedure steps by their execution phase within a method. Each method contains
+
+        multiple step groups (see `ProcedureStepGroupType`), and each group contains an ordered
+
+        list of steps (see `steps` and `ProcedureStepDefinitionVersion`) to be executed in sequence.'
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureMethodDefinitionVersion'
-          type: array
-        nextToken:
+        __typename:
           type: string
+        group:
+          enum:
+          - PRE_RUN
+          - RUN
+          - POST_RUN
+          type: string
+        steps:
+          items:
+            $ref: '#/components/schemas/ProcedureStepDefinitionVersionRef'
+          type: array
       type: object
     ProcedureMethodDefinitionVersion:
       description: 'A versioned method within a procedure flowchart. Methods are the building blocks of
@@ -311,23 +416,13 @@ components:
             $ref: '#/components/schemas/ProcedureStepGroup'
           type: array
       type: object
-    ProcedureMaterialInputSetting:
-      description: 'Configures a material input within a method, linking a parameter definition
-
-        (`ProcedureParameterVersion`) with its planned values. Material inputs specify reagents,
-
-        samples, or other substances consumed by the method step.'
-      properties:
-        __typename:
-          type: string
-        values:
-          items:
-            $ref: '#/components/schemas/ProcedureParameterPlannedValueRef'
-          type: array
-        version:
-          $ref: '#/components/schemas/ProcedureParameterVersionRef'
-      type: object
   responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
     InternalServerError:
       content:
         application/problem+json:
@@ -340,12 +435,6 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
     BadRequest:
       content:
         application/problem+json:
@@ -358,95 +447,6 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
-  parameters:
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

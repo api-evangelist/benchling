@@ -371,6 +371,14 @@ paths:
       - Workflow Outputs
 components:
   schemas:
+    WorkflowOutputsBulkUpdateRequest:
+      properties:
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutputBulkUpdate'
+          maxItems: 100
+          type: array
+      type: object
     WorkflowOutputsBulkCreateRequest:
       properties:
         workflowOutputs:
@@ -378,6 +386,189 @@ components:
             $ref: '#/components/schemas/WorkflowOutputBulkCreate'
           maxItems: 100
           type: array
+      type: object
+    WorkflowOutputArchiveReason:
+      description: 'The reason for archiving the provided workflow outputs. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Other
+      type: string
+    WorkflowOutputBulkUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+      - properties:
+          workflowOutputId:
+            description: The ID of the workflow output
+            example: wfout_5cJLQKVF
+            type: string
+    WorkflowOutputCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+      - properties:
+          workflowTaskId:
+            description: The ID of the workflow task this output belogns to
+            example: wftask_OnnsW08k
+            type: string
+        required:
+        - workflowTaskId
+    WorkflowTaskSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+    Field:
+      properties:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    WorkflowOutputsArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type
+
+        '
+      properties:
+        workflowOutputIds:
+          items:
+            example: wfout_5cJLQKVF
+            type: string
+          type: array
+      type: object
+    WorkflowOutputWriteBase:
+      properties:
+        fields:
+          $ref: '#/components/schemas/Fields'
+    WorkflowOutputBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputCreate'
+    WorkflowOutputUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
       type: object
     WorkflowOutput:
       allOf:
@@ -427,79 +618,6 @@ components:
             $ref: '#/components/schemas/WorkflowTaskSummary'
           workflowTaskGroup:
             $ref: '#/components/schemas/WorkflowTaskGroupSummary'
-    WorkflowOutputCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
-      - properties:
-          workflowTaskId:
-            description: The ID of the workflow task this output belogns to
-            example: wftask_OnnsW08k
-            type: string
-        required:
-        - workflowTaskId
-    WorkflowOutputBulkUpdate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
-      - properties:
-          workflowOutputId:
-            description: The ID of the workflow output
-            example: wfout_5cJLQKVF
-            type: string
-    Field:
-      properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    WorkflowTaskGroupSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow task group
-          example: prs_giVNQcTL
-          readOnly: true
-          type: string
-        name:
-          description: The name of the workflow task group
-          type: string
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
     WorkflowOutputsUnarchive:
       properties:
         workflowOutputIds:
@@ -509,46 +627,6 @@ components:
       required:
       - workflowOutputIds
       type: object
-    WorkflowTaskSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task
-          type: string
-        id:
-          description: The ID of the workflow task
-          example: wftask_OnnsW08k
-          readOnly: true
-          type: string
-    WorkflowOutputBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputCreate'
-    WorkflowOutputArchiveReason:
-      description: 'The reason for archiving the provided workflow outputs. Accepted reasons may differ based on tenant configuration.
-
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Other
-      type: string
-    WorkflowOutputsPaginatedList:
-      properties:
-        nextToken:
-          example: Im5ldyB0ZXN0Ig==
-          type: string
-        workflowOutputs:
-          items:
-            $ref: '#/components/schemas/WorkflowOutput'
-          type: array
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    WorkflowOutputWriteBase:
-      properties:
-        fields:
-          $ref: '#/components/schemas/Fields'
     BaseError:
       properties:
         message:
@@ -571,35 +649,26 @@ components:
       - workflowOutputIds
       - reason
       type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
+    WorkflowOutputSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    WorkflowOutputsPaginatedList:
+      properties:
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+        workflowOutputs:
+          items:
+            $ref: '#/components/schemas/WorkflowOutput'
+          type: array
+      type: object
     CreationOrigin:
       properties:
         application:
@@ -623,75 +692,6 @@ components:
           type:
           - string
           - 'null'
-      type: object
-    WorkflowOutputSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow output
-          example: wfout_5cJLQKVF
-          readOnly: true
-          type: string
-    WorkflowOutputUpdate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowOutputWriteBase'
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    WorkflowOutputsBulkUpdateRequest:
-      properties:
-        workflowOutputs:
-          items:
-            $ref: '#/components/schemas/WorkflowOutputBulkUpdate'
-          maxItems: 100
-          type: array
-      type: object
-    WorkflowOutputsArchivalChange:
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type
-
-        '
-      properties:
-        workflowOutputIds:
-          items:
-            example: wfout_5cJLQKVF
-            type: string
-          type: array
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

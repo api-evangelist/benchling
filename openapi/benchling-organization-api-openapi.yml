@@ -154,45 +154,29 @@ paths:
       - Organization
       x-bnch-rate-limit-tier: 4
 components:
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
   schemas:
-    OrganizationRef:
+    PrincipalRef:
       properties:
         __typename:
           type: string
         id:
           format: api_id
           type: string
+      type: object
+    GroupMembershipUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/GroupMembership'
+          type: array
+      type: object
+    Group:
+      anyOf:
+      - $ref: '#/components/schemas/Organization'
+      - $ref: '#/components/schemas/Team'
+      discriminator:
+        propertyName: __typename
       type: object
     Organization:
       description: 'Represents a group of users within Benchling, typically corresponding to a company,
@@ -233,45 +217,6 @@ components:
           - 'null'
           - string
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    Group:
-      anyOf:
-      - $ref: '#/components/schemas/Organization'
-      - $ref: '#/components/schemas/Team'
-      discriminator:
-        propertyName: __typename
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -298,24 +243,6 @@ components:
       - status
       - instance
       type: object
-    OrganizationPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Organization'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    GroupMembershipUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/GroupMembership'
-          type: array
-      type: object
     GroupMembership:
       description: 'Indicates that a Principal is a member of Group. Role indicates that the Principal is
 
@@ -341,6 +268,48 @@ components:
           enum:
           - MEMBER
           - ADMIN
+          type: string
+      type: object
+    OrganizationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Organization'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
           type: string
       type: object
     Team:
@@ -388,26 +357,6 @@ components:
           $ref: '#/components/schemas/OrganizationRef'
       type: object
   parameters:
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -418,20 +367,34 @@ components:
           type: string
         maxItems: 100
         type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: returning
+      name: pageSize
       schema:
-        items:
-          type: string
-        type: array
+        type: integer
     nextToken:
       description: Token for pagination
       in: query
       name: nextToken
       schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
         type: string
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
@@ -459,15 +422,14 @@ components:
       schema:
         format: datetime
         type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: name.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
@@ -476,6 +438,44 @@ components:
       schema:
         format: datetime
         type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

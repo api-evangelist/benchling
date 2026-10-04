@@ -189,94 +189,69 @@ paths:
       - Monomers
 components:
   schemas:
-    MonomersArchive:
-      additionalProperties: false
-      description: 'The request body for archiving Monomers.
-
-        '
+    Pagination:
       properties:
-        monomerIds:
-          items:
-            type: string
-          maxItems: 100
-          type: array
+        nextToken:
+          type: string
+    MonomerPolymerType:
+      description: The polymer type of the monomer. Currently only RNA monomers are supported.
+      enum:
+      - RNA
+      type: string
+    ArchiveRecord:
+      properties:
         reason:
-          description: 'The reason for archiving the provided Monomers. Accepted reasons may differ based on tenant configuration.
-
-            '
-          enum:
-          - Made in error
-          - Archived
-          - Other
+          example: Made in error
           type: string
-      required:
-      - reason
-      - monomerIds
       type: object
-    MonomersUnarchive:
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    MonomersArchivalChange:
       additionalProperties: false
-      description: 'The request body for unarchiving Monomers.
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
 
         '
       properties:
+        batchIds:
+          items:
+            type: string
+          type: array
         monomerIds:
           items:
             type: string
-          maxItems: 100
           type: array
-      required:
-      - monomerIds
       type: object
-    MonomerBaseRequest:
-      properties:
-        color:
-          description: The hex color code of the monomer visual symbol
-          example: '#7051FC'
-          type:
-          - string
-          - 'null'
-        customMolecularWeight:
-          description: Optional molecular weight value that the user can provide to override the calculated molecular weight
-          example: 119.422
-          type:
-          - number
-          - 'null'
-        name:
-          description: Name of the monomer
-          example: (Rp)-Phosphorothioate
-          type: string
-        smiles:
-          description: The chemical structure in SMILES format.
-          example: O[P@@](=S)([OH:1])[OH:2]
-          type: string
-        symbol:
-          description: User-defined identifier of the monomer, unique on the monomer type.
-          example: Rsp
-          type: string
-        visualSymbol:
-          allOf:
-          - $ref: '#/components/schemas/MonomerVisualSymbol'
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    MonomersPaginatedList:
+    MonomerCreate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/Pagination'
+      - $ref: '#/components/schemas/MonomerBaseRequest'
       - properties:
-          monomers:
-            items:
-              $ref: '#/components/schemas/Monomer'
-            type: array
-          nextToken:
+          naturalAnalog:
+            description: Symbol for the natural equivalent of the monomer. Acceptable natural analog values include IUPAC bases, r, and p.
+            example: T
             type: string
+      - required:
+        - smiles
+        - name
+        - naturalAnalog
+        - symbol
+    MonomerType:
+      description: The part of the nucleotide structure that the monomer fits into, i.e. backbone or branch
+      enum:
+      - BACKBONE
+      - BRANCH
+      type: string
     MonomerVisualSymbol:
       description: The shape of the monomer visual symbol.
       enum:
@@ -298,11 +273,17 @@ components:
       - LETTERS_P
       - LETTERS_PS
       type: string
-    MonomerPolymerType:
-      description: The polymer type of the monomer. Currently only RNA monomers are supported.
-      enum:
-      - RNA
-      type: string
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     Monomer:
       properties:
         archiveRecord:
@@ -382,67 +363,48 @@ components:
           allOf:
           - $ref: '#/components/schemas/MonomerVisualSymbol'
       type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
     MonomerUpdate:
       additionalProperties: false
       allOf:
       - $ref: '#/components/schemas/MonomerBaseRequest'
-    MonomersArchivalChange:
-      additionalProperties: false
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
-
-        '
+    MonomerBaseRequest:
       properties:
-        batchIds:
-          items:
-            type: string
-          type: array
-        monomerIds:
-          items:
-            type: string
-          type: array
-      type: object
-    NotFoundError:
-      properties:
-        error:
+        color:
+          description: The hex color code of the monomer visual symbol
+          example: '#7051FC'
+          type:
+          - string
+          - 'null'
+        customMolecularWeight:
+          description: Optional molecular weight value that the user can provide to override the calculated molecular weight
+          example: 119.422
+          type:
+          - number
+          - 'null'
+        name:
+          description: Name of the monomer
+          example: (Rp)-Phosphorothioate
+          type: string
+        smiles:
+          description: The chemical structure in SMILES format.
+          example: O[P@@](=S)([OH:1])[OH:2]
+          type: string
+        symbol:
+          description: User-defined identifier of the monomer, unique on the monomer type.
+          example: Rsp
+          type: string
+        visualSymbol:
           allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    MonomerType:
-      description: The part of the nucleotide structure that the monomer fits into, i.e. backbone or branch
-      enum:
-      - BACKBONE
-      - BRANCH
-      type: string
-    MonomerCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/MonomerBaseRequest'
-      - properties:
-          naturalAnalog:
-            description: Symbol for the natural equivalent of the monomer. Acceptable natural analog values include IUPAC bases, r, and p.
-            example: T
-            type: string
-      - required:
-        - smiles
-        - name
-        - naturalAnalog
-        - symbol
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
+          - $ref: '#/components/schemas/MonomerVisualSymbol'
       type: object
     ForbiddenError:
       properties:
@@ -458,16 +420,54 @@ components:
               type: string
           type: object
       type: object
-    BadRequestError:
+    MonomersUnarchive:
+      additionalProperties: false
+      description: 'The request body for unarchiving Monomers.
+
+        '
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        monomerIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+      required:
+      - monomerIds
+      type: object
+    MonomersPaginatedList:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          monomers:
+            items:
+              $ref: '#/components/schemas/Monomer'
+            type: array
+          nextToken:
+            type: string
+    MonomersArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Monomers.
+
+        '
+      properties:
+        monomerIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Monomers. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Archived
+          - Other
+          type: string
+      required:
+      - reason
+      - monomerIds
       type: object
   securitySchemes:
     basicApiKeyAuth:

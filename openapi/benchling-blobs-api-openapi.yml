@@ -370,21 +370,38 @@ paths:
       - Blobs
 components:
   schemas:
-    BlobsBulkGet:
+    BlobPartCreate:
+      additionalProperties: false
       properties:
-        blobs:
-          items:
-            $ref: '#/components/schemas/Blob'
-          type: array
+        data64:
+          format: bytes
+          type: string
+        md5:
+          type: string
+        partNumber:
+          description: 'An integer between 1 to 10,000, inclusive. The part number must be unique per part and indicates the ordering of the part inside the final blob. The part numbers do not need to be consecutive.
+
+            '
+          maximum: 10000
+          minimum: 1
+          type: integer
+      required:
+      - partNumber
+      - data64
+      - md5
       type: object
-    BaseError:
+    NotFoundError:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     BlobComplete:
       additionalProperties: false
@@ -393,6 +410,18 @@ components:
           items:
             $ref: '#/components/schemas/BlobPart'
           type: array
+      type: object
+    EmptyObject:
+      type: object
+    BlobPart:
+      properties:
+        eTag:
+          example: '"6f5902ac237024bdd0c176cb93063dc4"'
+          type: string
+        partNumber:
+          maximum: 10000
+          minimum: 1
+          type: integer
       type: object
     BlobCreate:
       additionalProperties: false
@@ -429,6 +458,26 @@ components:
       - data64
       - md5
       type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
     BlobMultipartCreate:
       additionalProperties: false
       properties:
@@ -452,41 +501,6 @@ components:
       required:
       - name
       - type
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    BlobPart:
-      properties:
-        eTag:
-          example: '"6f5902ac237024bdd0c176cb93063dc4"'
-          type: string
-        partNumber:
-          maximum: 10000
-          minimum: 1
-          type: integer
-      type: object
-    BlobUrl:
-      properties:
-        downloadURL:
-          description: a pre-signed download url.
-          format: uri
-          type: string
-        expiresAt:
-          description: The unix time that the download URL expires at.
-          type: integer
-      type: object
-    EmptyObject:
       type: object
     Blob:
       properties:
@@ -520,36 +534,22 @@ components:
           - ABORTED
           type: string
       type: object
-    BlobPartCreate:
-      additionalProperties: false
+    BlobsBulkGet:
       properties:
-        data64:
-          format: bytes
-          type: string
-        md5:
-          type: string
-        partNumber:
-          description: 'An integer between 1 to 10,000, inclusive. The part number must be unique per part and indicates the ordering of the part inside the final blob. The part numbers do not need to be consecutive.
-
-            '
-          maximum: 10000
-          minimum: 1
-          type: integer
-      required:
-      - partNumber
-      - data64
-      - md5
+        blobs:
+          items:
+            $ref: '#/components/schemas/Blob'
+          type: array
       type: object
-    BadRequestError:
+    BlobUrl:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        downloadURL:
+          description: a pre-signed download url.
+          format: uri
+          type: string
+        expiresAt:
+          description: The unix time that the download URL expires at.
+          type: integer
       type: object
   securitySchemes:
     basicApiKeyAuth:

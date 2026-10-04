@@ -179,60 +179,6 @@ components:
             $ref: '#/components/schemas/Enzyme'
           type: array
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    CutSiteDetail:
-      description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
-
-        The position field indicates where the 5'' strand is cut, while offset specifies the distance
-
-        from position where the 3'' strand is cut. A zero offset produces blunt ends; non-zero offsets
-
-        create sticky ends (overhangs). Enzymes that cut once have a single CutSiteDetail, while
-
-        rare double-cutting enzymes have two. This information is essential for predicting fragment
-
-        sizes and compatible ends when designing cloning strategies.'
-      properties:
-        __typename:
-          type: string
-        offset:
-          description: Location, relative to `position`, where the 3' cut is made.
-          type: integer
-        position:
-          description: Location, relative to the restriction site bases, where the 5' cut is made.
-          type: integer
-      type: object
-    OwnerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -259,14 +205,74 @@ components:
       - status
       - instance
       type: object
-    EnzymeListPaginatedList:
-      additionalProperties: false
+    OwnerRef:
       properties:
-        items:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    Enzyme:
+      description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+
+        enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+        that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+        has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+        details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+        site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+        pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+        during cloning workflow design.'
+      properties:
+        __typename:
+          type: string
+        cutSites:
+          description: Either one (for single cutters) or two (for double cutters) cut details.
           items:
-            $ref: '#/components/schemas/EnzymeList'
+            $ref: '#/components/schemas/CutSiteDetail'
           type: array
-        nextToken:
+        id:
+          description: Id of the Enzyme
+          type: string
+        isoschizomers:
+          description: Other enzymes in the catalog that recognize the same restriction site.
+          format: uri
+          type: string
+        name:
+          description: The name of the Enzyme, like EcoRI.
+          type: string
+        restrictionSiteBases:
+          description: The DNA bases recognized by the Enzyme.
           type: string
       type: object
     EnzymeList:
@@ -309,76 +315,68 @@ components:
           $ref: '#/components/schemas/OwnerRef'
           description: User or Organization owner
       type: object
-    Enzyme:
-      description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
+    EnzymeListPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EnzymeList'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    CutSiteDetail:
+      description: 'Describes the cleavage pattern of a restriction enzyme relative to its recognition site.
 
-        enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+        The position field indicates where the 5'' strand is cut, while offset specifies the distance
 
-        that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+        from position where the 3'' strand is cut. A zero offset produces blunt ends; non-zero offsets
 
-        has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+        create sticky ends (overhangs). Enzymes that cut once have a single CutSiteDetail, while
 
-        details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+        rare double-cutting enzymes have two. This information is essential for predicting fragment
 
-        site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
-
-        pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
-
-        during cloning workflow design.'
+        sizes and compatible ends when designing cloning strategies.'
       properties:
         __typename:
           type: string
-        cutSites:
-          description: Either one (for single cutters) or two (for double cutters) cut details.
-          items:
-            $ref: '#/components/schemas/CutSiteDetail'
-          type: array
-        id:
-          description: Id of the Enzyme
-          type: string
-        isoschizomers:
-          description: Other enzymes in the catalog that recognize the same restriction site.
-          format: uri
-          type: string
-        name:
-          description: The name of the Enzyme, like EcoRI.
-          type: string
-        restrictionSiteBases:
-          description: The DNA bases recognized by the Enzyme.
-          type: string
+        offset:
+          description: Location, relative to `position`, where the 3' cut is made.
+          type: integer
+        position:
+          description: Location, relative to the restriction site bases, where the 5' cut is made.
+          type: integer
       type: object
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
   parameters:
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
@@ -393,52 +391,6 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -448,16 +400,26 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
       name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -468,13 +430,51 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
       schema:
         format: datetime
         type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

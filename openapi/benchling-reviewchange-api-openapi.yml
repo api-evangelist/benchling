@@ -128,51 +128,22 @@ paths:
       - ReviewChange
       x-bnch-rate-limit-tier: 5
 components:
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
   parameters:
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
       in: query
-      name: createdAt.gte
+      name: id.anyOf
       schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    review.eq:
+      description: ID of a Review.
       in: query
-      name: createdAt.gt
+      name: review.eq
       schema:
-        format: datetime
         type: string
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
@@ -180,21 +151,40 @@ components:
       name: pageSize
       schema:
         type: integer
-    reviewId.anyOf:
-      description: Restricts results to review changes for any of the specified Review API IDs. Comma-separated list.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
-      name: reviewId.anyOf
+      name: omit
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+    reviewableId.anyOf:
+      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
       explode: false
       in: query
-      name: id.anyOf
+      name: reviewableId.anyOf
       schema:
         items:
           type: string
@@ -209,6 +199,13 @@ components:
         items:
           type: string
         type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
@@ -216,87 +213,48 @@ components:
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+    reviewId.anyOf:
+      description: Restricts results to review changes for any of the specified Review API IDs. Comma-separated list.
       explode: false
       in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    review.eq:
-      description: ID of a Review.
-      in: query
-      name: review.eq
-      schema:
-        type: string
-    reviewableId.anyOf:
-      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
-      explode: false
-      in: query
-      name: reviewableId.anyOf
+      name: reviewId.anyOf
       schema:
         items:
           type: string
         maxItems: 100
         type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   schemas:
-    ReviewRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ReviewChangePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewChange'
-          type: array
-        nextToken:
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -353,6 +311,48 @@ components:
           type:
           - 'null'
           - string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewChangePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewChange'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ReviewRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     ReviewChange:
       description: 'Represents a single action taken within a review. ReviewChanges form an ordered

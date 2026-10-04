@@ -365,14 +365,32 @@ paths:
       - Users
 components:
   schemas:
-    BaseError:
+    UserActivity:
       properties:
-        message:
+        lastSeen:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        userId:
           type: string
-        type:
+      type: object
+    Pagination:
+      properties:
+        nextToken:
           type: string
-        userMessage:
-          type: string
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     User:
       allOf:
@@ -397,9 +415,35 @@ components:
             - string
             - 'null'
       type: object
-    AsyncTaskLink:
+    UsersPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          users:
+            items:
+              $ref: '#/components/schemas/User'
+            type: array
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    UserUpdate:
+      additionalProperties: false
       properties:
-        taskId:
+        email:
+          description: Email of the User
+          type: string
+        handle:
+          description: Handle of the User
+          type: string
+        isSuspended:
+          description: Suspended status of the User
+          type: boolean
+        name:
+          description: Name of the User
           type: string
       type: object
     WarehouseCredentialSummary:
@@ -426,21 +470,16 @@ components:
           readOnly: true
           type: string
       type: object
-    UsersPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          users:
-            items:
-              $ref: '#/components/schemas/User'
-            type: array
-    UserBulkCreateRequest:
-      additionalProperties: false
+    BadRequestError:
       properties:
-        users:
-          items:
-            $ref: '#/components/schemas/UserCreate'
-          type: array
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     PartySummary:
       properties:
@@ -450,19 +489,6 @@ components:
           type: string
         name:
           type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
       type: object
     UserCreate:
       additionalProperties: false
@@ -481,42 +507,6 @@ components:
       - email
       - handle
       type: object
-    UserUpdate:
-      additionalProperties: false
-      properties:
-        email:
-          description: Email of the User
-          type: string
-        handle:
-          description: Handle of the User
-          type: string
-        isSuspended:
-          description: Suspended status of the User
-          type: boolean
-        name:
-          description: Name of the User
-          type: string
-      type: object
-    UserActivity:
-      properties:
-        lastSeen:
-          format: date-time
-          type:
-          - string
-          - 'null'
-        userId:
-          type: string
-      type: object
-    UserBulkUpdate:
-      additionalProperties: false
-      allOf:
-      - properties:
-          id:
-            type: string
-        required:
-        - id
-        type: object
-      - $ref: '#/components/schemas/UserUpdate'
     UserBulkUpdateRequest:
       additionalProperties: false
       properties:
@@ -525,17 +515,15 @@ components:
             $ref: '#/components/schemas/UserBulkUpdate'
           type: array
       type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    Pagination:
+    BaseError:
       properties:
-        nextToken:
+        message:
           type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
     ForbiddenError:
       properties:
         error:
@@ -550,16 +538,28 @@ components:
               type: string
           type: object
       type: object
-    BadRequestError:
+    UserBulkCreateRequest:
+      additionalProperties: false
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        users:
+          items:
+            $ref: '#/components/schemas/UserCreate'
+          type: array
+      type: object
+    UserBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        required:
+        - id
+        type: object
+      - $ref: '#/components/schemas/UserUpdate'
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

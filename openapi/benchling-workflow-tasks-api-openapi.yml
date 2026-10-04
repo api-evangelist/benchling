@@ -496,38 +496,36 @@ paths:
       - Workflow Tasks
 components:
   schemas:
-    WorkflowTasksArchivalChange:
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type
-
-        '
+    WorkflowTaskUpdate:
+      allOf:
+      - properties:
+          statusId:
+            example: wfts_VFvwv7JV
+            type: string
+      - $ref: '#/components/schemas/WorkflowTaskWriteBase'
+      type: object
+    WorkflowTasksBulkCopyRequest:
       properties:
         workflowTaskIds:
           items:
             example: wftask_OnnsW08k
+            maxItems: 100
             type: string
           type: array
       type: object
-    WorkflowTaskExecutionOrigin:
-      description: The context into which a task was executed
+    WorkflowTaskWriteBase:
       properties:
-        entryId:
-          example: etr_30ad79
-          type:
-          - string
-          - 'null'
-        originModalUuid:
-          example: e8805895-0654-4613-ac04-39ee7462202e
-          format: uuid
-          type:
-          - string
-          - 'null'
-        type:
-          enum:
-          - API
-          - ENTRY
-          - MODAL
+        assigneeId:
+          description: The id of the user assigned to the task
+          example: ent_0YuSQS51
           type: string
-      type: object
+        fields:
+          $ref: '#/components/schemas/Fields'
+        scheduledOn:
+          description: The date on which the task is scheduled to be executed
+          example: '2020-08-01'
+          format: date
+          type: string
     PartySummary:
       properties:
         handle:
@@ -590,16 +588,29 @@ components:
             type: string
           workflowTaskGroup:
             $ref: '#/components/schemas/WorkflowTaskGroupSummary'
-    WorkflowTasksUnarchive:
+    WorkflowTaskSummary:
       properties:
-        workflowTaskIds:
-          items:
-            example: wftask_OnnsW08k
-            type: string
-          type: array
-      required:
-      - workflowTaskIds
-      type: object
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
     Field:
       properties:
         displayValue:
@@ -637,63 +648,32 @@ components:
       required:
       - value
       type: object
-    WorkflowTaskGroupSummary:
+    NotFoundError:
       properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow task group
-          example: prs_giVNQcTL
-          readOnly: true
-          type: string
-        name:
-          description: The name of the workflow task group
-          type: string
-    WorkflowTaskSchemaSummary:
-      properties:
-        id:
-          description: The ID of the workflow task schema
-          type: string
-        name:
-          description: The name of the workflow task schema
-          type: string
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
-    WorkflowTaskSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task
-          type: string
-        id:
-          description: The ID of the workflow task
-          example: wftask_OnnsW08k
-          readOnly: true
-          type: string
-    WorkflowTaskArchiveReason:
-      description: 'The reason for archiving the provided workflow tasks. Accepted reasons may differ based on tenant configuration.
-
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Other
-      type: string
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
       type: object
     WorkflowTasksArchive:
       properties:
@@ -708,30 +688,20 @@ components:
       - workflowTaskIds
       - reason
       type: object
-    WorkflowTaskStatus:
+    BadRequestError:
       properties:
-        displayName:
-          description: The status label
-          example: Pending
-          readOnly: true
-          type: string
-        id:
-          description: The ID of the workflow task status
-          example: wfts_wQzUCsW0
-          readOnly: true
-          type: string
-        statusType:
-          description: The status type
-          enum:
-          - PENDING
-          - IN_PROGRESS
-          - FAILED
-          - CANCELLED
-          - INVALID
-          - COMPLETED
-          example: PENDING
-          readOnly: true
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
       type: object
     FieldType:
       enum:
@@ -762,60 +732,9 @@ components:
       - date
       - json
       type: string
-    CreationOrigin:
-      properties:
-        application:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        originId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        originModalUuid:
-          format: uuid
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        originType:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-      type: object
-    UserSummary:
+    WorkflowTaskBulkCreate:
       allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    WorkflowOutputSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow output
-          example: wfout_5cJLQKVF
-          readOnly: true
-          type: string
-    WorkflowTaskWriteBase:
-      properties:
-        assigneeId:
-          description: The id of the user assigned to the task
-          example: ent_0YuSQS51
-          type: string
-        fields:
-          $ref: '#/components/schemas/Fields'
-        scheduledOn:
-          description: The date on which the task is scheduled to be executed
-          example: '2020-08-01'
-          format: date
-          type: string
+      - $ref: '#/components/schemas/WorkflowTaskCreate'
     WorkflowTaskBulkUpdate:
       allOf:
       - $ref: '#/components/schemas/WorkflowTaskUpdate'
@@ -824,35 +743,6 @@ components:
             description: The workflow task ID
             example: wftask_OnnsW08k
             type: string
-      type: object
-    WorkflowTasksBulkCreateRequest:
-      properties:
-        workflowTasks:
-          items:
-            $ref: '#/components/schemas/WorkflowTaskBulkCreate'
-          type: array
-      type: object
-    WorkflowTaskCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowTaskWriteBase'
-      - properties:
-          workflowTaskGroupId:
-            description: The workflow ID
-            example: prs_giVNQcTL
-            type: string
-        required:
-        - workflowTaskGroupId
-    WorkflowTaskBulkCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowTaskCreate'
-    WorkflowTasksBulkCopyRequest:
-      properties:
-        workflowTaskIds:
-          items:
-            example: wftask_OnnsW08k
-            maxItems: 100
-            type: string
-          type: array
       type: object
     WorkflowTask:
       allOf:
@@ -906,26 +796,44 @@ components:
             items:
               $ref: '#/components/schemas/WorkflowOutputSummary'
             type: array
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    NotFoundError:
+    AsyncTaskLink:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        taskId:
+          type: string
       type: object
+    WorkflowTaskStatus:
+      properties:
+        displayName:
+          description: The status label
+          example: Pending
+          readOnly: true
+          type: string
+        id:
+          description: The ID of the workflow task status
+          example: wfts_wQzUCsW0
+          readOnly: true
+          type: string
+        statusType:
+          description: The status type
+          enum:
+          - PENDING
+          - IN_PROGRESS
+          - FAILED
+          - CANCELLED
+          - INVALID
+          - COMPLETED
+          example: PENDING
+          readOnly: true
+          type: string
+      type: object
+    WorkflowTaskSchemaSummary:
+      properties:
+        id:
+          description: The ID of the workflow task schema
+          type: string
+        name:
+          description: The name of the workflow task schema
+          type: string
     WorkflowTasksBulkUpdateRequest:
       properties:
         workflowTasks:
@@ -933,13 +841,16 @@ components:
             $ref: '#/components/schemas/WorkflowTaskBulkUpdate'
           type: array
       type: object
-    WorkflowTaskUpdate:
-      allOf:
-      - properties:
-          statusId:
-            example: wfts_VFvwv7JV
+    WorkflowTasksArchivalChange:
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type
+
+        '
+      properties:
+        workflowTaskIds:
+          items:
+            example: wftask_OnnsW08k
             type: string
-      - $ref: '#/components/schemas/WorkflowTaskWriteBase'
+          type: array
       type: object
     WorkflowTasksPaginatedList:
       properties:
@@ -951,22 +862,111 @@ components:
             $ref: '#/components/schemas/WorkflowTask'
           type: array
       type: object
+    WorkflowTaskCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskWriteBase'
+      - properties:
+          workflowTaskGroupId:
+            description: The workflow ID
+            example: prs_giVNQcTL
+            type: string
+        required:
+        - workflowTaskGroupId
     ArchiveRecord:
       properties:
         reason:
           example: Made in error
           type: string
       type: object
-    BadRequestError:
+    WorkflowTaskExecutionOrigin:
+      description: The context into which a task was executed
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        entryId:
+          example: etr_30ad79
+          type:
+          - string
+          - 'null'
+        originModalUuid:
+          example: e8805895-0654-4613-ac04-39ee7462202e
+          format: uuid
+          type:
+          - string
+          - 'null'
+        type:
+          enum:
+          - API
+          - ENTRY
+          - MODAL
+          type: string
+      type: object
+    WorkflowTasksUnarchive:
+      properties:
+        workflowTaskIds:
+          items:
+            example: wftask_OnnsW08k
+            type: string
+          type: array
+      required:
+      - workflowTaskIds
+      type: object
+    WorkflowTasksBulkCreateRequest:
+      properties:
+        workflowTasks:
+          items:
+            $ref: '#/components/schemas/WorkflowTaskBulkCreate'
+          type: array
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowTaskArchiveReason:
+      description: 'The reason for archiving the provided workflow tasks. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Other
+      type: string
+    WorkflowOutputSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    CreationOrigin:
+      properties:
+        application:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originModalUuid:
+          format: uuid
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originType:
+          readOnly: true
+          type:
+          - string
+          - 'null'
       type: object
   securitySchemes:
     basicApiKeyAuth:

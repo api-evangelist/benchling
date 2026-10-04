@@ -343,71 +343,152 @@ paths:
       - Dropdown
       x-bnch-rate-limit-tier: 2
 components:
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
+  parameters:
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
   schemas:
-    DropdownPaginatedList:
+    UpdateDropdownInput:
       additionalProperties: false
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Dropdown'
-          type: array
-        nextToken:
+        archiveReason:
           type: string
+        archived:
+          type: boolean
+        name:
+          description: Name of the dropdown
+          type: string
+        options:
+          description: Array of dropdown options
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CreateDropdownOptionInput'
+            - $ref: '#/components/schemas/UpdateDropdownOptionInput'
+          type: array
       type: object
-    AsyncTaskLink:
+    Dropdown:
+      description: 'A configurable list of predefined values used for standardizing data entry in schema fields.
+
+        Dropdowns provide controlled vocabulary choices that ensure consistency when users fill out
+
+        entity and object fields. Each Dropdown belongs to a Registry (see `registry`) and contains
+
+        one or more selectable options (see `DropdownOption`). Dropdowns are referenced by schema
+
+        field definitions (see `DropdownLinkFieldDefinition`) to constrain the allowed values for a
+
+        field. Organizations use dropdowns to enforce standardized terminology across experiments,
+
+        samples, and other registered entities.'
       properties:
-        pollingUri:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        id:
+          description: ID of the dropdown
+          type: string
+        name:
+          description: Name of the dropdown
+          type: string
+        options:
+          description: Array of dropdown options
           format: uri
           type: string
-        taskId:
-          type: string
+        registry:
+          $ref: '#/components/schemas/RegistryRef'
+          description: The registry that the dropdown belongs to
       type: object
-    DropdownOptionUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/DropdownOption'
-          type: array
-      type: object
-    GeneralError:
+    InternalServerError:
       properties:
         detail:
           type:
           - 'null'
           - string
           - object
+        errorId:
+          type: string
         instance:
           type: string
         status:
@@ -425,6 +506,46 @@ components:
       - status
       - instance
       type: object
+    DropdownOption:
+      description: 'An individual selectable value within a Dropdown. Each DropdownOption represents one valid
+
+        choice that users can select when populating a schema field configured with the parent
+
+        Dropdown. Options can be archived to remove them from the available choices while preserving
+
+        historical data that references them. The option''s name is displayed to users when selecting
+
+        values.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DropdownOptionUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DropdownOption'
+          type: array
+      type: object
     UpdateDropdownOptionInput:
       additionalProperties: false
       properties:
@@ -439,15 +560,47 @@ components:
       required:
       - id
       type: object
-    InternalServerError:
+    CreateDropdownOptionInput:
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+      required:
+      - name
+      type: object
+    CreateDropdownInput:
+      additionalProperties: false
+      properties:
+        name:
+          description: Name of the dropdown
+          type: string
+        options:
+          description: Array of dropdown options
+          items:
+            $ref: '#/components/schemas/CreateDropdownOptionInput'
+          type: array
+        registryId:
+          type: string
+      required:
+      - name
+      - registryId
+      - options
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    GeneralError:
       properties:
         detail:
           type:
           - 'null'
           - string
           - object
-        errorId:
-          type: string
         instance:
           type: string
         status:
@@ -497,200 +650,47 @@ components:
       required:
       - id
       type: object
-    Dropdown:
-      description: 'A configurable list of predefined values used for standardizing data entry in schema fields.
-
-        Dropdowns provide controlled vocabulary choices that ensure consistency when users fill out
-
-        entity and object fields. Each Dropdown belongs to a Registry (see `registry`) and contains
-
-        one or more selectable options (see `DropdownOption`). Dropdowns are referenced by schema
-
-        field definitions (see `DropdownLinkFieldDefinition`) to constrain the allowed values for a
-
-        field. Organizations use dropdowns to enforce standardized terminology across experiments,
-
-        samples, and other registered entities.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        id:
-          description: ID of the dropdown
-          type: string
-        name:
-          description: Name of the dropdown
-          type: string
-        options:
-          description: Array of dropdown options
-          format: uri
-          type: string
-        registry:
-          $ref: '#/components/schemas/RegistryRef'
-          description: The registry that the dropdown belongs to
-      type: object
-    UpdateDropdownInput:
+    DropdownPaginatedList:
       additionalProperties: false
       properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        name:
-          description: Name of the dropdown
-          type: string
-        options:
-          description: Array of dropdown options
+        items:
           items:
-            anyOf:
-            - $ref: '#/components/schemas/CreateDropdownOptionInput'
-            - $ref: '#/components/schemas/UpdateDropdownOptionInput'
+            $ref: '#/components/schemas/Dropdown'
           type: array
-      type: object
-    DropdownOption:
-      description: 'An individual selectable value within a Dropdown. Each DropdownOption represents one valid
-
-        choice that users can select when populating a schema field configured with the parent
-
-        Dropdown. Options can be archived to remove them from the available choices while preserving
-
-        historical data that references them. The option''s name is displayed to users when selecting
-
-        values.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        id:
-          type: string
-        name:
+        nextToken:
           type: string
       type: object
-    RegistryRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CreateDropdownOptionInput:
-      additionalProperties: false
-      properties:
-        name:
-          type: string
-      required:
-      - name
-      type: object
-    CreateDropdownInput:
-      additionalProperties: false
-      properties:
-        name:
-          description: Name of the dropdown
-          type: string
-        options:
-          description: Array of dropdown options
-          items:
-            $ref: '#/components/schemas/CreateDropdownOptionInput'
-          type: array
-        registryId:
-          type: string
-      required:
-      - name
-      - registryId
-      - options
-      type: object
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

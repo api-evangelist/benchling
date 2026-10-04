@@ -436,59 +436,16 @@ paths:
       - Assay Results
 components:
   schemas:
-    AssayResultIdsResponse:
+    AssayResultIdsRequest:
+      additionalProperties: false
       properties:
         assayResultIds:
           items:
             format: uuid
             type: string
           type: array
-      type: object
-    AssayResultsBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        assayResults:
-          items:
-            $ref: '#/components/schemas/AssayResultCreate'
-          type: array
       required:
-      - assayResults
-      type: object
-    AssayResultsBulkGet:
-      properties:
-        assayResults:
-          items:
-            $ref: '#/components/schemas/AssayResult'
-          type: array
-      type: object
-    AssayResultsArchive:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/AssayResultIdsRequest'
-      - properties:
-          reason:
-            description: The reason for archiving the provided results. Accepted reasons may differ based on tenant configuration
-            enum:
-            - Made in error
-            - Archived
-            - Other
-            type: string
-        type: object
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
+      - assayResultIds
       type: object
     AssayResultCreate:
       properties:
@@ -528,15 +485,48 @@ components:
       - schemaId
       - fields
       type: object
-    AssayResultsPaginatedList:
+    AssayResultsCreateResponse:
       properties:
         assayResults:
           items:
-            $ref: '#/components/schemas/AssayResult'
+            format: uuid
+            type: string
           type: array
-        nextToken:
+        errors:
+          default: null
+          type:
+          - object
+          - 'null'
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
           type: string
       type: object
+    AssayResultsBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResultCreate'
+          type: array
+      required:
+      - assayResults
+      type: object
+    AssayResultsBulkCreateInTableRequest:
+      allOf:
+      - $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
+      - properties:
+          tableId:
+            example: strtbl_IakA58In
+            type: string
+        required:
+        - assayResults
+        type: object
     Field:
       properties:
         displayValue:
@@ -574,24 +564,77 @@ components:
       required:
       - value
       type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    AssayFieldsCreate:
+      additionalProperties: true
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
     AsyncTaskLink:
       properties:
         taskId:
           type: string
       type: object
-    AssayResultIdsRequest:
-      additionalProperties: false
+    SchemaSummary:
       properties:
-        assayResultIds:
-          items:
-            format: uuid
-            type: string
-          type: array
-      required:
-      - assayResultIds
+        id:
+          type: string
+        name:
+          type: string
       type: object
-    AssayFieldsCreate:
-      additionalProperties: true
+    AssayResultTransactionCreateResponse:
+      properties:
+        id:
+          format: uuid
+          type: string
       type: object
     AssayResult:
       properties:
@@ -669,9 +712,32 @@ components:
           readOnly: true
           type: string
       type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    AssayResultsArchive:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/AssayResultIdsRequest'
+      - properties:
+          reason:
+            description: The reason for archiving the provided results. Accepted reasons may differ based on tenant configuration
+            enum:
+            - Made in error
+            - Archived
+            - Other
+            type: string
+        type: object
+    AssayResultIdsResponse:
+      properties:
+        assayResultIds:
+          items:
+            format: uuid
+            type: string
+          type: array
       type: object
     BaseError:
       properties:
@@ -682,71 +748,6 @@ components:
         userMessage:
           type: string
       type: object
-    AssayResultTransactionCreateResponse:
-      properties:
-        id:
-          format: uuid
-          type: string
-      type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
-    AssayResultsBulkCreateInTableRequest:
-      allOf:
-      - $ref: '#/components/schemas/AssayResultsBulkCreateRequest'
-      - properties:
-          tableId:
-            example: strtbl_IakA58In
-            type: string
-        required:
-        - assayResults
-        type: object
-    AssayResultsCreateResponse:
-      properties:
-        assayResults:
-          items:
-            format: uuid
-            type: string
-          type: array
-        errors:
-          default: null
-          type:
-          - object
-          - 'null'
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
     UserValidation:
       properties:
         validationComment:
@@ -763,6 +764,13 @@ components:
           - INVALID
           - PARTIALLY_VALID
           type: string
+      type: object
+    AssayResultsBulkGet:
+      properties:
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResult'
+          type: array
       type: object
     AssayResultsCreateErrorResponse:
       properties:
@@ -785,22 +793,14 @@ components:
             type: object
           type: array
       type: object
-    ArchiveRecord:
+    AssayResultsPaginatedList:
       properties:
-        reason:
-          example: Made in error
+        assayResults:
+          items:
+            $ref: '#/components/schemas/AssayResult'
+          type: array
+        nextToken:
           type: string
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

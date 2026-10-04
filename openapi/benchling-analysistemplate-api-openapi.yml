@@ -276,258 +276,161 @@ paths:
       - AnalysisTemplate
       x-bnch-rate-limit-tier: 4
 components:
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-  schemas:
-    AnalysisRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    TemplateCollectionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AnalysisTemplateVariable:
-      description: 'Defines a configuration parameter within an AnalysisTemplate that users can customize when
-
-        applying the template. Unlike AnalysisTemplateDataFrameVariable which handles data frame
-
-        inputs, this type represents scalar configuration values such as thresholds, filter criteria,
-
-        or algorithm parameters. The configVariableKey identifies which step configuration field
-
-        this variable controls, and variableTypeConfigSpec defines the allowed value types. When
-
-        users apply a template, they provide values for these variables that configure the behavior
-
-        of the corresponding PipelineStep.'
-      properties:
-        __typename:
-          type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        configVariableKey:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        pipelineStep:
-          $ref: '#/components/schemas/PipelineStepRef'
-        template:
-          $ref: '#/components/schemas/AnalysisTemplateRef'
-        variableTypeConfigSpec:
-          type: object
-      type: object
-    AnalysisTemplateDataFrameVariable:
-      description: 'Defines a data frame placeholder within an AnalysisTemplate that users must provide when
-
-        applying the template. Each variable specifies which PipelineStep input (replaceStep,
-
-        replaceStepData, replaceStepDataIndex) will receive the user-provided data frame. The
-
-        replaceDataFrameColumnsSpec field defines the expected column structure that the provided
-
-        data must match. When users apply an analysis template to create an Analysis, they provide
-
-        bindings that map actual data frames to these variables, populating the template''s pipeline
-
-        with real data.'
-      properties:
-        __typename:
-          type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type: string
-        description:
-          type: string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        replaceDataFrameColumnsSpec:
-          items:
-            $ref: '#/components/schemas/DataFrameColumn'
-          type: array
-        replaceStep:
-          $ref: '#/components/schemas/PipelineStepRef'
-        replaceStepData:
-          $ref: '#/components/schemas/PipelineStepDataRef'
-        replaceStepDataIndex:
-          type: integer
-        template:
-          $ref: '#/components/schemas/AnalysisTemplateRef'
-      type: object
-    DataFrameColumn:
-      description: 'Defines a column within a DataFrame, including its internal system name, user-facing
-
-        display name, and data type specification.'
-      properties:
-        __typename:
-          type: string
-        displayName:
-          type: string
-        systemName:
-          type: string
-        type:
-          type: object
-      type: object
-    AnalysisTemplatePaginatedList:
-      additionalProperties: false
-      properties:
+  parameters:
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
         items:
-          items:
-            $ref: '#/components/schemas/AnalysisTemplate'
-          type: array
-        nextToken:
           type: string
-      type: object
-    AnalysisTemplate:
-      description: 'A reusable pipeline configuration that can be instantiated to create new Analysis objects.
-
-        AnalysisTemplates define a complete data processing workflow with PipelineSteps (see `steps`)
-
-        that can be parameterized through configVariables (see `AnalysisTemplateVariable`) and
-
-        dataFrameVariables (see `AnalysisTemplateDataFrameVariable`). When users apply a template,
-
-        they provide values for these variables, generating a new Analysis with the template''s
-
-        pipeline structure populated with actual data. Templates are organized within
-
-        TemplateCollections and support versioning through the createdFromPipeline reference.'
+        maxItems: 10
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+  schemas:
+    PrincipalRef:
       properties:
         __typename:
           type: string
-        archivableChildren:
-          oneOf:
-          - format: uri
-            type: string
-          - type: 'null'
-        archivableParent:
-          oneOf:
-          - $ref: '#/components/schemas/TemplateCollectionRef'
-          - type: 'null'
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        configVariables:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        createdFromPipeline:
-          oneOf:
-          - $ref: '#/components/schemas/AnalysisRef'
-          - type: 'null'
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        dataFrameVariables:
-          format: uri
-          type: string
         id:
+          format: api_id
           type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        steps:
-          format: uri
-          type: string
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        webUrl:
-          type:
-          - 'null'
-          - string
       type: object
     PipelineStep:
       description: 'Represents a single operation node within a Pipeline''s directed acyclic graph (DAG). Each
@@ -708,46 +611,6 @@ components:
         stepVersion:
           type: integer
       type: object
-    PipelineStepRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -774,21 +637,113 @@ components:
       - status
       - instance
       type: object
-    AnalysisTemplateRef:
+    AnalysisTemplateVariable:
+      description: 'Defines a configuration parameter within an AnalysisTemplate that users can customize when
+
+        applying the template. Unlike AnalysisTemplateDataFrameVariable which handles data frame
+
+        inputs, this type represents scalar configuration values such as thresholds, filter criteria,
+
+        or algorithm parameters. The configVariableKey identifies which step configuration field
+
+        this variable controls, and variableTypeConfigSpec defines the allowed value types. When
+
+        users apply a template, they provide values for these variables that configure the behavior
+
+        of the corresponding PipelineStep.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        archiveDatetime:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archiveUser:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        archived:
+          type: boolean
+        configVariableKey:
           type: string
+        createdAt:
+          format: datetime
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        pipelineStep:
+          $ref: '#/components/schemas/PipelineStepRef'
+        template:
+          $ref: '#/components/schemas/AnalysisTemplateRef'
+        variableTypeConfigSpec:
+          type: object
       type: object
-    PipelineRef:
+    AnalysisTemplateDataFrameVariable:
+      description: 'Defines a data frame placeholder within an AnalysisTemplate that users must provide when
+
+        applying the template. Each variable specifies which PipelineStep input (replaceStep,
+
+        replaceStepData, replaceStepDataIndex) will receive the user-provided data frame. The
+
+        replaceDataFrameColumnsSpec field defines the expected column structure that the provided
+
+        data must match. When users apply an analysis template to create an Analysis, they provide
+
+        bindings that map actual data frames to these variables, populating the template''s pipeline
+
+        with real data.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        archiveDatetime:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archiveUser:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
           type: string
+        description:
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        replaceDataFrameColumnsSpec:
+          items:
+            $ref: '#/components/schemas/DataFrameColumn'
+          type: array
+        replaceStep:
+          $ref: '#/components/schemas/PipelineStepRef'
+        replaceStepData:
+          $ref: '#/components/schemas/PipelineStepDataRef'
+        replaceStepDataIndex:
+          type: integer
+        template:
+          $ref: '#/components/schemas/AnalysisTemplateRef'
       type: object
     AnalysisTemplateVariableUnpaginatedList:
       additionalProperties: false
@@ -796,22 +751,6 @@ components:
         items:
           items:
             $ref: '#/components/schemas/AnalysisTemplateVariable'
-          type: array
-      type: object
-    PipelineStepDataRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    PipelineStepUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/PipelineStep'
           type: array
       type: object
     AnalysisTemplateDataFrameVariableUnpaginatedList:
@@ -822,153 +761,214 @@ components:
             $ref: '#/components/schemas/AnalysisTemplateDataFrameVariable'
           type: array
       type: object
-  parameters:
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
           type: string
-        maxItems: 10
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
           type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    PipelineStepUnpaginatedList:
+      additionalProperties: false
+      properties:
         items:
+          items:
+            $ref: '#/components/schemas/PipelineStep'
+          type: array
+      type: object
+    AnalysisTemplatePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AnalysisTemplate'
+          type: array
+        nextToken:
           type: string
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
+      type: object
+    TemplateCollectionRef:
+      properties:
+        __typename:
           type: string
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
+        id:
+          format: api_id
           type: string
-        maxItems: 100
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
+      type: object
+    AnalysisTemplateRef:
+      properties:
+        __typename:
           type: string
-        maxItems: 100
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
+        id:
+          format: api_id
+          type: string
+      type: object
+    AnalysisTemplate:
+      description: 'A reusable pipeline configuration that can be instantiated to create new Analysis objects.
+
+        AnalysisTemplates define a complete data processing workflow with PipelineSteps (see `steps`)
+
+        that can be parameterized through configVariables (see `AnalysisTemplateVariable`) and
+
+        dataFrameVariables (see `AnalysisTemplateDataFrameVariable`). When users apply a template,
+
+        they provide values for these variables, generating a new Analysis with the template''s
+
+        pipeline structure populated with actual data. Templates are organized within
+
+        TemplateCollections and support versioning through the createdFromPipeline reference.'
+      properties:
+        __typename:
+          type: string
+        archivableChildren:
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
+        archivableParent:
+          oneOf:
+          - $ref: '#/components/schemas/TemplateCollectionRef'
+          - type: 'null'
+        archiveDatetime:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archiveUser:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        archived:
           type: boolean
-        maxItems: 2
-        type: array
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
+        configVariables:
+          format: uri
           type: string
-        maxItems: 100
-        type: array
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
+        createdAt:
+          format: datetime
+          type: string
+        createdFromPipeline:
+          oneOf:
+          - $ref: '#/components/schemas/AnalysisRef'
+          - type: 'null'
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        dataFrameVariables:
+          format: uri
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        steps:
+          format: uri
+          type: string
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+        webUrl:
+          type:
+          - 'null'
+          - string
+      type: object
+    AnalysisRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PipelineStepRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DataFrameColumn:
+      description: 'Defines a column within a DataFrame, including its internal system name, user-facing
+
+        display name, and data type specification.'
+      properties:
+        __typename:
+          type: string
+        displayName:
+          type: string
+        systemName:
+          type: string
+        type:
+          type: object
+      type: object
+    PipelineRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PipelineStepDataRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

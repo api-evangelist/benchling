@@ -121,44 +121,263 @@ paths:
       - WellPlatePosition
       x-bnch-rate-limit-tier: 5
 components:
-  responses:
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
+  parameters:
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   schemas:
+    ExpirationInfo:
+      description: 'Provides expiration tracking for inventory items such as containers and their
+
+        contents. The expirationDate may be explicitly set on the container or inherited
+
+        from the stored entity''s properties. The isExpired flag is a computed convenience
+
+        field that returns true if the current date is past the expiration date. Items
+
+        without an expiration date are considered non-expiring (isExpired returns false).'
+      properties:
+        __typename:
+          type: string
+        expirationDate:
+          description: Expiration date of the item, potentially inherited from the contents or overridden.
+          format: datetime
+          type:
+          - 'null'
+          - string
+        isExpired:
+          description: Whether the item is past its expiration date. Items without an expiration date return False.
+          type: boolean
+      type: object
+    ContainerContent:
+      description: 'Represents a biological or chemical entity stored within a Container or well. Each
+
+        ContainerContent links an Entity (such as a DNA sequence, protein, or custom entity)
+
+        to its storage location, along with an optional concentration measurement. The
+
+        timestamps track when the entity was first placed in the container and when the
+
+        concentration was last modified. A container can hold multiple ContainerContent
+
+        items representing different entities or samples stored together.'
+      properties:
+        __typename:
+          type: string
+        concentration:
+          description: Concentration of the entity in the container.
+          oneOf:
+          - $ref: '#/components/schemas/Measurement'
+          - type: 'null'
+        createdAt:
+          description: When the container was first filled with this entity.
+          format: datetime
+          type: string
+        entity:
+          description: The entity in the container.
+          oneOf:
+          - $ref: '#/components/schemas/EntityRef'
+          - type: 'null'
+        modifiedAt:
+          description: When the entity was last added to this container or the concentration was last changed.
+          format: datetime
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UnitRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    EntityRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     ContainerSchemaRef:
       properties:
         __typename:
           type: string
         id:
           format: api_id
+          type: string
+      type: object
+    WellPlatePositionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/WellPlatePosition'
+          type: array
+        nextToken:
           type: string
       type: object
     WellPlatePosition:
@@ -220,80 +439,31 @@ components:
           $ref: '#/components/schemas/ContainerSchemaRef'
           description: The container schema used by wells in the well plate.
       type: object
-    ExpirationInfo:
-      description: 'Provides expiration tracking for inventory items such as containers and their
+    Measurement:
+      description: 'Represents a quantity with an associated unit of measurement within Benchling''s inventory
 
-        contents. The expirationDate may be explicitly set on the container or inherited
+        system. Measurements are used throughout inventory to track container volumes, sample
 
-        from the stored entity''s properties. The isExpired flag is a computed convenience
+        masses, concentrations, and other quantitative values. Each Measurement pairs a numeric
 
-        field that returns true if the current date is past the expiration date. Items
+        value with a Unit (see Unit) to provide context-aware quantity handling. For example,
 
-        without an expiration date are considered non-expiring (isExpired returns false).'
+        a container might have a Measurement of 500 uL for its volume. Unlike ContainerQuantity
+
+        which provides a simpler representation, Measurement supports the full Unit system with
+
+        dimensional conversions.'
       properties:
         __typename:
           type: string
-        expirationDate:
-          description: Expiration date of the item, potentially inherited from the contents or overridden.
-          format: datetime
+        unit:
+          oneOf:
+          - $ref: '#/components/schemas/UnitRef'
+          - type: 'null'
+        value:
           type:
           - 'null'
-          - string
-        isExpired:
-          description: Whether the item is past its expiration date. Items without an expiration date return False.
-          type: boolean
-      type: object
-    WellPlatePositionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/WellPlatePosition'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    EntityRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ContainerContent:
-      description: 'Represents a biological or chemical entity stored within a Container or well. Each
-
-        ContainerContent links an Entity (such as a DNA sequence, protein, or custom entity)
-
-        to its storage location, along with an optional concentration measurement. The
-
-        timestamps track when the entity was first placed in the container and when the
-
-        concentration was last modified. A container can hold multiple ContainerContent
-
-        items representing different entities or samples stored together.'
-      properties:
-        __typename:
-          type: string
-        concentration:
-          description: Concentration of the entity in the container.
-          oneOf:
-          - $ref: '#/components/schemas/Measurement'
-          - type: 'null'
-        createdAt:
-          description: When the container was first filled with this entity.
-          format: datetime
-          type: string
-        entity:
-          description: The entity in the container.
-          oneOf:
-          - $ref: '#/components/schemas/EntityRef'
-          - type: 'null'
-        modifiedAt:
-          description: When the entity was last added to this container or the concentration was last changed.
-          format: datetime
-          type: string
+          - number
       type: object
     GridCoordinates:
       description: Read model representing a fillable position in a box or plate.
@@ -326,90 +496,6 @@ components:
         row:
           description: The 0-indexed row index of the position
           type: integer
-      type: object
-    Measurement:
-      description: 'Represents a quantity with an associated unit of measurement within Benchling''s inventory
-
-        system. Measurements are used throughout inventory to track container volumes, sample
-
-        masses, concentrations, and other quantitative values. Each Measurement pairs a numeric
-
-        value with a Unit (see Unit) to provide context-aware quantity handling. For example,
-
-        a container might have a Measurement of 500 uL for its volume. Unlike ContainerQuantity
-
-        which provides a simpler representation, Measurement supports the full Unit system with
-
-        dimensional conversions.'
-      properties:
-        __typename:
-          type: string
-        unit:
-          oneOf:
-          - $ref: '#/components/schemas/UnitRef'
-          - type: 'null'
-        value:
-          type:
-          - 'null'
-          - number
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    UnitRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     ExperimentalRole:
       description: 'Represents the complete experimental designation of a well or container within an assay,
@@ -447,123 +533,37 @@ components:
           - 'null'
           - string
       type: object
-  parameters:
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
