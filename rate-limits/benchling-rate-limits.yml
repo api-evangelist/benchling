@@ -1,19 +1,19 @@
 generated: '2026-08-15'
 method: searched
-source: https://docs.benchling.com/docs/rate-limiting (HTTP 200, fetched 2026-08-15) plus x-bnch-rate-limit-tier
-  / "Tier N Rate Limit" tags read from openapi/benchling-v3-openapi.yaml.
+source: https://docs.benchling.com/docs/rate-limiting
 name: Benchling Rate Limits
 description: Benchling enforces both request-rate limits (requests per 30 seconds) and throughput limits
   (objects created or updated per hour) to ensure platform stability. Limits vary by key type. Apps have
   independent per-app limits so they do not consume a shared tenant budget.
 url: https://docs.benchling.com/docs/rate-limiting
-rate_limits:
+rate_limits: &id001
 - name: User API Key Limit
   description: Aggregate limit across all personal/user API keys within a single tenant.
   limit: 60
   window: 30 seconds
   scope: per-tenant (all user keys combined)
   key_type: user_api_key
+  limit_text: 60 requests per 30 seconds per tenant for all users keys
 - name: App API Key Limit
   description: Per-app limit for individual Benchling App keys. Apps have independent budgets so one heavy
     app does not throttle others.
@@ -21,6 +21,7 @@ rate_limits:
   window: 30 seconds
   scope: per-app-key
   key_type: app_client_credentials
+  limit_text: 300 requests per 30 seconds per app key
 - name: Combined App Tenant Limit
   description: Aggregate ceiling for all Benchling Apps operating within a single tenant. This limit is
     not reflected in response headers.
@@ -29,6 +30,7 @@ rate_limits:
   scope: per-tenant (all apps combined)
   key_type: app_client_credentials
   note: Not exposed via rate-limit response headers.
+  limit_text: 1000 requests per 30 seconds per tenant for all Benchling apps
 - name: Platform-Wide Throughput Limit
   description: Limits the total number of objects (entities, containers, results, etc.) created or updated
     across all API calls over a rolling hour window. Applies to entire tenant and adjusts dynamically
@@ -38,6 +40,7 @@ rate_limits:
   scope: per-tenant (all keys combined)
   dynamic: true
   note: Exact threshold may change in response to system load. Most tenants operate well below this ceiling.
+  limit_text: total number of objects
 response_headers:
 - name: x-rate-limit-limit
   description: Total requests allowed in the current window period.
@@ -98,3 +101,6 @@ gaps:
     no Retry-After accompanies a 429 — so a client must compute the wait from x-rate-limit-reset. The
     1000 req/30s all-apps tenant ceiling is not reflected in headers at all, which means an app can be
     throttled by a limit it cannot observe.
+limits: *id001
+source_note: https://docs.benchling.com/docs/rate-limiting (HTTP 200, fetched 2026-08-15) plus x-bnch-rate-limit-tier
+  / "Tier N Rate Limit" tags read from openapi/benchling-v3-openapi.yaml.
