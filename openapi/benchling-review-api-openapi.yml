@@ -171,8 +171,118 @@ paths:
       - Review
       x-bnch-rate-limit-tier: 4
 components:
+  parameters:
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    reviewableId.anyOf:
+      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
+      explode: false
+      in: query
+      name: reviewableId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Too Many Requests
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
-    PrincipalRef:
+    ReviewRef:
       properties:
         __typename:
           type: string
@@ -215,41 +325,21 @@ components:
           - $ref: '#/components/schemas/PrincipalRef'
           - type: 'null'
       type: object
-    ReviewPaginatedList:
-      additionalProperties: false
+    PrincipalRef:
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Review'
-          type: array
-        nextToken:
+        __typename:
+          type: string
+        id:
+          format: api_id
           type: string
       type: object
-    InternalServerError:
+    ReviewProcessRef:
       properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
+        __typename:
           type: string
-        instance:
+        id:
+          format: api_id
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     ReviewSnapshot:
       description: 'A point-in-time snapshot of a reviewable item (e.g. an Entry) captured when a
@@ -281,6 +371,115 @@ components:
           type:
           - 'null'
           - string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewChange:
+      description: 'Represents a single action taken within a review. ReviewChanges form an ordered
+
+        history of all changes made to a review, including status transitions,
+
+        reviewer assignments, and comments. Each ReviewChange records the action taken,
+
+        any associated comment, whether it was electronically signed, and an optional
+
+        point-in-time snapshot.'
+      properties:
+        __typename:
+          type: string
+        action:
+          description: The action taken
+          enum:
+          - SEND_FOR_REVIEW
+          - REQUEST_CHANGES
+          - APPROVE
+          - REJECT
+          - RETRACT
+          - ACCEPT
+          - COMPLETE
+          - SIGN
+          - REVIEW
+          - WITNESS
+          - SELF_REVIEW
+          - COMMENT
+          - REASSIGN
+          - null
+          type:
+          - 'null'
+          - string
+        comment:
+          description: Optional comment associated with this change
+          type:
+          - 'null'
+          - string
+        createdAt:
+          description: When this change occurred
+          format: datetime
+          type: string
+        eSigned:
+          description: Whether this change was electronically signed
+          type:
+          - 'null'
+          - boolean
+        id:
+          description: ID of the review change
+          type: string
+        review:
+          $ref: '#/components/schemas/ReviewRef'
+          description: The review this change belongs to
+        snapshot:
+          description: A point-in-time snapshot of the reviewable item taken at the time of this action
+          oneOf:
+          - $ref: '#/components/schemas/ReviewSnapshot'
+          - type: 'null'
       type: object
     Review:
       description: 'Represents an active or completed review of a reviewable item such as an Entry or
@@ -352,37 +551,15 @@ components:
           - 'null'
           - string
       type: object
-    ReviewProcessRef:
+    ReviewPaginatedList:
+      additionalProperties: false
       properties:
-        __typename:
+        items:
+          items:
+            $ref: '#/components/schemas/Review'
+          type: array
+        nextToken:
           type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     ReviewChangePaginatedList:
       additionalProperties: false
@@ -394,183 +571,6 @@ components:
         nextToken:
           type: string
       type: object
-    ReviewRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ReviewChange:
-      description: 'Represents a single action taken within a review. ReviewChanges form an ordered
-
-        history of all changes made to a review, including status transitions,
-
-        reviewer assignments, and comments. Each ReviewChange records the action taken,
-
-        any associated comment, whether it was electronically signed, and an optional
-
-        point-in-time snapshot.'
-      properties:
-        __typename:
-          type: string
-        action:
-          description: The action taken
-          enum:
-          - SEND_FOR_REVIEW
-          - REQUEST_CHANGES
-          - APPROVE
-          - REJECT
-          - RETRACT
-          - ACCEPT
-          - COMPLETE
-          - SIGN
-          - REVIEW
-          - WITNESS
-          - SELF_REVIEW
-          - COMMENT
-          - REASSIGN
-          - null
-          type:
-          - 'null'
-          - string
-        comment:
-          description: Optional comment associated with this change
-          type:
-          - 'null'
-          - string
-        createdAt:
-          description: When this change occurred
-          format: datetime
-          type: string
-        eSigned:
-          description: Whether this change was electronically signed
-          type:
-          - 'null'
-          - boolean
-        id:
-          description: ID of the review change
-          type: string
-        review:
-          $ref: '#/components/schemas/ReviewRef'
-          description: The review this change belongs to
-        snapshot:
-          description: A point-in-time snapshot of the reviewable item taken at the time of this action
-          oneOf:
-          - $ref: '#/components/schemas/ReviewSnapshot'
-          - type: 'null'
-      type: object
-  parameters:
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    reviewableId.anyOf:
-      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
-      explode: false
-      in: query
-      name: reviewableId.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

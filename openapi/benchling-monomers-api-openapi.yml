@@ -189,69 +189,17 @@ paths:
       - Monomers
 components:
   schemas:
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    MonomerPolymerType:
-      description: The polymer type of the monomer. Currently only RNA monomers are supported.
-      enum:
-      - RNA
-      type: string
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    MonomersArchivalChange:
-      additionalProperties: false
-      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
-
-        '
-      properties:
-        batchIds:
-          items:
-            type: string
-          type: array
-        monomerIds:
-          items:
-            type: string
-          type: array
-      type: object
-    MonomerCreate:
+    MonomersPaginatedList:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/MonomerBaseRequest'
+      - $ref: '#/components/schemas/Pagination'
       - properties:
-          naturalAnalog:
-            description: Symbol for the natural equivalent of the monomer. Acceptable natural analog values include IUPAC bases, r, and p.
-            example: T
+          monomers:
+            items:
+              $ref: '#/components/schemas/Monomer'
+            type: array
+          nextToken:
             type: string
-      - required:
-        - smiles
-        - name
-        - naturalAnalog
-        - symbol
-    MonomerType:
-      description: The part of the nucleotide structure that the monomer fits into, i.e. backbone or branch
-      enum:
-      - BACKBONE
-      - BRANCH
-      type: string
     MonomerVisualSymbol:
       description: The shape of the monomer visual symbol.
       enum:
@@ -273,6 +221,61 @@ components:
       - LETTERS_P
       - LETTERS_PS
       type: string
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    MonomerUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MonomerBaseRequest'
+    MonomersArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Monomers.
+
+        '
+      properties:
+        monomerIds:
+          items:
+            type: string
+          maxItems: 100
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Monomers. Accepted reasons may differ based on tenant configuration.
+
+            '
+          enum:
+          - Made in error
+          - Archived
+          - Other
+          type: string
+      required:
+      - reason
+      - monomerIds
+      type: object
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
     BadRequestError:
       properties:
         error:
@@ -283,6 +286,21 @@ components:
                 enum:
                 - invalid_request_error
                 type: string
+      type: object
+    MonomersArchivalChange:
+      additionalProperties: false
+      description: 'IDs of all items that were archived or unarchived, grouped by resource type.
+
+        '
+      properties:
+        batchIds:
+          items:
+            type: string
+          type: array
+        monomerIds:
+          items:
+            type: string
+          type: array
       type: object
     Monomer:
       properties:
@@ -363,19 +381,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/MonomerVisualSymbol'
       type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    MonomerUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/MonomerBaseRequest'
+    MonomerPolymerType:
+      description: The polymer type of the monomer. Currently only RNA monomers are supported.
+      enum:
+      - RNA
+      type: string
     MonomerBaseRequest:
       properties:
         color:
@@ -406,20 +416,39 @@ components:
           allOf:
           - $ref: '#/components/schemas/MonomerVisualSymbol'
       type: object
-    ForbiddenError:
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    NotFoundError:
       properties:
         error:
-          properties:
-            invalidId:
-              type: string
-            message:
-              type: string
-            type:
-              type: string
-            userMessage:
-              type: string
-          type: object
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
+    MonomerCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/MonomerBaseRequest'
+      - properties:
+          naturalAnalog:
+            description: Symbol for the natural equivalent of the monomer. Acceptable natural analog values include IUPAC bases, r, and p.
+            example: T
+            type: string
+      - required:
+        - smiles
+        - name
+        - naturalAnalog
+        - symbol
     MonomersUnarchive:
       additionalProperties: false
       description: 'The request body for unarchiving Monomers.
@@ -434,41 +463,12 @@ components:
       required:
       - monomerIds
       type: object
-    MonomersPaginatedList:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          monomers:
-            items:
-              $ref: '#/components/schemas/Monomer'
-            type: array
-          nextToken:
-            type: string
-    MonomersArchive:
-      additionalProperties: false
-      description: 'The request body for archiving Monomers.
-
-        '
-      properties:
-        monomerIds:
-          items:
-            type: string
-          maxItems: 100
-          type: array
-        reason:
-          description: 'The reason for archiving the provided Monomers. Accepted reasons may differ based on tenant configuration.
-
-            '
-          enum:
-          - Made in error
-          - Archived
-          - Other
-          type: string
-      required:
-      - reason
-      - monomerIds
-      type: object
+    MonomerType:
+      description: The part of the nucleotide structure that the monomer fits into, i.e. backbone or branch
+      enum:
+      - BACKBONE
+      - BRANCH
+      type: string
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

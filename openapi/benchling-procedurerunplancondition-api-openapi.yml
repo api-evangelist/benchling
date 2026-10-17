@@ -431,18 +431,47 @@ paths:
       x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    EquipmentValuePlanInput:
+    ProcedureRunPlanConditionReplicateInput:
       additionalProperties: false
       properties:
-        equipmentId:
-          description: 'The ID of the equipment parameter version. Format: `schver_XXXXXXXX`.'
-          type: string
-        value:
-          description: 'A dict with the shape {"value": {"equipment": <TypedValue | null>}}. The equipment TypedValue must match the referenced equipment parameter''s configured type: {"type": "ft_string", "value": "..."} for text inputs, or {"type": "ft_file_link", "targetFiles": [...]} for entity link inputs.'
-          type: object
+        replicateNumber:
+          description: The 1-indexed replicate number. Must be >= 1. Replicate numbers must be consecutive starting from 1 (e.g., 1, 2, 3).
+          type: integer
+        sourcePmeiIds:
+          description: 'IDs of source procedure method execution instances (PMEIs) for unit operation linking. Format: `pcmei_XXXXXXXX`. Used to connect this replicate''s inputs to outputs from a previous run.'
+          items:
+            type: string
+          type: array
       required:
-      - equipmentId
-      - value
+      - replicateNumber
+      type: object
+    ProcedureRunPlanConditionReplicate:
+      description: 'Represents a planned replicate within a `ProcedureRunPlanCondition`. Scientists often run the
+
+        same experimental condition multiple times to obtain statistically significant results—each
+
+        repetition is a replicate. The `replicateNumber` provides a one-indexed identifier (e.g.,
+
+        replicate 1, 2, 3). The `sourcePmeiIds` field supports unit operation linking by storing source
+
+        `ProcedureMethodExecutionInstance` IDs from other procedure runs. Upon promotion of the parent
+
+        `ProcedureRunPlan`, each ProcedureRunPlanConditionReplicate becomes a `ProcedureRunConditionReplicate` in the
+
+        resulting procedure run.'
+      properties:
+        __typename:
+          type: string
+        replicateNumber:
+          description: The replicate number.
+          type: integer
+        sourcePmeiIds:
+          description: 'Source PMEI IDs for this replicate.
+
+            Support unit operation linking to future-pmeis when executing the draft procedure run.'
+          items:
+            type: string
+          type: array
       type: object
     DataParameterValuePlanInput:
       additionalProperties: false
@@ -456,83 +485,6 @@ components:
       required:
       - parameterId
       - value
-      type: object
-    ProcedureMethodDefinitionVersionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    EquipmentValuePlan:
-      description: 'A pre-filled value for an equipment parameter within a `MethodParametersPlan`. The
-
-        `equipmentId` references the `ProcedureParameterVersion` for the equipment parameter this
-
-        value applies to. The `value` field contains the planned equipment assignment in JSON format,
-
-        typically specifying which piece of lab equipment will be used. Used during experiment planning
-
-        to pre-assign instruments or devices that will be used when the procedure run is executed.'
-      properties:
-        __typename:
-          type: string
-        equipmentId:
-          type: string
-        value:
-          type: object
-      type: object
-    MethodParametersPlan:
-      description: 'Contains the planned parameter values for a single unit operation (method) within a
-
-        `ProcedureRunPlanCondition`. Links to a `ProcedureMethodDefinitionVersion` via
-
-        `templateMethodVersion` to identify which method these values apply to. Parameter values are
-
-        organized by category: `dataParameterValues` for data fields like numbers or text,
-
-        `materialInputValues` for sample or reagent inputs, and `equipmentValues` for equipment
-
-        assignments. When the parent `ProcedureRunPlan` is promoted to a `ProcedureRun`, these planned
-
-        values become the starting values in the resulting `ProcedureMethodExecutionInstance`.'
-      properties:
-        __typename:
-          type: string
-        dataParameterValues:
-          description: Planned values for data parameters keyed by parameter identifiers.
-          items:
-            $ref: '#/components/schemas/DataParameterValuePlan'
-          type: array
-        equipmentValues:
-          description: Planned values for equipment keyed by equipment identifiers.
-          items:
-            $ref: '#/components/schemas/EquipmentValuePlan'
-          type: array
-        materialInputValues:
-          description: Planned values for material inputs keyed by input identifiers.
-          items:
-            $ref: '#/components/schemas/MaterialInputValuePlan'
-          type: array
-      type: object
-    ProcedureRunPlanConditionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureRunPlanCondition'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    ProcedureRunPlanRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
       type: object
     CreateProcedureRunPlanConditionInput:
       additionalProperties: false
@@ -586,6 +538,109 @@ components:
       - replicates
       - templateMethodVersionId
       type: object
+    ProcedureRunPlanCondition:
+      description: 'A planned experimental condition within a `ProcedureRunPlan`, representing how a procedure''s
+
+        methods will be configured when the plan is promoted to an actual `ProcedureRun`. Each
+
+        condition contains pre-filled parameter values (via `MethodParametersPlan`) for the procedure''s
+
+        unit operations, and specifies how many replicates will be run (via
+
+        `ProcedureRunPlanConditionReplicate`). Scientists use conditions to plan different experimental
+
+        configurations before execution—for example, testing multiple temperatures or reagent
+
+        concentrations. The `position` field determines display order within the parent run plan. Upon
+
+        promotion, each ProcedureRunPlanCondition becomes a `ProcedureRunCondition` in the resulting
+
+        experiment. Also known as an "experiment condition" in the Benchling UI''s experiment planning
+
+        workflow.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          description: The user-defined description of the condition.
+          type: string
+        id:
+          type: string
+        methodParametersPlan:
+          description: 'Method plan containing parameter values for this condition''s unit operation. If this value is null upon
+
+            promotion to a procedure run, default values from the procedure will be used.'
+          oneOf:
+          - $ref: '#/components/schemas/MethodParametersPlan'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          description: The user-defined name of the condition.
+          type: string
+        position:
+          description: The display order of the condition within the run.
+          type: integer
+        procedureRunPlan:
+          $ref: '#/components/schemas/ProcedureRunPlanRef'
+          description: The ProcedureRunPlan that this condition is a part of.
+        replicates:
+          description: Replicate information for this condition.
+          items:
+            $ref: '#/components/schemas/ProcedureRunPlanConditionReplicate'
+          type: array
+        templateMethodVersion:
+          $ref: '#/components/schemas/ProcedureMethodDefinitionVersionRef'
+          description: The procedure method definition version (PMDV) this condition belongs to.
+      type: object
+    MaterialInputValuePlanInput:
+      additionalProperties: false
+      properties:
+        materialInputId:
+          description: 'The ID of the material input parameter version. Format: `schver_XXXXXXXX`.'
+          type: string
+        value:
+          description: 'A dict with the shape {"value": {"material": <TypedValue | null>, "amount": <TypedValue | null>}}. The material TypedValue must match the referenced material input''s configured type: {"type": "ft_string", "value": "..."} for text inputs, or {"type": "ft_file_link", "targetFiles": [...]} for entity link inputs. The amount TypedValue is always ft_float (e.g., {"type": "ft_float", "floatValue": 1.0, "value": "1.0"}). Either sub-field may be null independently.'
+          type: object
+      required:
+      - materialInputId
+      - value
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    EquipmentValuePlanInput:
+      additionalProperties: false
+      properties:
+        equipmentId:
+          description: 'The ID of the equipment parameter version. Format: `schver_XXXXXXXX`.'
+          type: string
+        value:
+          description: 'A dict with the shape {"value": {"equipment": <TypedValue | null>}}. The equipment TypedValue must match the referenced equipment parameter''s configured type: {"type": "ft_string", "value": "..."} for text inputs, or {"type": "ft_file_link", "targetFiles": [...]} for entity link inputs.'
+          type: object
+      required:
+      - equipmentId
+      - value
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -612,37 +667,6 @@ components:
       - status
       - instance
       type: object
-    DataParameterValuePlan:
-      description: 'A pre-filled value for a data parameter within a `MethodParametersPlan`. The `parameterId`
-
-        references the `ProcedureParameterVersion` this value applies to. The `value` field contains
-
-        the planned data in JSON format, which may be a number, string, or structured value depending
-
-        on the parameter''s data type configuration. Used during experiment planning to specify default
-
-        values that will populate the parameter when the procedure run is created.'
-      properties:
-        __typename:
-          type: string
-        parameterId:
-          type: string
-        value:
-          type: object
-      type: object
-    MaterialInputValuePlanInput:
-      additionalProperties: false
-      properties:
-        materialInputId:
-          description: 'The ID of the material input parameter version. Format: `schver_XXXXXXXX`.'
-          type: string
-        value:
-          description: 'A dict with the shape {"value": {"material": <TypedValue | null>, "amount": <TypedValue | null>}}. The material TypedValue must match the referenced material input''s configured type: {"type": "ft_string", "value": "..."} for text inputs, or {"type": "ft_file_link", "targetFiles": [...]} for entity link inputs. The amount TypedValue is always ft_float (e.g., {"type": "ft_float", "floatValue": 1.0, "value": "1.0"}). Either sub-field may be null independently.'
-          type: object
-      required:
-      - materialInputId
-      - value
-      type: object
     GeneralError:
       properties:
         detail:
@@ -666,37 +690,6 @@ components:
       - detail
       - status
       - instance
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    MethodParametersPlanInput:
-      additionalProperties: false
-      properties:
-        dataParameterValues:
-          description: Planned values for data parameters in this method.
-          items:
-            $ref: '#/components/schemas/DataParameterValuePlanInput'
-          type: array
-        equipmentValues:
-          description: Planned values for equipment parameters in this method.
-          items:
-            $ref: '#/components/schemas/EquipmentValuePlanInput'
-          type: array
-        materialInputValues:
-          description: Planned values for material inputs in this method.
-          items:
-            $ref: '#/components/schemas/MaterialInputValuePlanInput'
-          type: array
-      required:
-      - dataParameterValues
-      - materialInputValues
-      - equipmentValues
       type: object
     UpdateProcedureRunPlanConditionInput:
       additionalProperties: false
@@ -755,6 +748,52 @@ components:
         templateMethodVersionId:
           description: The procedure method definition version ID (`pcmdv_XXXXXXXX`) this condition belongs to. Update this when the parent run plan's flowchart config version has changed and conditions need to point to the new method versions.
           type: string
+      type: object
+    EquipmentValuePlan:
+      description: 'A pre-filled value for an equipment parameter within a `MethodParametersPlan`. The
+
+        `equipmentId` references the `ProcedureParameterVersion` for the equipment parameter this
+
+        value applies to. The `value` field contains the planned equipment assignment in JSON format,
+
+        typically specifying which piece of lab equipment will be used. Used during experiment planning
+
+        to pre-assign instruments or devices that will be used when the procedure run is executed.'
+      properties:
+        __typename:
+          type: string
+        equipmentId:
+          type: string
+        value:
+          type: object
+      type: object
+    ProcedureRunPlanConditionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureRunPlanCondition'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    MaterialInputValuePlan:
+      description: 'A pre-filled value for a material input within a `MethodParametersPlan`. The `materialInputId`
+
+        references the `ProcedureParameterVersion` for the material input this value applies to. The
+
+        `value` field contains the planned material specification in JSON format, typically including
+
+        sample references and quantities. Used during experiment planning to pre-assign samples,
+
+        reagents, or other materials that will be used when the procedure run is executed.'
+      properties:
+        __typename:
+          type: string
+        materialInputId:
+          type: string
+        value:
+          type: object
       type: object
     UpdateProcedureRunPlanConditionInputWithPathParams:
       additionalProperties: false
@@ -819,152 +858,97 @@ components:
       required:
       - id
       type: object
-    MaterialInputValuePlan:
-      description: 'A pre-filled value for a material input within a `MethodParametersPlan`. The `materialInputId`
-
-        references the `ProcedureParameterVersion` for the material input this value applies to. The
-
-        `value` field contains the planned material specification in JSON format, typically including
-
-        sample references and quantities. Used during experiment planning to pre-assign samples,
-
-        reagents, or other materials that will be used when the procedure run is executed.'
+    MethodParametersPlanInput:
+      additionalProperties: false
+      properties:
+        dataParameterValues:
+          description: Planned values for data parameters in this method.
+          items:
+            $ref: '#/components/schemas/DataParameterValuePlanInput'
+          type: array
+        equipmentValues:
+          description: Planned values for equipment parameters in this method.
+          items:
+            $ref: '#/components/schemas/EquipmentValuePlanInput'
+          type: array
+        materialInputValues:
+          description: Planned values for material inputs in this method.
+          items:
+            $ref: '#/components/schemas/MaterialInputValuePlanInput'
+          type: array
+      required:
+      - dataParameterValues
+      - materialInputValues
+      - equipmentValues
+      type: object
+    ProcedureMethodDefinitionVersionRef:
       properties:
         __typename:
           type: string
-        materialInputId:
+        id:
+          format: api_id
+          type: string
+      type: object
+    DataParameterValuePlan:
+      description: 'A pre-filled value for a data parameter within a `MethodParametersPlan`. The `parameterId`
+
+        references the `ProcedureParameterVersion` this value applies to. The `value` field contains
+
+        the planned data in JSON format, which may be a number, string, or structured value depending
+
+        on the parameter''s data type configuration. Used during experiment planning to specify default
+
+        values that will populate the parameter when the procedure run is created.'
+      properties:
+        __typename:
+          type: string
+        parameterId:
           type: string
         value:
           type: object
       type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    ProcedureRunPlanConditionReplicate:
-      description: 'Represents a planned replicate within a `ProcedureRunPlanCondition`. Scientists often run the
-
-        same experimental condition multiple times to obtain statistically significant results—each
-
-        repetition is a replicate. The `replicateNumber` provides a one-indexed identifier (e.g.,
-
-        replicate 1, 2, 3). The `sourcePmeiIds` field supports unit operation linking by storing source
-
-        `ProcedureMethodExecutionInstance` IDs from other procedure runs. Upon promotion of the parent
-
-        `ProcedureRunPlan`, each ProcedureRunPlanConditionReplicate becomes a `ProcedureRunConditionReplicate` in the
-
-        resulting procedure run.'
+    ProcedureRunPlanRef:
       properties:
         __typename:
-          type: string
-        replicateNumber:
-          description: The replicate number.
-          type: integer
-        sourcePmeiIds:
-          description: 'Source PMEI IDs for this replicate.
-
-            Support unit operation linking to future-pmeis when executing the draft procedure run.'
-          items:
-            type: string
-          type: array
-      type: object
-    ProcedureRunPlanCondition:
-      description: 'A planned experimental condition within a `ProcedureRunPlan`, representing how a procedure''s
-
-        methods will be configured when the plan is promoted to an actual `ProcedureRun`. Each
-
-        condition contains pre-filled parameter values (via `MethodParametersPlan`) for the procedure''s
-
-        unit operations, and specifies how many replicates will be run (via
-
-        `ProcedureRunPlanConditionReplicate`). Scientists use conditions to plan different experimental
-
-        configurations before execution—for example, testing multiple temperatures or reagent
-
-        concentrations. The `position` field determines display order within the parent run plan. Upon
-
-        promotion, each ProcedureRunPlanCondition becomes a `ProcedureRunCondition` in the resulting
-
-        experiment. Also known as an "experiment condition" in the Benchling UI''s experiment planning
-
-        workflow.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        description:
-          description: The user-defined description of the condition.
           type: string
         id:
+          format: api_id
           type: string
-        methodParametersPlan:
-          description: 'Method plan containing parameter values for this condition''s unit operation. If this value is null upon
-
-            promotion to a procedure run, default values from the procedure will be used.'
-          oneOf:
-          - $ref: '#/components/schemas/MethodParametersPlan'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          description: The user-defined name of the condition.
-          type: string
-        position:
-          description: The display order of the condition within the run.
-          type: integer
-        procedureRunPlan:
-          $ref: '#/components/schemas/ProcedureRunPlanRef'
-          description: The ProcedureRunPlan that this condition is a part of.
-        replicates:
-          description: Replicate information for this condition.
-          items:
-            $ref: '#/components/schemas/ProcedureRunPlanConditionReplicate'
-          type: array
-        templateMethodVersion:
-          $ref: '#/components/schemas/ProcedureMethodDefinitionVersionRef'
-          description: The procedure method definition version (PMDV) this condition belongs to.
       type: object
-    ProcedureRunPlanConditionReplicateInput:
-      additionalProperties: false
+    MethodParametersPlan:
+      description: 'Contains the planned parameter values for a single unit operation (method) within a
+
+        `ProcedureRunPlanCondition`. Links to a `ProcedureMethodDefinitionVersion` via
+
+        `templateMethodVersion` to identify which method these values apply to. Parameter values are
+
+        organized by category: `dataParameterValues` for data fields like numbers or text,
+
+        `materialInputValues` for sample or reagent inputs, and `equipmentValues` for equipment
+
+        assignments. When the parent `ProcedureRunPlan` is promoted to a `ProcedureRun`, these planned
+
+        values become the starting values in the resulting `ProcedureMethodExecutionInstance`.'
       properties:
-        replicateNumber:
-          description: The 1-indexed replicate number. Must be >= 1. Replicate numbers must be consecutive starting from 1 (e.g., 1, 2, 3).
-          type: integer
-        sourcePmeiIds:
-          description: 'IDs of source procedure method execution instances (PMEIs) for unit operation linking. Format: `pcmei_XXXXXXXX`. Used to connect this replicate''s inputs to outputs from a previous run.'
+        __typename:
+          type: string
+        dataParameterValues:
+          description: Planned values for data parameters keyed by parameter identifiers.
           items:
-            type: string
+            $ref: '#/components/schemas/DataParameterValuePlan'
           type: array
-      required:
-      - replicateNumber
+        equipmentValues:
+          description: Planned values for equipment keyed by equipment identifiers.
+          items:
+            $ref: '#/components/schemas/EquipmentValuePlan'
+          type: array
+        materialInputValues:
+          description: Planned values for material inputs keyed by input identifiers.
+          items:
+            $ref: '#/components/schemas/MaterialInputValuePlan'
+          type: array
       type: object
   parameters:
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -978,10 +962,29 @@ components:
       name: nextToken
       schema:
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: createdAt.gte
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -992,19 +995,24 @@ components:
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: omit
+      name: modifiedAt.lt
       schema:
-        items:
-          type: string
-        type: array
+        format: datetime
+        type: string
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
       name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -1017,13 +1025,12 @@ components:
         items:
           type: string
         type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: createdAt.gt
+      name: pageSize
       schema:
-        format: datetime
-        type: string
+        type: integer
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -1031,17 +1038,10 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -1052,30 +1052,30 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Too Many Requests
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     BadRequest:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Bad Request
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
     NotFound:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

@@ -244,6 +244,54 @@ paths:
       - DNA Alignments
 components:
   schemas:
+    DnaTemplateAlignmentFile:
+      properties:
+        data:
+          format: byte
+          type: string
+        name:
+          type: string
+      type: object
+    EmptyObject:
+      type: object
+    DnaTemplateAlignmentCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentBase'
+      - properties:
+          shouldDisableCircularSequenceRotation:
+            default: false
+            description: Whether to disable circular sequence rotation.
+            type: boolean
+          templateSequenceId:
+            example: seq_rXqq0IHU
+            type: string
+        required:
+        - templateSequenceId
+        type: object
+    DnaAlignment:
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentSummary'
+      - properties:
+          alignedSequences:
+            items:
+              $ref: '#/components/schemas/AlignedSequence'
+            type: array
+        type: object
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    Pagination:
+      properties:
+        nextToken:
+          type: string
     ClustaloOptions:
       description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
       properties:
@@ -274,66 +322,66 @@ components:
           minimum: 0
           type: integer
       type: object
-    DnaTemplateAlignmentFile:
+    AlignedSequence:
       properties:
-        data:
-          format: byte
+        bases:
+          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
           type: string
+        dnaSequenceId:
+          deprecated: true
+          example: seq_MYmsnS1u
+          type:
+          - string
+          - 'null'
         name:
+          example: Gene001
           type: string
+        pairwiseIdentity:
+          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
+
+            '
+          example: 0.505
+          format: float
+          type: number
+        sequenceId:
+          example: seq_MYmsnS1u
+          type:
+          - string
+          - 'null'
+        trimEnd:
+          example: 60
+          type: integer
+        trimStart:
+          example: 0
+          type: integer
       type: object
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    NotFoundError:
+    BadRequestError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
-              invalidId:
-                type: string
               type:
                 enum:
                 - invalid_request_error
                 type: string
       type: object
-    MafftOptions:
-      description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
+    DnaConsensusAlignmentCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/DnaAlignmentBase'
+      - properties:
+          newSequence:
+            properties:
+              folderId:
+                example: lib_qQFY3WQH
+                type: string
+            type: object
+          sequenceId:
+            type: string
+    AsyncTaskLink:
       properties:
-        adjustDirection:
-          default: fast
-          description: "Adjust direction:\n  * `fast`: Enabled, quickly.\n  * `accurate`: Enabled, accurately (slow).\n  * `disabled`: Disabled, fastest.\n"
-          enum:
-          - fast
-          - accurate
-          - disabled
-          type: string
-        gapExtensionPenalty:
-          default: 0.0
-          description: Gap extension penalty.
-          type: number
-        gapOpenPenalty:
-          default: 1.53
-          description: Gap open penalty.
-          type: number
-        maxIterations:
-          default: 0
-          description: Max refinement iterations. Not applicable for auto strategy, as it will be selected automatically.
-          type: integer
-        retree:
-          default: 2
-          description: Tree rebuilding. Only used for 6-mer strategy.
-          type: integer
-        strategy:
-          default: auto
-          description: "MAFFT Strategy:\n  * `auto`: Pick a strategy automatically based on the count and size of inputs.\n  * `sixmer`: Use 6-mer distance for constructing the guide tree.\n  * `localpair`: Compute local pairwise alignments using Smith-Waterman for constructing the guide tree and iterative refinement.\n  * `globalpair`: Compute global pairwise alignments using Needleman-Wunsch for constructing the guide tree and iterative refinement.\n"
-          enum:
-          - auto
-          - sixmer
-          - localpair
-          - globalpair
+        taskId:
           type: string
       type: object
     DnaAlignmentSummary:
@@ -365,7 +413,18 @@ components:
           format: uri
           type: string
       type: object
-    EmptyObject:
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     DnaAlignmentBase:
       properties:
@@ -404,101 +463,42 @@ components:
               $ref: '#/components/schemas/DnaAlignmentSummary'
             type: array
       type: object
-    BadRequestError:
+    MafftOptions:
+      description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    BaseError:
-      properties:
-        message:
+        adjustDirection:
+          default: fast
+          description: "Adjust direction:\n  * `fast`: Enabled, quickly.\n  * `accurate`: Enabled, accurately (slow).\n  * `disabled`: Disabled, fastest.\n"
+          enum:
+          - fast
+          - accurate
+          - disabled
           type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    DnaTemplateAlignmentCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentBase'
-      - properties:
-          shouldDisableCircularSequenceRotation:
-            default: false
-            description: Whether to disable circular sequence rotation.
-            type: boolean
-          templateSequenceId:
-            example: seq_rXqq0IHU
-            type: string
-        required:
-        - templateSequenceId
-        type: object
-    DnaConsensusAlignmentCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentBase'
-      - properties:
-          newSequence:
-            properties:
-              folderId:
-                example: lib_qQFY3WQH
-                type: string
-            type: object
-          sequenceId:
-            type: string
-    DnaAlignment:
-      allOf:
-      - $ref: '#/components/schemas/DnaAlignmentSummary'
-      - properties:
-          alignedSequences:
-            items:
-              $ref: '#/components/schemas/AlignedSequence'
-            type: array
-        type: object
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    AlignedSequence:
-      properties:
-        bases:
-          example: GTAGCAAAGANTAGTAGCCAGCTGTGATAAATGTCAGCTAAAAGGGGAAGCCATG
-          type: string
-        dnaSequenceId:
-          deprecated: true
-          example: seq_MYmsnS1u
-          type:
-          - string
-          - 'null'
-        name:
-          example: Gene001
-          type: string
-        pairwiseIdentity:
-          description: 'Fraction of bases between trimStart and trimEnd that match the template bases. Only present for Template Alignments; Will be empty for Consensus Alignments.
-
-            '
-          example: 0.505
-          format: float
+        gapExtensionPenalty:
+          default: 0.0
+          description: Gap extension penalty.
           type: number
-        sequenceId:
-          example: seq_MYmsnS1u
-          type:
-          - string
-          - 'null'
-        trimEnd:
-          example: 60
+        gapOpenPenalty:
+          default: 1.53
+          description: Gap open penalty.
+          type: number
+        maxIterations:
+          default: 0
+          description: Max refinement iterations. Not applicable for auto strategy, as it will be selected automatically.
           type: integer
-        trimStart:
-          example: 0
+        retree:
+          default: 2
+          description: Tree rebuilding. Only used for 6-mer strategy.
           type: integer
+        strategy:
+          default: auto
+          description: "MAFFT Strategy:\n  * `auto`: Pick a strategy automatically based on the count and size of inputs.\n  * `sixmer`: Use 6-mer distance for constructing the guide tree.\n  * `localpair`: Compute local pairwise alignments using Smith-Waterman for constructing the guide tree and iterative refinement.\n  * `globalpair`: Compute global pairwise alignments using Needleman-Wunsch for constructing the guide tree and iterative refinement.\n"
+          enum:
+          - auto
+          - sixmer
+          - localpair
+          - globalpair
+          type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

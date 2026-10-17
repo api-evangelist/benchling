@@ -125,7 +125,160 @@ paths:
       - GroupMembership
       x-bnch-rate-limit-tier: 5
 components:
+  parameters:
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    memberId.eq:
+      description: Restricts results to memberships for the specified member (principal) ID.
+      in: query
+      name: memberId.eq
+      schema:
+        type: string
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    groupId.eq:
+      description: Restricts results to memberships of the specified group ID.
+      in: query
+      name: groupId.eq
+      schema:
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
   schemas:
+    Team:
+      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
+
+        management and data sharing. Teams belong to exactly one organization, and users may
+
+        only join a team if they are already members of that team''s parent organization. Each
+
+        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
+
+        team membership, while members receive standard access. Unlike Organizations, teams
+
+        cannot directly own Projects or Folders—they are used for collaboration and access
+
+        control purposes. Teams can be configured with `provisionedCapabilities` to grant
+
+        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
+
+        flag controls whether team members can create and modify certain schema types.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: 'Indicates that members of the team are able to create and modify schemas that do not implement the
+
+            Collaboratable interface.'
+          type: boolean
+        memberships:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+      type: object
     PrincipalRef:
       properties:
         __typename:
@@ -133,6 +286,66 @@ components:
         id:
           format: api_id
           type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GroupMembershipPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/GroupMembership'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     Group:
       anyOf:
@@ -180,32 +393,6 @@ components:
           - 'null'
           - string
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
     GroupMembership:
       description: 'Indicates that a Principal is a member of Group. Role indicates that the Principal is
 
@@ -233,30 +420,6 @@ components:
           - ADMIN
           type: string
       type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
     OrganizationRef:
       properties:
         __typename:
@@ -265,169 +428,6 @@ components:
           format: api_id
           type: string
       type: object
-    GroupMembershipPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/GroupMembership'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    Team:
-      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
-
-        management and data sharing. Teams belong to exactly one organization, and users may
-
-        only join a team if they are already members of that team''s parent organization. Each
-
-        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
-
-        team membership, while members receive standard access. Unlike Organizations, teams
-
-        cannot directly own Projects or Folders—they are used for collaboration and access
-
-        control purposes. Teams can be configured with `provisionedCapabilities` to grant
-
-        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
-
-        flag controls whether team members can create and modify certain schema types.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        description:
-          type: string
-        id:
-          type: string
-        membersAreAdministratorsOfSchemas:
-          description: 'Indicates that members of the team are able to create and modify schemas that do not implement the
-
-            Collaboratable interface.'
-          type: boolean
-        memberships:
-          format: uri
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        organization:
-          $ref: '#/components/schemas/OrganizationRef'
-      type: object
-  parameters:
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    groupId.eq:
-      description: Restricts results to memberships of the specified group ID.
-      in: query
-      name: groupId.eq
-      schema:
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    memberId.eq:
-      description: Restricts results to memberships for the specified member (principal) ID.
-      in: query
-      name: memberId.eq
-      schema:
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
   responses:
     TooManyRequests:
       content:
@@ -435,30 +435,30 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Too Many Requests
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
     BadRequest:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Bad Request
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
     NotFound:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

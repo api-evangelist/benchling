@@ -321,6 +321,111 @@ paths:
       - Workflow Task Groups
 components:
   schemas:
+    Folder:
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+          readOnly: true
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parentFolderId:
+          description: ID of the parent folder, if it exists
+          type:
+          - string
+          - 'null'
+        projectId:
+          description: ID of the containing project
+          readOnly: true
+          type: string
+    WorkflowOutputSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow output
+          example: wfout_5cJLQKVF
+          readOnly: true
+          type: string
+    CreationOrigin:
+      properties:
+        application:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originModalUuid:
+          format: uuid
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        originType:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    WorkflowTaskGroupArchiveReason:
+      description: 'The reason for archiving the provided workflow task groups. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Other
+      type: string
+    WorkflowTaskNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow task node config details
+          example: wftnd_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - TASK
+          type: string
+        taskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
+      type: object
+    WorkflowEndNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow flowchart end node config details
+          example: wftrnd_aB8Wi12c
+          readOnly: true
+          type: string
+        name:
+          description: The name of the end node
+          example: End 1
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - END
+          type: string
+      type: object
     WorkflowRootNodeDetails:
       additionalProperties: false
       properties:
@@ -347,110 +452,35 @@ components:
             $ref: '#/components/schemas/WorkflowTaskGroup'
           type: array
       type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    WorkflowTaskGroupsArchive:
-      properties:
-        reason:
-          $ref: '#/components/schemas/WorkflowTaskGroupArchiveReason'
-        workflowTaskGroupIds:
-          items:
-            example: prs_giVNQcTL
-            type: string
-          type: array
-      required:
-      - workflowTaskGroupIds
-      - reason
-      type: object
-    WorkflowTaskSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task
-          type: string
-        id:
-          description: The ID of the workflow task
-          example: wftask_OnnsW08k
-          readOnly: true
-          type: string
-    WorkflowTaskGroupSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow task group
-          example: prs_giVNQcTL
-          readOnly: true
-          type: string
-        name:
-          description: The name of the workflow task group
-          type: string
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    WorkflowTaskGroupCreate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowTaskGroupWriteBase'
-      - properties:
-          schemaId:
-            description: The workflow task schema of tasks in this task group
-            example: prstsch_KnR9iVum
-            type: string
-        required:
-        - schemaId
-        - folderId
-    WorkflowTaskGroupUpdate:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowTaskGroupWriteBase'
-    WorkflowRouterNodeDetails:
+    WorkflowRouterFunction:
       additionalProperties: false
       properties:
+        edgeConfigId:
+          description: The ID of the workflow flowchart edge config associated with this function
+          example: wffcec_giVNQcTL
+          readOnly: true
+          type: string
         id:
-          description: The ID of the workflow router node config details
-          example: wfrnd_hbVJBcMC
+          description: The function associated with a router node
+          example: wfrf_b2VJBmBj
           readOnly: true
           type: string
+        isDefault:
+          readOnly: true
         name:
-          description: The name of the router node
-          example: Router 1
+          description: The name of a function associated with a router node
+          example: Rule 1
           readOnly: true
           type: string
-        nodeType:
-          description: The type of the node
-          enum:
-          - ROUTER
-          type: string
-        routerFunctions:
-          description: Router functions associated with this router node
-          items:
-            $ref: '#/components/schemas/WorkflowRouterFunction'
-          readOnly: true
-          type: array
       type: object
-    UserSummary:
+    WorkflowNodeTaskGroupSummary:
       allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
+      - $ref: '#/components/schemas/WorkflowTaskGroupSummary'
+      - properties:
+          nodeConfigId:
+            description: The node in a Flowchart that this task group is associated with. This will be null if the task group is not part of a flowchart.
+            example: wffcnc_giVNQcTL
+            type: string
     WorkflowTaskGroupsArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type
 
@@ -473,50 +503,10 @@ components:
                 - invalid_request_error
                 type: string
       type: object
-    WorkflowFlowchartNodeConfig:
+    WorkflowTaskGroupsArchive:
       properties:
-        id:
-          description: The ID of the workflow flowchart node config
-          readOnly: true
-          type: string
-        nodeDetails:
-          discriminator:
-            mapping:
-              END: '#/components/schemas/WorkflowEndNodeDetails'
-              OUTPUT: '#/components/schemas/WorkflowOutputNodeDetails'
-              ROOT: '#/components/schemas/WorkflowRootNodeDetails'
-              ROUTER: '#/components/schemas/WorkflowRouterNodeDetails'
-              TASK: '#/components/schemas/WorkflowTaskNodeDetails'
-            propertyName: nodeType
-          oneOf:
-          - $ref: '#/components/schemas/WorkflowRootNodeDetails'
-          - $ref: '#/components/schemas/WorkflowOutputNodeDetails'
-          - $ref: '#/components/schemas/WorkflowTaskNodeDetails'
-          - $ref: '#/components/schemas/WorkflowRouterNodeDetails'
-          - $ref: '#/components/schemas/WorkflowEndNodeDetails'
-        nodeType:
-          description: The type associated with the node config
-          enum:
-          - ROOT
-          - OUTPUT
-          - TASK
-          - ROUTER
-          - END
-          type: string
-      type: object
-    TeamSummary:
-      allOf:
-      - type: object
-      - properties:
-          id:
-            type: string
-          name:
-            type: string
-      - example:
-          id: team_5cjIguqc
-          name: Elion's Team
-    WorkflowTaskGroupsUnarchive:
-      properties:
+        reason:
+          $ref: '#/components/schemas/WorkflowTaskGroupArchiveReason'
         workflowTaskGroupIds:
           items:
             example: prs_giVNQcTL
@@ -524,29 +514,14 @@ components:
           type: array
       required:
       - workflowTaskGroupIds
+      - reason
       type: object
-    WorkflowTaskSchemaSummary:
+    ArchiveRecord:
       properties:
-        id:
-          description: The ID of the workflow task schema
+        reason:
+          example: Made in error
           type: string
-        name:
-          description: The name of the workflow task schema
-          type: string
-    WorkflowTaskGroupWriteBase:
-      properties:
-        folderId:
-          description: ID of the folder that contains the workflow task group
-          type: string
-        name:
-          description: The name of the workflow task group
-          type: string
-        watcherIds:
-          description: IDs of the users watching the workflow task group
-          items:
-            example: ent_a0SApq3z
-            type: string
-          type: array
+      type: object
     WorkflowTaskGroup:
       allOf:
       - $ref: '#/components/schemas/WorkflowTaskGroupBase'
@@ -583,171 +558,6 @@ components:
             items:
               $ref: '#/components/schemas/WorkflowOutputSummary'
             type: array
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    WorkflowTaskGroupArchiveReason:
-      description: 'The reason for archiving the provided workflow task groups. Accepted reasons may differ based on tenant configuration.
-
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Other
-      type: string
-    WorkflowOutputNodeDetails:
-      additionalProperties: false
-      properties:
-        id:
-          description: The ID of the workflow output node config details
-          example: wfond_hbVNQcEM
-          readOnly: true
-          type: string
-        nodeType:
-          description: The type of the node
-          enum:
-          - OUTPUT
-          type: string
-        outputSchema:
-          $ref: '#/components/schemas/SchemaSummary'
-      type: object
-    WorkflowRouterFunction:
-      additionalProperties: false
-      properties:
-        edgeConfigId:
-          description: The ID of the workflow flowchart edge config associated with this function
-          example: wffcec_giVNQcTL
-          readOnly: true
-          type: string
-        id:
-          description: The function associated with a router node
-          example: wfrf_b2VJBmBj
-          readOnly: true
-          type: string
-        isDefault:
-          readOnly: true
-        name:
-          description: The name of a function associated with a router node
-          example: Rule 1
-          readOnly: true
-          type: string
-      type: object
-    Folder:
-      properties:
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          readOnly: true
-        id:
-          readOnly: true
-          type: string
-        name:
-          type: string
-        parentFolderId:
-          description: ID of the parent folder, if it exists
-          type:
-          - string
-          - 'null'
-        projectId:
-          description: ID of the containing project
-          readOnly: true
-          type: string
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    WorkflowTaskNodeDetails:
-      additionalProperties: false
-      properties:
-        id:
-          description: The ID of the workflow task node config details
-          example: wftnd_hbVNQcEM
-          readOnly: true
-          type: string
-        nodeType:
-          description: The type of the node
-          enum:
-          - TASK
-          type: string
-        taskSchema:
-          $ref: '#/components/schemas/WorkflowTaskSchemaSummary'
-      type: object
-    WorkflowNodeTaskGroupSummary:
-      allOf:
-      - $ref: '#/components/schemas/WorkflowTaskGroupSummary'
-      - properties:
-          nodeConfigId:
-            description: The node in a Flowchart that this task group is associated with. This will be null if the task group is not part of a flowchart.
-            example: wffcnc_giVNQcTL
-            type: string
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    WorkflowOutputSummary:
-      properties:
-        displayId:
-          description: User-friendly ID of the workflow task group
-          type: string
-        id:
-          description: The ID of the workflow output
-          example: wfout_5cJLQKVF
-          readOnly: true
-          type: string
-    WorkflowEndNodeDetails:
-      additionalProperties: false
-      properties:
-        id:
-          description: The ID of the workflow flowchart end node config details
-          example: wftrnd_aB8Wi12c
-          readOnly: true
-          type: string
-        name:
-          description: The name of the end node
-          example: End 1
-          readOnly: true
-          type: string
-        nodeType:
-          description: The type of the node
-          enum:
-          - END
-          type: string
-      type: object
-    CreationOrigin:
-      properties:
-        application:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        originId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        originModalUuid:
-          format: uuid
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        originType:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-      type: object
     WorkflowTaskGroupBase:
       allOf:
       - $ref: '#/components/schemas/WorkflowTaskGroupSummary'
@@ -795,6 +605,196 @@ components:
             items:
               $ref: '#/components/schemas/WorkflowTaskSummary'
             type: array
+    WorkflowTaskSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task
+          type: string
+        id:
+          description: The ID of the workflow task
+          example: wftask_OnnsW08k
+          readOnly: true
+          type: string
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    WorkflowRouterNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow router node config details
+          example: wfrnd_hbVJBcMC
+          readOnly: true
+          type: string
+        name:
+          description: The name of the router node
+          example: Router 1
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - ROUTER
+          type: string
+        routerFunctions:
+          description: Router functions associated with this router node
+          items:
+            $ref: '#/components/schemas/WorkflowRouterFunction'
+          readOnly: true
+          type: array
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    WorkflowTaskGroupWriteBase:
+      properties:
+        folderId:
+          description: ID of the folder that contains the workflow task group
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+        watcherIds:
+          description: IDs of the users watching the workflow task group
+          items:
+            example: ent_a0SApq3z
+            type: string
+          type: array
+    WorkflowTaskSchemaSummary:
+      properties:
+        id:
+          description: The ID of the workflow task schema
+          type: string
+        name:
+          description: The name of the workflow task schema
+          type: string
+    WorkflowFlowchartNodeConfig:
+      properties:
+        id:
+          description: The ID of the workflow flowchart node config
+          readOnly: true
+          type: string
+        nodeDetails:
+          discriminator:
+            mapping:
+              END: '#/components/schemas/WorkflowEndNodeDetails'
+              OUTPUT: '#/components/schemas/WorkflowOutputNodeDetails'
+              ROOT: '#/components/schemas/WorkflowRootNodeDetails'
+              ROUTER: '#/components/schemas/WorkflowRouterNodeDetails'
+              TASK: '#/components/schemas/WorkflowTaskNodeDetails'
+            propertyName: nodeType
+          oneOf:
+          - $ref: '#/components/schemas/WorkflowRootNodeDetails'
+          - $ref: '#/components/schemas/WorkflowOutputNodeDetails'
+          - $ref: '#/components/schemas/WorkflowTaskNodeDetails'
+          - $ref: '#/components/schemas/WorkflowRouterNodeDetails'
+          - $ref: '#/components/schemas/WorkflowEndNodeDetails'
+        nodeType:
+          description: The type associated with the node config
+          enum:
+          - ROOT
+          - OUTPUT
+          - TASK
+          - ROUTER
+          - END
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    WorkflowTaskGroupSummary:
+      properties:
+        displayId:
+          description: User-friendly ID of the workflow task group
+          type: string
+        id:
+          description: The ID of the workflow task group
+          example: prs_giVNQcTL
+          readOnly: true
+          type: string
+        name:
+          description: The name of the workflow task group
+          type: string
+    TeamSummary:
+      allOf:
+      - type: object
+      - properties:
+          id:
+            type: string
+          name:
+            type: string
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
+    WorkflowTaskGroupsUnarchive:
+      properties:
+        workflowTaskGroupIds:
+          items:
+            example: prs_giVNQcTL
+            type: string
+          type: array
+      required:
+      - workflowTaskGroupIds
+      type: object
+    WorkflowTaskGroupUpdate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskGroupWriteBase'
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    WorkflowTaskGroupCreate:
+      allOf:
+      - $ref: '#/components/schemas/WorkflowTaskGroupWriteBase'
+      - properties:
+          schemaId:
+            description: The workflow task schema of tasks in this task group
+            example: prstsch_KnR9iVum
+            type: string
+        required:
+        - schemaId
+        - folderId
+    WorkflowOutputNodeDetails:
+      additionalProperties: false
+      properties:
+        id:
+          description: The ID of the workflow output node config details
+          example: wfond_hbVNQcEM
+          readOnly: true
+          type: string
+        nodeType:
+          description: The type of the node
+          enum:
+          - OUTPUT
+          type: string
+        outputSchema:
+          $ref: '#/components/schemas/SchemaSummary'
+      type: object
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

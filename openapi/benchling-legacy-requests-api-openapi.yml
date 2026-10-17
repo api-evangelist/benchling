@@ -397,124 +397,80 @@ paths:
       - Legacy Requests
 components:
   schemas:
-    RequestTasksBulkCreateRequest:
-      additionalProperties: false
+    AssayResult:
       properties:
-        tasks:
-          description: The Legacy Request Tasks to create
-          items:
-            $ref: '#/components/schemas/RequestTasksBulkCreate'
-          maxItems: 100
-          type: array
-      required:
-      - tasks
-      type: object
-    Oligo:
-      discriminator:
-        mapping:
-          DNA: DnaOligo
-          RNA: RnaOligo
-        propertyName: nucleotideType
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Oligo in the API.
-          format: uri
-          readOnly: true
-          type: string
         archiveRecord:
           allOf:
           - $ref: '#/components/schemas/ArchiveRecord'
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        bases:
-          description: Base pairs of the Oligo.
-          example: ACTTTTT
-          type: string
+          description: 'ArchiveRecord Resource if the result is archived. This is null if the result is not archived.
+
+            '
         createdAt:
-          description: DateTime the Oligo was created.
+          description: DateTime at which the the result was created
           format: date-time
           readOnly: true
           type: string
         creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
           allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the Oligo.
-        entityRegistryId:
-          description: Registry ID of the Oligo if registered.
+          - $ref: '#/components/schemas/UserSummary'
+          description: UserSummary Resource of who created the request
+          readOnly: true
+        entryId:
+          description: ID of the entry that this result is attached to
           type:
           - string
           - 'null'
+        fieldValidation:
+          additionalProperties:
+            $ref: '#/components/schemas/UserValidation'
+          description: 'Object mapping field names to a UserValidation Resource object for that field. To **set** validation for a result, you *must* use this object.
+
+            '
+          type: object
         fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the Oligo.
-          type:
-          - string
-          - 'null'
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Field values for the returned result. Please note the keys of each field are the field''s system name (additional_prop) instead of the field''s display name (additionalProp).
+
+            '
+          example:
+          - additional_prop: null
+            displayValue: Amp
+            isMulti: true
+            textValue: Amp
+            type: dna_sequence_link
+            value:
+            - seq_jdf8BV24
         id:
-          description: ID of the Oligo.
-          example: seq_bhuDUw9D
+          description: ID of the result
           type: string
-        length:
-          description: Number of bases in the Oligo.
-          type: integer
+        isReviewed:
+          description: Whether or not this result is attached to an accepted entry
+          type: boolean
         modifiedAt:
-          description: DateTime the Oligo was last modified.
+          description: DateTime at which the the result was last modified
           format: date-time
           readOnly: true
           type: string
-        name:
-          description: Name of the Oligo.
-          type: string
-        nucleotideType:
-          description: Nucleotide type of the Oligo.
-          enum:
-          - DNA
-          - RNA
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          readOnly: true
-        registryId:
-          description: Registry the Oligo is registered in.
+        projectId:
+          description: ID of the project to insert the result into
           type:
           - string
           - 'null'
         schema:
           allOf:
           - $ref: '#/components/schemas/SchemaSummary'
-        webURL:
-          description: URL of the Oligo.
-          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
-          format: uri
+          description: Schema that the result belongs to
+          title: SchemaProperty
+        v3Id:
+          description: V3 identifier for the result
           readOnly: true
           type: string
-      type: object
-    RequestWriteUserAssignee:
-      properties:
-        userId:
-          example: ent_a0SApq3z
+        validationComment:
+          readOnly: true
           type: string
-      required:
-      - userId
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
+        validationStatus:
+          readOnly: true
           type: string
       type: object
     Mixture:
@@ -608,50 +564,285 @@ components:
           readOnly: true
           type: string
       type: object
-    Entity:
-      discriminator:
-        mapping:
-          aa_sequence: '#/components/schemas/AaSequenceWithEntityType'
-          custom_entity: '#/components/schemas/CustomEntityWithEntityType'
-          dna_oligo: '#/components/schemas/DnaOligoWithEntityType'
-          dna_sequence: '#/components/schemas/DnaSequenceWithEntityType'
-          mixture: '#/components/schemas/MixtureWithEntityType'
-          molecule: '#/components/schemas/MoleculeWithEntityType'
-          rna_oligo: '#/components/schemas/RnaOligoWithEntityType'
-          rna_sequence: '#/components/schemas/RnaSequenceWithEntityType'
-        propertyName: entityType
-      oneOf:
-      - $ref: '#/components/schemas/DnaSequenceWithEntityType'
-      - $ref: '#/components/schemas/RnaSequenceWithEntityType'
-      - $ref: '#/components/schemas/AaSequenceWithEntityType'
-      - $ref: '#/components/schemas/MixtureWithEntityType'
-      - $ref: '#/components/schemas/DnaOligoWithEntityType'
-      - $ref: '#/components/schemas/RnaOligoWithEntityType'
-      - $ref: '#/components/schemas/MoleculeWithEntityType'
-      - $ref: '#/components/schemas/CustomEntityWithEntityType'
-      type: object
-    CustomEntityWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/CustomEntity'
-      - properties:
-          entityType:
-            enum:
-            - custom_entity
-            type: string
-        type: object
-      type: object
-    CustomField:
+    EntityLabels:
       properties:
-        value:
+        entityRegistryId:
+          example: REAG000
+          type:
+          - string
+          - 'null'
+        id:
+          example: bfi_12345
+          type: string
+        name:
+          example: Deionized Water
           type: string
       type: object
-    UserSummary:
+    Translation:
       allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          aminoAcids:
+            readOnly: true
+            type: string
+          coerceStartCodonToMethionine:
+            default: false
+            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
+            type: boolean
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          geneticCode:
+            default: STANDARD
+            description: The genetic code to use when translating the nucleotide sequence into amino acids.
+            enum:
+            - STANDARD
+            - VERTEBRATE_MITOCHONDRIAL
+            - YEAST_MITOCHONDRIAL
+            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
+            - INVERTEBRATE_MITOCHONDRIAL
+            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
+            - ECHINODERM_FLATWORM_MITOCHONDRIAL
+            - EUPLOTID_NUCLEAR
+            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
+            - ALTERNATIVE_YEAST_NUCLEAR
+            - ASCIDIAN_MITOCHONDRIAL
+            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
+            - CHLOROPHYCEAN_MITOCHONDRIAL
+            - TREMATODE_MITOCHONDRIAL
+            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
+            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
+            - RHABDOPLEURIDAE_MITOCHONDRIAL
+            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
+            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
+            - MESODINIUM_NUCLEAR
+            - PERITRICH_NUCLEAR
+            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
+            type: string
+          regions:
+            items:
+              properties:
+                end:
+                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+                  type: integer
+                start:
+                  description: 0-based inclusive start index.
+                  type: integer
+              type: object
+            type: array
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            type: integer
+        type: object
+    AaSequence:
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        aminoAcids:
+          description: Amino acids of the AA sequence.
+          example: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
+          type: string
+        annotations:
+          description: Array of annotation objects on the AA sequence.
+          items:
+            $ref: '#/components/schemas/AaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the AA Sequence in the API.
+          example: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          description: DateTime the AA sequence was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the AA sequence.
+        entityRegistryId:
+          description: Registry ID of the AA sequence if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the AA sequence.
+          type:
+          - string
+          - 'null'
+        id:
+          description: ID of the AA sequence.
+          example: prtn_ObbdtGhC
+          type: string
+        length:
+          description: Number of amino acids in the AA sequence.
+          type: integer
+        modifiedAt:
+          description: DateTime the AA sequence was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the AA sequence.
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the AA sequence is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          description: URL of the AA sequence.
+          example: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    Molecule:
+      additionalProperties: false
+      properties:
+        aliases:
+          description: Array of aliases.
+          items:
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Molecule in the API.
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        canonicalizedSmiles:
+          description: The canonicalized chemical structure in SMILES format.
+          example: Nc1nc(=O)n([H])cc1C1CC1
+          type: string
+        createdAt:
+          description: DateTime the Molecule was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Molecule.
+        entityRegistryId:
+          description: Registry ID of the Molecule if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Molecule.
+          type:
+          - string
+          - 'null'
+        id:
+          description: ID of the Molecule.
+          example: mol_bhuDUw9D
+          type: string
+        modifiedAt:
+          description: DateTime the Molecule was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the Molecule.
+          type: string
+        originalSmiles:
+          description: The original chemical structure supplied by the user in SMILES format. Null if the user did not originally supply SMILES.
+          example: Nc1nc(=O)n([H])cc1C1CC1
+          type:
+          - string
+          - 'null'
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the Molecule is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        webURL:
+          description: URL of the Molecule.
+          example: https://benchling.com/benchling/f/lib_R8KcsjhW-molecules/mol_xCUXNVyG-molecule1/edit
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    RequestTasksBulkCreateResponse:
+      properties:
+        tasks:
+          description: The created Legacy Request Tasks
+          items:
+            $ref: '#/components/schemas/RequestTask'
+          type: array
+      type: object
+    DnaSequenceTranscription:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          description: Linked RNA sequence ID.
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          maximum: 1
+          minimum: -1
+          type: integer
+      type: object
+    RequestSampleGroupCreate:
+      properties:
+        samples:
+          $ref: '#/components/schemas/RequestSampleGroupSamples'
+      required:
+      - samples
+      type: object
     RequestTaskBase:
       allOf:
       - $ref: '#/components/schemas/RequestTaskBaseFields'
@@ -666,25 +857,279 @@ components:
       required:
       - id
       type: object
-    IngredientMeasurementUnits:
-      enum:
-      - nL
-      - uL
-      - mL
-      - L
-      - mg
-      - g
-      - kg
-      - ug
-      - Units
-      - Cells
-      - mol
-      - mmol
-      - umol
-      example: mL
-      type:
-      - string
-      - 'null'
+    RequestsBulkGet:
+      properties:
+        requests:
+          items:
+            $ref: '#/components/schemas/Request'
+          type: array
+      type: object
+    RnaAnnotation:
+      allOf:
+      - $ref: '#/components/schemas/SequenceFeatureBase'
+      - properties:
+          end:
+            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+            type: integer
+          start:
+            description: 0-based inclusive start index.
+            type: integer
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 0
+            type: integer
+          type:
+            type: string
+        type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    Request:
+      allOf:
+      - $ref: '#/components/schemas/RequestBase'
+      - properties:
+          apiURL:
+            description: The canonical url of the Legacy Request in the API.
+            example: https://benchling.com/api/v2/requests/req_dnn2JtWq
+            format: uri
+            readOnly: true
+            type: string
+          assignees:
+            description: Array of assignees
+            items:
+              oneOf:
+              - $ref: '#/components/schemas/RequestUserAssignee'
+              - $ref: '#/components/schemas/RequestTeamAssignee'
+            readOnly: true
+            type: array
+          createdAt:
+            description: Date and time the Legacy Request was created
+            example: 2017-04-23 01:30:50.970926
+            format: isoformat
+            readOnly: true
+            type: string
+          creator:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - description: UserSummary of the user who created the Legacy Request
+            - readOnly: true
+          displayId:
+            description: User-friendly ID of the Legacy Request
+            example: VP1
+            readOnly: true
+            type: string
+          fields:
+            $ref: '#/components/schemas/Fields'
+          id:
+            description: Unique ID for the Legacy Request
+            example: req_JekfeyVS
+            readOnly: true
+            type: string
+          projectId:
+            description: The ID of the project to which the Legacy Request belongs.
+            example: src_29pt8Ida
+            type: string
+          requestStatus:
+            $ref: '#/components/schemas/RequestStatus'
+          requestor:
+            allOf:
+            - $ref: '#/components/schemas/UserSummary'
+            - description: UserSummary of the user making the Legacy Request
+            - readOnly: true
+          sampleGroups:
+            items:
+              $ref: '#/components/schemas/RequestSampleGroup'
+            type: array
+          scheduledOn:
+            description: Date the Legacy Request is scheduled to be executed on, in YYYY-MM-DD format.
+            example: 2019-09-12
+            format: date
+            type:
+            - string
+            - 'null'
+          schema:
+            allOf:
+            - $ref: '#/components/schemas/SchemaSummary'
+            - description: SchemaSummary for the Legacy Request
+              example:
+                id: assaysch_3IF58QOf
+                name: Vector Production
+              readOnly: true
+            title: SchemaProperty
+          tasks:
+            items:
+              $ref: '#/components/schemas/RequestTask'
+            type: array
+          webURL:
+            description: URL of the Legacy Request
+            example: https://benchling.com/requests/req_JekfeyVS
+            format: uri
+            readOnly: true
+            type: string
+    RequestTask:
+      allOf:
+      - $ref: '#/components/schemas/RequestTaskBase'
+      description: 'A request task.
+
+        '
+      properties:
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          title: SchemaProperty
+      type: object
+    ExecuteSampleGroups:
+      description: 'The response is intentionally empty.
+
+        '
+      type: object
+    RequestSampleGroupSamples:
+      additionalProperties:
+        oneOf:
+        - $ref: '#/components/schemas/RequestSampleWithEntity'
+        - $ref: '#/components/schemas/RequestSampleWithBatch'
+      description: 'The key for each (Legacy) RequestSample should match one of the samplesSchema[n].name property in the request schema json.
+
+        '
+      example:
+        Batch Example:
+          batchId: bat_XK0UnLyk
+        Entity Example:
+          containerId: ctn_urUAEBq
+          entityId: seq_nDtxYEs
+      type: object
+    CustomEntity:
+      properties:
+        aliases:
+          items:
+            example: sBN000
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Custom Entity in the API.
+          example: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        createdAt:
+          example: '2017-04-18T05:54:56.247545+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          - readOnly: true
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        entityRegistryId:
+          example: sBN000
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          example: lib_R8KcsjhW
+          type:
+          - string
+          - 'null'
+        id:
+          example: bfi_xCUXNVyG
+          type: string
+        modifiedAt:
+          example: '2017-04-18T05:55:48.685345+00:00'
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          example: sBN000
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          example: src_NetYd96a
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          example:
+            id: ts_EM122lfJ
+            name: Strain
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
+          readOnly: true
+          type: string
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    InaccessibleResource:
+      additionalProperties: false
+      properties:
+        inaccessibleId:
+          type: string
+        resourceType:
+          enum:
+          - inaccessible_resource
+          type: string
+        type:
+          description: 'The type of this inaccessible item. Example values: "custom_entity", "container", "plate", "dna_sequence"
+
+            '
+          example: custom_entity
+          type: string
+      type: object
+    AaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/AaSequence'
+      - properties:
+          entityType:
+            enum:
+            - aa_sequence
+            type: string
+        type: object
+      type: object
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    RequestSampleGroup:
+      properties:
+        id:
+          example: sgrp_YJKtcWV
+          type: string
+        samples:
+          $ref: '#/components/schemas/RequestSampleGroupSamples'
+      type: object
     FieldType:
       enum:
       - dna_sequence_link
@@ -714,23 +1159,67 @@ components:
       - date
       - json
       type: string
-    RequestTeamAssignee:
-      properties:
-        team:
-          $ref: '#/components/schemas/TeamSummary'
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
       type: object
-    RequestTask:
-      allOf:
-      - $ref: '#/components/schemas/RequestTaskBase'
-      description: 'A request task.
-
-        '
+    Field:
       properties:
-        schema:
+        displayValue:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        isMulti:
+          readOnly: true
+          type: boolean
+        textValue:
+          example: Amp
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        type:
           allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          title: SchemaProperty
+          - $ref: '#/components/schemas/FieldType'
+          readOnly: true
+        value:
+          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
+
+            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
+
+            '
+          oneOf:
+          - type: string
+          - type: boolean
+          - type: number
+          - type: object
+          - items:
+              type: string
+            type: array
+      required:
+      - value
       type: object
+    BadRequestErrorBulk:
+      allOf:
+      - $ref: '#/components/schemas/BadRequestError'
+      - properties:
+          error:
+            properties:
+              errors:
+                items:
+                  properties:
+                    index:
+                      type: number
+                    message:
+                      type: string
+                  type: object
+                type: array
+            type: object
+        type: object
     RequestSampleWithEntity:
       properties:
         containerId:
@@ -742,6 +1231,304 @@ components:
       required:
       - entityId
       type: object
+    RequestResponse:
+      properties:
+        results:
+          items:
+            $ref: '#/components/schemas/AssayResult'
+          type: array
+        samples:
+          description: Array of samples produced by the Legacy Request.
+          items:
+            properties:
+              batch:
+                allOf:
+                - $ref: '#/components/schemas/RequestResponseSamplesItemBatch'
+                description: The sample, if it is a batch resource. Null otherwise.
+              entity:
+                allOf:
+                - $ref: '#/components/schemas/RequestResponseSamplesItemEntity'
+                description: The sample, if it is an entity resource. Null otherwise.
+              status:
+                description: The status of the sample, based on the status of the stage run that generated it.
+                enum:
+                - COMPLETED
+                - DISCARDED
+                type: string
+            type: object
+          type: array
+      type: object
+    Oligo:
+      discriminator:
+        mapping:
+          DNA: DnaOligo
+          RNA: RnaOligo
+        propertyName: nucleotideType
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        apiURL:
+          description: The canonical url of the Oligo in the API.
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          description: Base pairs of the Oligo.
+          example: ACTTTTT
+          type: string
+        createdAt:
+          description: DateTime the Oligo was created.
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          allOf:
+          - $ref: '#/components/schemas/CustomFields'
+          description: Custom fields set on the Oligo.
+        entityRegistryId:
+          description: Registry ID of the Oligo if registered.
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          description: ID of the folder that contains the Oligo.
+          type:
+          - string
+          - 'null'
+        id:
+          description: ID of the Oligo.
+          example: seq_bhuDUw9D
+          type: string
+        length:
+          description: Number of bases in the Oligo.
+          type: integer
+        modifiedAt:
+          description: DateTime the Oligo was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          description: Name of the Oligo.
+          type: string
+        nucleotideType:
+          description: Nucleotide type of the Oligo.
+          enum:
+          - DNA
+          - RNA
+          type: string
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          description: Registry the Oligo is registered in.
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        webURL:
+          description: URL of the Oligo.
+          example: https://benchling.com/benchling/f/lib_hBHqKbzE-oligos/seq_bhuDUw9D-test-oligo-abc/edit
+          format: uri
+          readOnly: true
+          type: string
+      type: object
+    NucleotideSequencePart:
+      properties:
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        sequenceId:
+          example: seq_VfVOART1
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+      type: object
+    RequestFulfillment:
+      description: 'A Legacy Request fulfillment represents work that is done which changes the status of a request or a sample group within that request.
+
+        Fulfillments are created when state changes between IN_PROGRESS, COMPLETED, or FAILED statuses. Fulfillments do not capture a PENDING state because all Legacy Requests or Legacy Request Sample Groups are considered PENDING until the first corresponding fulfillment is created.
+
+        '
+      properties:
+        createdAt:
+          description: Date and time the Legacy Request Fulfillment was created
+          format: date-time
+          type: string
+        entryId:
+          description: ID of the entry this Legacy Request Fulfillment was executed in, if any
+          example: etr_IKwdYx31
+          type: string
+        id:
+          description: ID of the Legacy Request Fulfillment
+          example: reqffm_8Hm71Usw
+          type: string
+        modifiedAt:
+          description: DateTime the Legacy Request Fulfillment was last modified
+          format: date-time
+          readOnly: true
+          type: string
+        requestId:
+          description: ID of the Legacy Request this fulfillment fulfills
+          example: req_pu9caSiv
+          type: string
+        sampleGroup:
+          allOf:
+          - $ref: '#/components/schemas/SampleGroup'
+          description: The Legacy Request Sample Group this fulfillment was executed upon, if any.
+        status:
+          $ref: '#/components/schemas/SampleGroupStatus'
+      type: object
+    Batch:
+      additionalProperties: false
+      properties:
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        createdAt:
+          description: DateTime at which the the result was created
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          allOf:
+          - $ref: '#/components/schemas/UserSummary'
+          readOnly: true
+        defaultConcentration:
+          $ref: '#/components/schemas/Measurement'
+        entity:
+          discriminator:
+            mapping:
+              aa_sequence: '#/components/schemas/AaSequenceSummary'
+              custom_entity: '#/components/schemas/CustomEntitySummary'
+              dna_sequence: '#/components/schemas/DnaSequenceSummary'
+            propertyName: entityType
+          oneOf:
+          - $ref: '#/components/schemas/DnaSequenceSummary'
+          - $ref: '#/components/schemas/AaSequenceSummary'
+          - $ref: '#/components/schemas/CustomEntitySummary'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        id:
+          example: bat_UOIr8IjL
+          readOnly: true
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+          readOnly: true
+          title: SchemaProperty
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    RnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/Oligo'
+      - properties:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/RnaAnnotation'
+            type: array
+          apiURL:
+            example: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9D
+            type: string
+          bases:
+            example: ACUUUUU
+            type: string
+          customNotation:
+            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          customNotationName:
+            description: Name of the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
+            type: string
+          nucleotideType:
+            example: RNA
+            type: string
+    RequestTasksBulkUpdateResponse:
+      properties:
+        tasks:
+          description: The Legacy Request Tasks to update
+          items:
+            $ref: '#/components/schemas/RequestTask'
+          type: array
+      type: object
+    Entity:
+      discriminator:
+        mapping:
+          aa_sequence: '#/components/schemas/AaSequenceWithEntityType'
+          custom_entity: '#/components/schemas/CustomEntityWithEntityType'
+          dna_oligo: '#/components/schemas/DnaOligoWithEntityType'
+          dna_sequence: '#/components/schemas/DnaSequenceWithEntityType'
+          mixture: '#/components/schemas/MixtureWithEntityType'
+          molecule: '#/components/schemas/MoleculeWithEntityType'
+          rna_oligo: '#/components/schemas/RnaOligoWithEntityType'
+          rna_sequence: '#/components/schemas/RnaSequenceWithEntityType'
+        propertyName: entityType
+      oneOf:
+      - $ref: '#/components/schemas/DnaSequenceWithEntityType'
+      - $ref: '#/components/schemas/RnaSequenceWithEntityType'
+      - $ref: '#/components/schemas/AaSequenceWithEntityType'
+      - $ref: '#/components/schemas/MixtureWithEntityType'
+      - $ref: '#/components/schemas/DnaOligoWithEntityType'
+      - $ref: '#/components/schemas/RnaOligoWithEntityType'
+      - $ref: '#/components/schemas/MoleculeWithEntityType'
+      - $ref: '#/components/schemas/CustomEntityWithEntityType'
+      type: object
+    RequestResponseSamplesItemBatch:
+      allOf:
+      - $ref: '#/components/schemas/BatchOrInaccessibleResource'
+    RequestWriteTeamAssignee:
+      properties:
+        teamId:
+          example: team_5cjIguqc
+          type: string
+      required:
+      - teamId
+      type: object
+    RequestFulfillmentsPaginatedList:
+      description: An object containing an array of (Legacy) RequestFulfillments
+      properties:
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+        requestFulfillments:
+          items:
+            $ref: '#/components/schemas/RequestFulfillment'
+          type: array
+      type: object
     RnaSequenceWithEntityType:
       allOf:
       - $ref: '#/components/schemas/RnaSequence'
@@ -751,6 +1538,160 @@ components:
             - rna_sequence
             type: string
         type: object
+      type: object
+    AaAnnotation:
+      properties:
+        color:
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the AA sequence is always represented as 0.
+          type: integer
+        id:
+          example: prtnann_o7zMPG0P
+          type: string
+        name:
+          maxLength: 255
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        type:
+          example: Site
+          maxLength: 255
+          type: string
+      type: object
+    RequestUserAssignee:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserSummary'
+      type: object
+    BatchOrInaccessibleResource:
+      oneOf:
+      - $ref: '#/components/schemas/Batch'
+      - $ref: '#/components/schemas/InaccessibleResource'
+    CustomEntityWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/CustomEntity'
+      - properties:
+          entityType:
+            enum:
+            - custom_entity
+            type: string
+        type: object
+      type: object
+    RnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: 1
+            type: integer
+        type: object
+    RequestsPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/RequestsBulkGet'
+      - properties:
+          nextToken:
+            type: string
+    SampleGroupsStatusUpdate:
+      additionalProperties: false
+      description: Specification to update status of sample groups on the request which were executed.
+      properties:
+        sampleGroups:
+          items:
+            $ref: '#/components/schemas/SampleGroupStatusUpdate'
+          type: array
+      required:
+      - sampleGroups
+      type: object
+    RequestBase:
+      description: A Legacy Request is an ask to perform a service, e.g. produce a sample or perform assays on a sample. Requests are usually placed to another team or individual who specializes in performing the service.
+      type: object
+    SchemaSummary:
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    RequestUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/RequestWriteBase'
+      - properties:
+          requestStatus:
+            $ref: '#/components/schemas/RequestStatus'
+    SampleGroupStatus:
+      description: Status of a sample group
+      enum:
+      - IN_PROGRESS
+      - COMPLETED
+      - FAILED
+      type: string
+    UserValidation:
+      properties:
+        validationComment:
+          description: A string explaining the reason for the provided validation status.
+          type: string
+        validationStatus:
+          description: 'Valid values for this enum depend on whether it is used to set a value (e.g., in a POST request), or is a return value for an existing result.
+
+            Acceptable values for setting a status are ''VALID'' or ''INVALID''. Possible return values are ''VALID'', ''INVALID'', or ''PARTIALLY_VALID'' (a result will be partially valid if it has some valid fields and some invalid fields).
+
+            '
+          enum:
+          - VALID
+          - INVALID
+          - PARTIALLY_VALID
+          type: string
+      type: object
+    IngredientMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - mg
+      - g
+      - kg
+      - ug
+      - Units
+      - Cells
+      - mol
+      - mmol
+      - umol
+      example: mL
+      type:
+      - string
+      - 'null'
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ContainerLabels:
+      properties:
+        barcode:
+          example: VIAL001
+          type: string
+        id:
+          example: cnt_12345
+          type: string
+        name:
+          example: My Container
+          type: string
       type: object
     CustomEntitySummary:
       properties:
@@ -765,15 +1706,194 @@ components:
           deprecated: true
           type: string
       type: object
-    MixtureWithEntityType:
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    Primer:
+      properties:
+        bases:
+          readOnly: true
+          type: string
+        bindPosition:
+          readOnly: true
+          type: integer
+        color:
+          readOnly: true
+          type: string
+        end:
+          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
+          type: integer
+        name:
+          readOnly: true
+          type: string
+        oligoId:
+          type: string
+        overhangLength:
+          readOnly: true
+          type: integer
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        strand:
+          example: 1
+          type: integer
+      type: object
+    RequestTasksBulkUpdateRequest:
+      additionalProperties: false
+      description: 'A request body for bulk updating Legacy Request Tasks.
+
+        '
+      properties:
+        tasks:
+          description: The Legacy Request Tasks to update
+          items:
+            $ref: '#/components/schemas/RequestTaskBase'
+          type: array
+      required:
+      - tasks
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    RnaOligoWithEntityType:
       allOf:
-      - $ref: '#/components/schemas/Mixture'
+      - $ref: '#/components/schemas/RnaOligo'
       - properties:
           entityType:
             enum:
-            - mixture
+            - rna_oligo
             type: string
         type: object
+      type: object
+    SampleGroupStatusUpdate:
+      properties:
+        sampleGroupId:
+          description: The string id of the sample group
+          example: sgrp_2GPCXk6
+          type: string
+        status:
+          $ref: '#/components/schemas/SampleGroupStatus'
+      required:
+      - sampleGroupId
+      - status
+      type: object
+    RequestResponseSamplesItemEntity:
+      allOf:
+      - $ref: '#/components/schemas/EntityOrInaccessibleResource'
+    DnaSequence:
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        annotations:
+          items:
+            $ref: '#/components/schemas/DnaAnnotation'
+          type: array
+        apiURL:
+          description: The canonical url of the DNA Sequence in the API.
+          example: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
+          format: uri
+          readOnly: true
+          type: string
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        authors:
+          items:
+            $ref: '#/components/schemas/UserSummary'
+          type: array
+        bases:
+          type: string
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        creator:
+          $ref: '#/components/schemas/UserSummary'
+        customFields:
+          $ref: '#/components/schemas/CustomFields'
+        dnaAlignmentIds:
+          description: API IDs of Nucleotide Alignments involving the RNA sequence
+          items:
+            type: string
+          type: array
+        entityRegistryId:
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+        folderId:
+          type:
+          - string
+          - 'null'
+        id:
+          type: string
+        isCircular:
+          type: boolean
+        length:
+          type: integer
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        name:
+          type: string
+        parts:
+          items:
+            $ref: '#/components/schemas/DnaSequencePart'
+          type: array
+        primers:
+          items:
+            $ref: '#/components/schemas/Primer'
+          type: array
+        registrationOrigin:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          readOnly: true
+        registryId:
+          type:
+          - string
+          - 'null'
+        schema:
+          allOf:
+          - $ref: '#/components/schemas/SchemaSummary'
+        transcriptions:
+          items:
+            $ref: '#/components/schemas/DnaSequenceTranscription'
+          type: array
+        translations:
+          items:
+            $ref: '#/components/schemas/Translation'
+          type: array
+        url:
+          description: The path of the web URL, omitting the tenant domain
+          type: string
+        webURL:
+          readOnly: true
+          type: string
+      type: object
+    AaSequenceSummary:
+      properties:
+        entityType:
+          enum:
+          - aa_sequence
+          type: string
+        id:
+          example: prtn_ObbdtGhC
+          type: string
+        type:
+          deprecated: true
+          type: string
       type: object
     DnaAnnotation:
       allOf:
@@ -792,104 +1912,179 @@ components:
           type:
             type: string
         type: object
-    DnaSequenceTranscription:
-      properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          description: Linked RNA sequence ID.
-          example: seq_VfVOART1
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          maximum: 1
-          minimum: -1
-          type: integer
+    DnaSequencePart:
+      allOf:
+      - $ref: '#/components/schemas/NucleotideSequencePart'
+      - properties:
+          strand:
+            example: 1
+            maximum: 1
+            minimum: -1
+            type: integer
+        type: object
+    MixtureWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/Mixture'
+      - properties:
+          entityType:
+            enum:
+            - mixture
+            type: string
+        type: object
       type: object
-    RequestSampleGroupSamples:
-      additionalProperties:
-        oneOf:
-        - $ref: '#/components/schemas/RequestSampleWithEntity'
-        - $ref: '#/components/schemas/RequestSampleWithBatch'
-      description: 'The key for each (Legacy) RequestSample should match one of the samplesSchema[n].name property in the request schema json.
+    SampleGroup:
+      description: Represents a sample group that is an input to a request. A sample group is a set of samples upon which work in the request should be done.
+      properties:
+        id:
+          type: string
+        samples:
+          type: object
+      type: object
+    DnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/Oligo'
+      - properties:
+          annotations:
+            description: Annotations on the Oligo.
+            items:
+              $ref: '#/components/schemas/DnaAnnotation'
+            type: array
+          apiURL:
+            example: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
+            type: string
+          bases:
+            example: ACTTTTT
+            type: string
+          customNotation:
+            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          customNotationName:
+            description: Name of the custom notation specified in the request. Null if no notation was specified.
+            type:
+            - string
+            - 'null'
+          helm:
+            description: Representation of the oligo in HELM syntax, including any chemical modifications
+            example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
+            type: string
+    TeamSummary:
+      allOf:
+      - type: object
+      - properties:
+          id:
+            type: string
+          name:
+            type: string
+      - example:
+          id: team_5cjIguqc
+          name: Elion's Team
+    MoleculeWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/Molecule'
+      - properties:
+          entityType:
+            enum:
+            - molecule
+            type: string
+        type: object
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    SequenceFeatureCustomField:
+      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+      properties:
+        name:
+          description: Name of the custom field
+          type: string
+        value:
+          description: Value of the custom field
+          type: string
+      type: object
+    RequestTaskBaseFields:
+      description: 'Shared fields for Legacy Request Tasks and related endpoints.
 
         '
-      example:
-        Batch Example:
-          batchId: bat_XK0UnLyk
-        Entity Example:
-          containerId: ctn_urUAEBq
-          entityId: seq_nDtxYEs
-      type: object
-    InaccessibleResource:
-      additionalProperties: false
       properties:
-        inaccessibleId:
-          type: string
-        resourceType:
-          enum:
-          - inaccessible_resource
-          type: string
-        type:
-          description: 'The type of this inaccessible item. Example values: "custom_entity", "container", "plate", "dna_sequence"
+        fields:
+          allOf:
+          - $ref: '#/components/schemas/Fields'
+          description: 'Schema fields to set on the request task.
+
+            Every field should have its name as a key, mapping to an object with information about the value of the field.
 
             '
-          example: custom_entity
-          type: string
+        sampleGroupIds:
+          description: IDs of all Legacy Request Sample Groups now associated with this task.
+          items:
+            type: string
+          type: array
       type: object
-    RequestResponseSamplesItemBatch:
+    RequestCreate:
+      additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/BatchOrInaccessibleResource'
-    EntityLabels:
+      - $ref: '#/components/schemas/RequestWriteBase'
+      - properties:
+          schemaId:
+            description: ID of the Legacy Request's schema.
+            example: assaysch_3IF58QOf
+            type: string
+            writeOnly: true
+        required:
+        - schemaId
+        - fields
+        - samples
+        - sampleGroups
+        - projectId
+    RequestWriteUserAssignee:
       properties:
-        entityRegistryId:
-          example: REAG000
+        userId:
+          example: ent_a0SApq3z
+          type: string
+      required:
+      - userId
+      type: object
+    MixtureMeasurementUnits:
+      enum:
+      - nL
+      - uL
+      - mL
+      - L
+      - g
+      - kg
+      - mg
+      - ug
+      - Units
+      example: L
+      type:
+      - string
+      - 'null'
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
           type:
           - string
           - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
         id:
-          example: bfi_12345
           type: string
         name:
-          example: Deionized Water
           type: string
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    UserValidation:
-      properties:
-        validationComment:
-          description: A string explaining the reason for the provided validation status.
-          type: string
-        validationStatus:
-          description: 'Valid values for this enum depend on whether it is used to set a value (e.g., in a POST request), or is a return value for an existing result.
-
-            Acceptable values for setting a status are ''VALID'' or ''INVALID''. Possible return values are ''VALID'', ''INVALID'', or ''PARTIALLY_VALID'' (a result will be partially valid if it has some valid fields and some invalid fields).
-
-            '
-          enum:
-          - VALID
-          - INVALID
-          - PARTIALLY_VALID
-          type: string
-      type: object
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
       type: object
     RnaSequence:
       properties:
@@ -998,160 +2193,17 @@ components:
           readOnly: true
           type: string
       type: object
-    RequestTaskBaseFields:
-      description: 'Shared fields for Legacy Request Tasks and related endpoints.
-
-        '
+    RequestSampleWithBatch:
       properties:
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Schema fields to set on the request task.
-
-            Every field should have its name as a key, mapping to an object with information about the value of the field.
-
-            '
-        sampleGroupIds:
-          description: IDs of all Legacy Request Sample Groups now associated with this task.
-          items:
-            type: string
-          type: array
-      type: object
-    RequestTasksBulkCreateResponse:
-      properties:
-        tasks:
-          description: The created Legacy Request Tasks
-          items:
-            $ref: '#/components/schemas/RequestTask'
-          type: array
-      type: object
-    Field:
-      properties:
-        displayValue:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        isMulti:
-          readOnly: true
-          type: boolean
-        textValue:
-          example: Amp
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        type:
-          allOf:
-          - $ref: '#/components/schemas/FieldType'
-          readOnly: true
-        value:
-          description: 'For single link fields, use the id of the item you want to link (eg. "seq_jdf8BV24").
-
-            For multi-link fields, use an array of ids of the items you want to link (eg. ["seq_jdf8BV24"])
-
-            '
-          oneOf:
-          - type: string
-          - type: boolean
-          - type: number
-          - type: object
-          - items:
-              type: string
-            type: array
-      required:
-      - value
-      type: object
-    DnaSequenceSummary:
-      properties:
-        entityType:
-          enum:
-          - dna_sequence
+        batchId:
+          example: bat_XK0UnLyk
           type: string
-        id:
-          example: seq_ObbdtGhC
-          type: string
-        type:
-          deprecated: true
-          type: string
-      type: object
-    RequestWriteTeamAssignee:
-      properties:
-        teamId:
-          example: team_5cjIguqc
+        containerId:
+          example: ctn_urUAEBq
           type: string
       required:
-      - teamId
+      - batchId
       type: object
-    AaSequenceWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/AaSequence'
-      - properties:
-          entityType:
-            enum:
-            - aa_sequence
-            type: string
-        type: object
-      type: object
-    RequestResponse:
-      properties:
-        results:
-          items:
-            $ref: '#/components/schemas/AssayResult'
-          type: array
-        samples:
-          description: Array of samples produced by the Legacy Request.
-          items:
-            properties:
-              batch:
-                allOf:
-                - $ref: '#/components/schemas/RequestResponseSamplesItemBatch'
-                description: The sample, if it is a batch resource. Null otherwise.
-              entity:
-                allOf:
-                - $ref: '#/components/schemas/RequestResponseSamplesItemEntity'
-                description: The sample, if it is an entity resource. Null otherwise.
-              status:
-                description: The status of the sample, based on the status of the stage run that generated it.
-                enum:
-                - COMPLETED
-                - DISCARDED
-                type: string
-            type: object
-          type: array
-      type: object
-    DnaSequenceWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/DnaSequence'
-      - properties:
-          entityType:
-            enum:
-            - dna_sequence
-            type: string
-        type: object
-      type: object
-    ContainerLabels:
-      properties:
-        barcode:
-          example: VIAL001
-          type: string
-        id:
-          example: cnt_12345
-          type: string
-        name:
-          example: My Container
-          type: string
-      type: object
-    DnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: -1
-            type: integer
-        type: object
     Measurement:
       properties:
         units:
@@ -1168,199 +2220,14 @@ components:
       - value
       - units
       type: object
-    RequestSampleGroupCreate:
-      properties:
-        samples:
-          $ref: '#/components/schemas/RequestSampleGroupSamples'
-      required:
-      - samples
-      type: object
-    RnaOligoWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/RnaOligo'
-      - properties:
-          entityType:
-            enum:
-            - rna_oligo
-            type: string
-        type: object
-      type: object
-    RequestUserAssignee:
-      properties:
-        user:
-          $ref: '#/components/schemas/UserSummary'
-      type: object
-    RnaAnnotation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 0
-            type: integer
-          type:
-            type: string
-        type: object
-    Batch:
-      additionalProperties: false
-      properties:
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-        createdAt:
-          description: DateTime at which the the result was created
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          allOf:
-          - $ref: '#/components/schemas/UserSummary'
-          readOnly: true
-        defaultConcentration:
-          $ref: '#/components/schemas/Measurement'
-        entity:
-          discriminator:
-            mapping:
-              aa_sequence: '#/components/schemas/AaSequenceSummary'
-              custom_entity: '#/components/schemas/CustomEntitySummary'
-              dna_sequence: '#/components/schemas/DnaSequenceSummary'
-            propertyName: entityType
-          oneOf:
-          - $ref: '#/components/schemas/DnaSequenceSummary'
-          - $ref: '#/components/schemas/AaSequenceSummary'
-          - $ref: '#/components/schemas/CustomEntitySummary'
-        fields:
-          $ref: '#/components/schemas/Fields'
-        id:
-          example: bat_UOIr8IjL
-          readOnly: true
-          type: string
-        modifiedAt:
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          type: string
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          readOnly: true
-          title: SchemaProperty
-        webURL:
-          readOnly: true
-          type: string
-      type: object
-    SampleGroup:
-      description: Represents a sample group that is an input to a request. A sample group is a set of samples upon which work in the request should be done.
-      properties:
-        id:
-          type: string
-        samples:
-          type: object
-      type: object
-    SampleGroupStatus:
-      description: Status of a sample group
+    RequestStatus:
       enum:
+      - REQUESTED
+      - SCHEDULED
       - IN_PROGRESS
       - COMPLETED
-      - FAILED
+      - CANCELLED
       type: string
-    RequestCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/RequestWriteBase'
-      - properties:
-          schemaId:
-            description: ID of the Legacy Request's schema.
-            example: assaysch_3IF58QOf
-            type: string
-            writeOnly: true
-        required:
-        - schemaId
-        - fields
-        - samples
-        - sampleGroups
-        - projectId
-    RegistrationOrigin:
-      properties:
-        originEntryId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
-      type: object
-    RnaOligo:
-      allOf:
-      - $ref: '#/components/schemas/Oligo'
-      - properties:
-          annotations:
-            description: Annotations on the Oligo.
-            items:
-              $ref: '#/components/schemas/RnaAnnotation'
-            type: array
-          apiURL:
-            example: https://benchling.com/api/v2/rna-oligos/seq_bhuDUw9D
-            type: string
-          bases:
-            example: ACUUUUU
-            type: string
-          customNotation:
-            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
-            type:
-            - string
-            - 'null'
-          customNotationName:
-            description: Name of the custom notation specified in the request. Null if no notation was specified.
-            type:
-            - string
-            - 'null'
-          helm:
-            description: Representation of the oligo in HELM syntax, including any chemical modifications
-            example: RNA1{r(A)p.r(C)[Ssp].r(U)p.r(U)p.r(U)p.r(U)p.r(U)p}$$$$V2.0
-            type: string
-          nucleotideType:
-            example: RNA
-            type: string
-    DnaOligo:
-      allOf:
-      - $ref: '#/components/schemas/Oligo'
-      - properties:
-          annotations:
-            description: Annotations on the Oligo.
-            items:
-              $ref: '#/components/schemas/DnaAnnotation'
-            type: array
-          apiURL:
-            example: https://benchling.com/api/v2/dna-oligos/seq_bhuDUw9D
-            type: string
-          bases:
-            example: ACTTTTT
-            type: string
-          customNotation:
-            description: Representation of the oligo in the custom notation specified in the request. Null if no notation was specified.
-            type:
-            - string
-            - 'null'
-          customNotationName:
-            description: Name of the custom notation specified in the request. Null if no notation was specified.
-            type:
-            - string
-            - 'null'
-          helm:
-            description: Representation of the oligo in HELM syntax, including any chemical modifications
-            example: RNA1{d(A)p.d(C)[Ssp].d(T)p.d(T)p.d(T)p.d(T)p.d(T)p}$$$$V2.0
-            type: string
     DnaOligoWithEntityType:
       allOf:
       - $ref: '#/components/schemas/DnaOligo'
@@ -1371,867 +2238,10 @@ components:
             type: string
         type: object
       type: object
-    SequenceFeatureCustomField:
-      description: A name and value pair associated with a sequence feature (annotation or translation). For genbank imports, these are the qualifiers associated with each feature.
+    RequestTeamAssignee:
       properties:
-        name:
-          description: Name of the custom field
-          type: string
-        value:
-          description: Value of the custom field
-          type: string
-      type: object
-    AaSequenceSummary:
-      properties:
-        entityType:
-          enum:
-          - aa_sequence
-          type: string
-        id:
-          example: prtn_ObbdtGhC
-          type: string
-        type:
-          deprecated: true
-          type: string
-      type: object
-    SequenceFeatureBase:
-      properties:
-        color:
-          description: Hex color code used when displaying this feature in the UI.
-          example: '#F58A5E'
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/SequenceFeatureCustomField'
-          maxItems: 100
-          type: array
-        name:
-          maxLength: 2048
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-      type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    TeamSummary:
-      allOf:
-      - type: object
-      - properties:
-          id:
-            type: string
-          name:
-            type: string
-      - example:
-          id: team_5cjIguqc
-          name: Elion's Team
-    SampleGroupStatusUpdate:
-      properties:
-        sampleGroupId:
-          description: The string id of the sample group
-          example: sgrp_2GPCXk6
-          type: string
-        status:
-          $ref: '#/components/schemas/SampleGroupStatus'
-      required:
-      - sampleGroupId
-      - status
-      type: object
-    RequestTasksBulkUpdateRequest:
-      additionalProperties: false
-      description: 'A request body for bulk updating Legacy Request Tasks.
-
-        '
-      properties:
-        tasks:
-          description: The Legacy Request Tasks to update
-          items:
-            $ref: '#/components/schemas/RequestTaskBase'
-          type: array
-      required:
-      - tasks
-      type: object
-    Translation:
-      allOf:
-      - $ref: '#/components/schemas/SequenceFeatureBase'
-      - properties:
-          aminoAcids:
-            readOnly: true
-            type: string
-          coerceStartCodonToMethionine:
-            default: false
-            description: Whether to override the translation of the start codon to Methionine. Has no effect when the start codon already translates to Methionine.
-            type: boolean
-          end:
-            description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-            type: integer
-          geneticCode:
-            default: STANDARD
-            description: The genetic code to use when translating the nucleotide sequence into amino acids.
-            enum:
-            - STANDARD
-            - VERTEBRATE_MITOCHONDRIAL
-            - YEAST_MITOCHONDRIAL
-            - MOLD_PROTOZOAN_COELENTERATE_MITOCHONDRIAL_MYCOPLASMA_SPIROPLASMA
-            - INVERTEBRATE_MITOCHONDRIAL
-            - CILIATE_DASYCLADACEAN_HEXAMITA_NUCLEAR
-            - ECHINODERM_FLATWORM_MITOCHONDRIAL
-            - EUPLOTID_NUCLEAR
-            - BACTERIAL_ARCHAEAL_PLANT_PLASTID
-            - ALTERNATIVE_YEAST_NUCLEAR
-            - ASCIDIAN_MITOCHONDRIAL
-            - ALTERNATIVE_FLATWORM_MITOCHONDRIAL
-            - CHLOROPHYCEAN_MITOCHONDRIAL
-            - TREMATODE_MITOCHONDRIAL
-            - SCENEDESMUS_OBLIQUUS_MITOCHONDRIAL
-            - THRAUSTOCHYTRIUM_MITOCHONDRIAL
-            - RHABDOPLEURIDAE_MITOCHONDRIAL
-            - CANDIDATE_DIVISION_SR1_GRACILIBACTERIA
-            - PACHYSOLEN_TANNOPHILUS_NUCLEAR
-            - MESODINIUM_NUCLEAR
-            - PERITRICH_NUCLEAR
-            - CEPHALODISCIDAE_MITOCHONDRIAL_UAA_TYR
-            type: string
-          regions:
-            items:
-              properties:
-                end:
-                  description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-                  type: integer
-                start:
-                  description: 0-based inclusive start index.
-                  type: integer
-              type: object
-            type: array
-          start:
-            description: 0-based inclusive start index.
-            type: integer
-          strand:
-            example: 1
-            type: integer
-        type: object
-    RequestFulfillment:
-      description: 'A Legacy Request fulfillment represents work that is done which changes the status of a request or a sample group within that request.
-
-        Fulfillments are created when state changes between IN_PROGRESS, COMPLETED, or FAILED statuses. Fulfillments do not capture a PENDING state because all Legacy Requests or Legacy Request Sample Groups are considered PENDING until the first corresponding fulfillment is created.
-
-        '
-      properties:
-        createdAt:
-          description: Date and time the Legacy Request Fulfillment was created
-          format: date-time
-          type: string
-        entryId:
-          description: ID of the entry this Legacy Request Fulfillment was executed in, if any
-          example: etr_IKwdYx31
-          type: string
-        id:
-          description: ID of the Legacy Request Fulfillment
-          example: reqffm_8Hm71Usw
-          type: string
-        modifiedAt:
-          description: DateTime the Legacy Request Fulfillment was last modified
-          format: date-time
-          readOnly: true
-          type: string
-        requestId:
-          description: ID of the Legacy Request this fulfillment fulfills
-          example: req_pu9caSiv
-          type: string
-        sampleGroup:
-          allOf:
-          - $ref: '#/components/schemas/SampleGroup'
-          description: The Legacy Request Sample Group this fulfillment was executed upon, if any.
-        status:
-          $ref: '#/components/schemas/SampleGroupStatus'
-      type: object
-    CustomEntity:
-      properties:
-        aliases:
-          items:
-            example: sBN000
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Custom Entity in the API.
-          example: https://benchling.com/api/v2/custom-entities/bfi_xCUXNVyG
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        createdAt:
-          example: '2017-04-18T05:54:56.247545+00:00'
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          allOf:
-          - $ref: '#/components/schemas/UserSummary'
-          - readOnly: true
-        customFields:
-          $ref: '#/components/schemas/CustomFields'
-        entityRegistryId:
-          example: sBN000
-          type:
-          - string
-          - 'null'
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          example: lib_R8KcsjhW
-          type:
-          - string
-          - 'null'
-        id:
-          example: bfi_xCUXNVyG
-          type: string
-        modifiedAt:
-          example: '2017-04-18T05:55:48.685345+00:00'
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          example: sBN000
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          readOnly: true
-        registryId:
-          example: src_NetYd96a
-          type:
-          - string
-          - 'null'
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          example:
-            id: ts_EM122lfJ
-            name: Strain
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
-        webURL:
-          example: https://benchling.com/benchling/f/R8KcsjhW-academic-registry/bfi-xCUXNVyG-sbn000/edit
-          readOnly: true
-          type: string
-      type: object
-    BadRequestErrorBulk:
-      allOf:
-      - $ref: '#/components/schemas/BadRequestError'
-      - properties:
-          error:
-            properties:
-              errors:
-                items:
-                  properties:
-                    index:
-                      type: number
-                    message:
-                      type: string
-                  type: object
-                type: array
-            type: object
-        type: object
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    RequestsBulkGet:
-      properties:
-        requests:
-          items:
-            $ref: '#/components/schemas/Request'
-          type: array
-      type: object
-    RequestResponseSamplesItemEntity:
-      allOf:
-      - $ref: '#/components/schemas/EntityOrInaccessibleResource'
-    SampleGroupsStatusUpdate:
-      additionalProperties: false
-      description: Specification to update status of sample groups on the request which were executed.
-      properties:
-        sampleGroups:
-          items:
-            $ref: '#/components/schemas/SampleGroupStatusUpdate'
-          type: array
-      required:
-      - sampleGroups
-      type: object
-    RequestWriteBase:
-      allOf:
-      - $ref: '#/components/schemas/RequestBase'
-      - properties:
-          assignees:
-            description: Array of assignees
-            items:
-              oneOf:
-              - $ref: '#/components/schemas/RequestWriteUserAssignee'
-              - $ref: '#/components/schemas/RequestWriteTeamAssignee'
-            type: array
-            writeOnly: true
-          fields:
-            allOf:
-            - $ref: '#/components/schemas/Fields'
-            description: The Legacy Request's fields
-          projectId:
-            description: The ID of the project to which the Legacy Request belongs.
-            example: src_29pt8Ida
-            type: string
-          requestorId:
-            description: 'ID of the user making the Legacy Request. If unspecified, the requestor is the request creator.
-
-              '
-            example: ent_a0SApq3z
-            type:
-            - string
-            - 'null'
-            writeOnly: true
-          sampleGroups:
-            items:
-              $ref: '#/components/schemas/RequestSampleGroupCreate'
-            type: array
-          scheduledOn:
-            description: Date the Legacy Request is scheduled to be executed on, in YYYY-MM-DD format.
-            example: 2019-09-12
-            format: date
-            type: string
-            writeOnly: true
-    RequestBase:
-      description: A Legacy Request is an ask to perform a service, e.g. produce a sample or perform assays on a sample. Requests are usually placed to another team or individual who specializes in performing the service.
-      type: object
-    RequestSampleWithBatch:
-      properties:
-        batchId:
-          example: bat_XK0UnLyk
-          type: string
-        containerId:
-          example: ctn_urUAEBq
-          type: string
-      required:
-      - batchId
-      type: object
-    MoleculeWithEntityType:
-      allOf:
-      - $ref: '#/components/schemas/Molecule'
-      - properties:
-          entityType:
-            enum:
-            - molecule
-            type: string
-        type: object
-      type: object
-    DnaSequence:
-      properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        annotations:
-          items:
-            $ref: '#/components/schemas/DnaAnnotation'
-          type: array
-        apiURL:
-          description: The canonical url of the DNA Sequence in the API.
-          example: https://benchling.com/api/v2/dna-sequences/seq_asQya4lk
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        bases:
-          type: string
-        createdAt:
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          $ref: '#/components/schemas/CustomFields'
-        dnaAlignmentIds:
-          description: API IDs of Nucleotide Alignments involving the RNA sequence
-          items:
-            type: string
-          type: array
-        entityRegistryId:
-          type:
-          - string
-          - 'null'
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          type:
-          - string
-          - 'null'
-        id:
-          type: string
-        isCircular:
-          type: boolean
-        length:
-          type: integer
-        modifiedAt:
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          type: string
-        parts:
-          items:
-            $ref: '#/components/schemas/DnaSequencePart'
-          type: array
-        primers:
-          items:
-            $ref: '#/components/schemas/Primer'
-          type: array
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          readOnly: true
-        registryId:
-          type:
-          - string
-          - 'null'
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-        transcriptions:
-          items:
-            $ref: '#/components/schemas/DnaSequenceTranscription'
-          type: array
-        translations:
-          items:
-            $ref: '#/components/schemas/Translation'
-          type: array
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
-        webURL:
-          readOnly: true
-          type: string
-      type: object
-    RequestUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/RequestWriteBase'
-      - properties:
-          requestStatus:
-            $ref: '#/components/schemas/RequestStatus'
-    AaAnnotation:
-      properties:
-        color:
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the AA sequence is always represented as 0.
-          type: integer
-        id:
-          example: prtnann_o7zMPG0P
-          type: string
-        name:
-          maxLength: 255
-          type: string
-        notes:
-          example: Cong et al Science. 2013 Jan 3.
-          maxLength: 10000
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        type:
-          example: Site
-          maxLength: 255
-          type: string
-      type: object
-    RequestStatus:
-      enum:
-      - REQUESTED
-      - SCHEDULED
-      - IN_PROGRESS
-      - COMPLETED
-      - CANCELLED
-      type: string
-    MixtureMeasurementUnits:
-      enum:
-      - nL
-      - uL
-      - mL
-      - L
-      - g
-      - kg
-      - mg
-      - ug
-      - Units
-      example: L
-      type:
-      - string
-      - 'null'
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    Molecule:
-      additionalProperties: false
-      properties:
-        aliases:
-          description: Array of aliases.
-          items:
-            type: string
-          type: array
-        apiURL:
-          description: The canonical url of the Molecule in the API.
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        canonicalizedSmiles:
-          description: The canonicalized chemical structure in SMILES format.
-          example: Nc1nc(=O)n([H])cc1C1CC1
-          type: string
-        createdAt:
-          description: DateTime the Molecule was created.
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the Molecule.
-        entityRegistryId:
-          description: Registry ID of the Molecule if registered.
-          type:
-          - string
-          - 'null'
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the Molecule.
-          type:
-          - string
-          - 'null'
-        id:
-          description: ID of the Molecule.
-          example: mol_bhuDUw9D
-          type: string
-        modifiedAt:
-          description: DateTime the Molecule was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          description: Name of the Molecule.
-          type: string
-        originalSmiles:
-          description: The original chemical structure supplied by the user in SMILES format. Null if the user did not originally supply SMILES.
-          example: Nc1nc(=O)n([H])cc1C1CC1
-          type:
-          - string
-          - 'null'
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          readOnly: true
-        registryId:
-          description: Registry the Molecule is registered in.
-          type:
-          - string
-          - 'null'
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-        webURL:
-          description: URL of the Molecule.
-          example: https://benchling.com/benchling/f/lib_R8KcsjhW-molecules/mol_xCUXNVyG-molecule1/edit
-          format: uri
-          readOnly: true
-          type: string
-      type: object
-    RequestFulfillmentsPaginatedList:
-      description: An object containing an array of (Legacy) RequestFulfillments
-      properties:
-        nextToken:
-          example: Im5ldyB0ZXN0Ig==
-          type: string
-        requestFulfillments:
-          items:
-            $ref: '#/components/schemas/RequestFulfillment'
-          type: array
-      type: object
-    RequestSampleGroup:
-      properties:
-        id:
-          example: sgrp_YJKtcWV
-          type: string
-        samples:
-          $ref: '#/components/schemas/RequestSampleGroupSamples'
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    Request:
-      allOf:
-      - $ref: '#/components/schemas/RequestBase'
-      - properties:
-          apiURL:
-            description: The canonical url of the Legacy Request in the API.
-            example: https://benchling.com/api/v2/requests/req_dnn2JtWq
-            format: uri
-            readOnly: true
-            type: string
-          assignees:
-            description: Array of assignees
-            items:
-              oneOf:
-              - $ref: '#/components/schemas/RequestUserAssignee'
-              - $ref: '#/components/schemas/RequestTeamAssignee'
-            readOnly: true
-            type: array
-          createdAt:
-            description: Date and time the Legacy Request was created
-            example: 2017-04-23 01:30:50.970926
-            format: isoformat
-            readOnly: true
-            type: string
-          creator:
-            allOf:
-            - $ref: '#/components/schemas/UserSummary'
-            - description: UserSummary of the user who created the Legacy Request
-            - readOnly: true
-          displayId:
-            description: User-friendly ID of the Legacy Request
-            example: VP1
-            readOnly: true
-            type: string
-          fields:
-            $ref: '#/components/schemas/Fields'
-          id:
-            description: Unique ID for the Legacy Request
-            example: req_JekfeyVS
-            readOnly: true
-            type: string
-          projectId:
-            description: The ID of the project to which the Legacy Request belongs.
-            example: src_29pt8Ida
-            type: string
-          requestStatus:
-            $ref: '#/components/schemas/RequestStatus'
-          requestor:
-            allOf:
-            - $ref: '#/components/schemas/UserSummary'
-            - description: UserSummary of the user making the Legacy Request
-            - readOnly: true
-          sampleGroups:
-            items:
-              $ref: '#/components/schemas/RequestSampleGroup'
-            type: array
-          scheduledOn:
-            description: Date the Legacy Request is scheduled to be executed on, in YYYY-MM-DD format.
-            example: 2019-09-12
-            format: date
-            type:
-            - string
-            - 'null'
-          schema:
-            allOf:
-            - $ref: '#/components/schemas/SchemaSummary'
-            - description: SchemaSummary for the Legacy Request
-              example:
-                id: assaysch_3IF58QOf
-                name: Vector Production
-              readOnly: true
-            title: SchemaProperty
-          tasks:
-            items:
-              $ref: '#/components/schemas/RequestTask'
-            type: array
-          webURL:
-            description: URL of the Legacy Request
-            example: https://benchling.com/requests/req_JekfeyVS
-            format: uri
-            readOnly: true
-            type: string
-    AaSequence:
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        aminoAcids:
-          description: Amino acids of the AA sequence.
-          example: IKTATARRELAETSWTGDRLWGFSDNWAPALRRPSPSALGK
-          type: string
-        annotations:
-          description: Array of annotation objects on the AA sequence.
-          items:
-            $ref: '#/components/schemas/AaAnnotation'
-          type: array
-        apiURL:
-          description: The canonical url of the AA Sequence in the API.
-          example: https://benchling.com/api/v2/aa-sequences/prtn_7nMBOMm0
-          format: uri
-          readOnly: true
-          type: string
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-        authors:
-          items:
-            $ref: '#/components/schemas/UserSummary'
-          type: array
-        createdAt:
-          description: DateTime the AA sequence was created.
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          $ref: '#/components/schemas/UserSummary'
-        customFields:
-          allOf:
-          - $ref: '#/components/schemas/CustomFields'
-          description: Custom fields set on the AA sequence.
-        entityRegistryId:
-          description: Registry ID of the AA sequence if registered.
-          type:
-          - string
-          - 'null'
-        fields:
-          $ref: '#/components/schemas/Fields'
-        folderId:
-          description: ID of the folder that contains the AA sequence.
-          type:
-          - string
-          - 'null'
-        id:
-          description: ID of the AA sequence.
-          example: prtn_ObbdtGhC
-          type: string
-        length:
-          description: Number of amino acids in the AA sequence.
-          type: integer
-        modifiedAt:
-          description: DateTime the AA sequence was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        name:
-          description: Name of the AA sequence.
-          type: string
-        registrationOrigin:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          readOnly: true
-        registryId:
-          description: Registry the AA sequence is registered in.
-          type:
-          - string
-          - 'null'
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-        url:
-          description: The path of the web URL, omitting the tenant domain
-          type: string
-        webURL:
-          description: URL of the AA sequence.
-          example: https://benchling.com/benchling/f/lib_55UxcIps-registry/prtn_7nMBOMm0-kedchain11/edit"
-          format: uri
-          readOnly: true
-          type: string
-      type: object
-    RequestsPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/RequestsBulkGet'
-      - properties:
-          nextToken:
-            type: string
-    RequestTasksBulkUpdateResponse:
-      properties:
-        tasks:
-          description: The Legacy Request Tasks to update
-          items:
-            $ref: '#/components/schemas/RequestTask'
-          type: array
-      type: object
-    RnaSequencePart:
-      allOf:
-      - $ref: '#/components/schemas/NucleotideSequencePart'
-      - properties:
-          strand:
-            example: 1
-            maximum: 1
-            minimum: 1
-            type: integer
-        type: object
-    Primer:
-      properties:
-        bases:
-          readOnly: true
-          type: string
-        bindPosition:
-          readOnly: true
-          type: integer
-        color:
-          readOnly: true
-          type: string
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        name:
-          readOnly: true
-          type: string
-        oligoId:
-          type: string
-        overhangLength:
-          readOnly: true
-          type: integer
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-        strand:
-          example: 1
-          type: integer
+        team:
+          $ref: '#/components/schemas/TeamSummary'
       type: object
     Ingredient:
       properties:
@@ -2282,114 +2292,6 @@ components:
         units:
           $ref: '#/components/schemas/IngredientMeasurementUnits'
       type: object
-    BatchOrInaccessibleResource:
-      oneOf:
-      - $ref: '#/components/schemas/Batch'
-      - $ref: '#/components/schemas/InaccessibleResource'
-    NucleotideSequencePart:
-      properties:
-        end:
-          description: 0-based exclusive end index. The end of the sequence is always represented as 0.
-          type: integer
-        sequenceId:
-          example: seq_VfVOART1
-          type: string
-        start:
-          description: 0-based inclusive start index.
-          type: integer
-      type: object
-    ExecuteSampleGroups:
-      description: 'The response is intentionally empty.
-
-        '
-      type: object
-    AssayResult:
-      properties:
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-          description: 'ArchiveRecord Resource if the result is archived. This is null if the result is not archived.
-
-            '
-        createdAt:
-          description: DateTime at which the the result was created
-          format: date-time
-          readOnly: true
-          type: string
-        creator:
-          allOf:
-          - $ref: '#/components/schemas/UserSummary'
-          description: UserSummary Resource of who created the request
-          readOnly: true
-        entryId:
-          description: ID of the entry that this result is attached to
-          type:
-          - string
-          - 'null'
-        fieldValidation:
-          additionalProperties:
-            $ref: '#/components/schemas/UserValidation'
-          description: 'Object mapping field names to a UserValidation Resource object for that field. To **set** validation for a result, you *must* use this object.
-
-            '
-          type: object
-        fields:
-          allOf:
-          - $ref: '#/components/schemas/Fields'
-          description: 'Field values for the returned result. Please note the keys of each field are the field''s system name (additional_prop) instead of the field''s display name (additionalProp).
-
-            '
-          example:
-          - additional_prop: null
-            displayValue: Amp
-            isMulti: true
-            textValue: Amp
-            type: dna_sequence_link
-            value:
-            - seq_jdf8BV24
-        id:
-          description: ID of the result
-          type: string
-        isReviewed:
-          description: Whether or not this result is attached to an accepted entry
-          type: boolean
-        modifiedAt:
-          description: DateTime at which the the result was last modified
-          format: date-time
-          readOnly: true
-          type: string
-        projectId:
-          description: ID of the project to insert the result into
-          type:
-          - string
-          - 'null'
-        schema:
-          allOf:
-          - $ref: '#/components/schemas/SchemaSummary'
-          description: Schema that the result belongs to
-          title: SchemaProperty
-        v3Id:
-          description: V3 identifier for the result
-          readOnly: true
-          type: string
-        validationComment:
-          readOnly: true
-          type: string
-        validationStatus:
-          readOnly: true
-          type: string
-      type: object
-    EntityOrInaccessibleResource:
-      oneOf:
-      - $ref: '#/components/schemas/Entity'
-      - $ref: '#/components/schemas/InaccessibleResource'
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
     RequestTasksBulkCreate:
       allOf:
       - $ref: '#/components/schemas/RequestTaskBaseFields'
@@ -2401,6 +2303,104 @@ components:
       required:
       - schemaId
       type: object
+    DnaSequenceWithEntityType:
+      allOf:
+      - $ref: '#/components/schemas/DnaSequence'
+      - properties:
+          entityType:
+            enum:
+            - dna_sequence
+            type: string
+        type: object
+      type: object
+    EntityOrInaccessibleResource:
+      oneOf:
+      - $ref: '#/components/schemas/Entity'
+      - $ref: '#/components/schemas/InaccessibleResource'
+      type: object
+    DnaSequenceSummary:
+      properties:
+        entityType:
+          enum:
+          - dna_sequence
+          type: string
+        id:
+          example: seq_ObbdtGhC
+          type: string
+        type:
+          deprecated: true
+          type: string
+      type: object
+    RequestTasksBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        tasks:
+          description: The Legacy Request Tasks to create
+          items:
+            $ref: '#/components/schemas/RequestTasksBulkCreate'
+          maxItems: 100
+          type: array
+      required:
+      - tasks
+      type: object
+    SequenceFeatureBase:
+      properties:
+        color:
+          description: Hex color code used when displaying this feature in the UI.
+          example: '#F58A5E'
+          type: string
+        customFields:
+          items:
+            $ref: '#/components/schemas/SequenceFeatureCustomField'
+          maxItems: 100
+          type: array
+        name:
+          maxLength: 2048
+          type: string
+        notes:
+          example: Cong et al Science. 2013 Jan 3.
+          maxLength: 10000
+          type: string
+      type: object
+    RequestWriteBase:
+      allOf:
+      - $ref: '#/components/schemas/RequestBase'
+      - properties:
+          assignees:
+            description: Array of assignees
+            items:
+              oneOf:
+              - $ref: '#/components/schemas/RequestWriteUserAssignee'
+              - $ref: '#/components/schemas/RequestWriteTeamAssignee'
+            type: array
+            writeOnly: true
+          fields:
+            allOf:
+            - $ref: '#/components/schemas/Fields'
+            description: The Legacy Request's fields
+          projectId:
+            description: The ID of the project to which the Legacy Request belongs.
+            example: src_29pt8Ida
+            type: string
+          requestorId:
+            description: 'ID of the user making the Legacy Request. If unspecified, the requestor is the request creator.
+
+              '
+            example: ent_a0SApq3z
+            type:
+            - string
+            - 'null'
+            writeOnly: true
+          sampleGroups:
+            items:
+              $ref: '#/components/schemas/RequestSampleGroupCreate'
+            type: array
+          scheduledOn:
+            description: Date the Legacy Request is scheduled to be executed on, in YYYY-MM-DD format.
+            example: 2019-09-12
+            format: date
+            type: string
+            writeOnly: true
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
