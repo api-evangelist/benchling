@@ -5,16 +5,49 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Test Order API
   version: 2.0.0
-  description: A Test Order represents an individual request to perform a specific test on a sample.
+  description: 'A Test Order represents an individual request to perform a specific test on a sample. Each
+
+    Test Order references a `TestDefinition` that specifies what type of test to perform, and
+
+    a `sample` (Entity) that is being tested. Test Orders track their lifecycle through `status`
+
+    (see `TestStatus`), from PENDING when created, through IN_PROGRESS during execution, to
+
+    COMPLETED or other terminal states. When executed via an Assay workflow, the `procedure`
+
+    and `procedureMethodExecutionInstance` fields link to the execution context. Results are
+
+    captured in the `result` field. Test Orders can be associated with `Study` objects for
+
+    clinical/preclinical workflows and linked to specific plate wells via `plateWellAssociations`
+
+    for laboratory execution tracking.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: A Test Order represents an individual request to perform a specific test on a sample.
+- description: 'A Test Order represents an individual request to perform a specific test on a sample. Each
+
+    Test Order references a `TestDefinition` that specifies what type of test to perform, and
+
+    a `sample` (Entity) that is being tested. Test Orders track their lifecycle through `status`
+
+    (see `TestStatus`), from PENDING when created, through IN_PROGRESS during execution, to
+
+    COMPLETED or other terminal states. When executed via an Assay workflow, the `procedure`
+
+    and `procedureMethodExecutionInstance` fields link to the execution context. Results are
+
+    captured in the `result` field. Test Orders can be associated with `Study` objects for
+
+    clinical/preclinical workflows and linked to specific plate wells via `plateWellAssociations`
+
+    for laboratory execution tracking.'
   name: TestOrder
   x-bnch-organization: Benchling
+  x-displayName: Test Order
 paths:
   /test-order/items:
     get:
@@ -74,7 +107,6 @@ paths:
       summary: List TestOrder items
       tags:
       - TestOrder
-      x-bnch-rate-limit-tier: 4
   /test-order/{test_order_id}:
     get:
       description: Get a single TestOrder by ID.
@@ -115,13 +147,52 @@ paths:
       summary: Get TestOrder by ID
       tags:
       - TestOrder
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
       name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -134,21 +205,14 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: name.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -170,31 +234,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -205,36 +248,126 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
   schemas:
+    EntityRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureMethodExecutionInstanceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     TestOrder:
       description: 'A Test Order represents an individual request to perform a specific test on a sample. Each
 
@@ -331,32 +464,6 @@ components:
           format: api_id
           type: string
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
     TestOrderPaginatedList:
       additionalProperties: false
       properties:
@@ -365,47 +472,9 @@ components:
             $ref: '#/components/schemas/TestOrder'
           type: array
         nextToken:
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
           type:
-          - 'null'
           - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
           - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    EntityRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
       type: object
     ContainerRef:
       properties:
@@ -423,27 +492,20 @@ components:
           format: api_id
           type: string
       type: object
-    ProcedureMethodExecutionInstanceRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
   responses:
     TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -456,6 +518,12 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -463,6 +531,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

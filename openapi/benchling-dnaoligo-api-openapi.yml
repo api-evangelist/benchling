@@ -7,7 +7,21 @@ info:
   version: 2.0.0
   description: 'Represents a short single-stranded DNA oligonucleotide in Benchling''s molecular biology
 
-    platform.'
+    platform. DNA oligos are typically synthetic sequences used as primers for PCR, probes
+
+    for hybridization assays, or components in cloning workflows. Each oligo stores its
+
+    nucleotide base sequence, annotations for features of interest, and any chemical
+
+    modifications (see ModifiedNucleotide) such as phosphorothioate backbones or fluorescent
+
+    labels. Oligos can be registered in the Registry with unique identifiers, organized in
+
+    folders, and linked to other entities via schema fields. Unlike DnaSequence, oligos are
+
+    specifically designed for shorter, synthesizable sequences. Also referred to as primers
+
+    or probes depending on their application.'
 servers:
 - url: /api/v3
 security:
@@ -16,22 +30,42 @@ security:
 tags:
 - description: 'Represents a short single-stranded DNA oligonucleotide in Benchling''s molecular biology
 
-    platform.'
+    platform. DNA oligos are typically synthetic sequences used as primers for PCR, probes
+
+    for hybridization assays, or components in cloning workflows. Each oligo stores its
+
+    nucleotide base sequence, annotations for features of interest, and any chemical
+
+    modifications (see ModifiedNucleotide) such as phosphorothioate backbones or fluorescent
+
+    labels. Oligos can be registered in the Registry with unique identifiers, organized in
+
+    folders, and linked to other entities via schema fields. Unlike DnaSequence, oligos are
+
+    specifically designed for shorter, synthesizable sequences. Also referred to as primers
+
+    or probes depending on their application.'
   name: DnaOligo
   x-bnch-core-type: DnaOligo
   x-bnch-organization: Benchling
+  x-displayName: Dna Oligo
 paths:
   /dna-oligo:
     post:
-      description: Create DnaOligo.
+      description: 'Create a DNA Oligo in a folder. `name` and `folderId` are required.
+
+
+        ## Sequence specification
+
+
+        Provide exactly one of the following:
+
+        - `bases` — plain nucleotide sequence
+
+        - `helm` — HELM notation (requires the modified nucleotides feature to be enabled)
+
+        - `customNotation` with `customNotationId` — vendor-specific notation (requires custom syntaxes to be enabled; both fields must be set together)'
       operationId: DnaOligo.Create
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -50,6 +84,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -57,7 +93,6 @@ paths:
       summary: Create DnaOligo
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 4
   /dna-oligo/items:
     get:
       description: List DnaOligo items.
@@ -66,12 +101,15 @@ paths:
       - $ref: '#/components/parameters/archiveReason.anyOf'
       - $ref: '#/components/parameters/archived.anyOf'
       - $ref: '#/components/parameters/authors.anyOf'
+      - $ref: '#/components/parameters/bases.anyOf'
       - $ref: '#/components/parameters/createdAt.gt'
       - $ref: '#/components/parameters/createdAt.gte'
       - $ref: '#/components/parameters/createdAt.lt'
       - $ref: '#/components/parameters/createdAt.lte'
       - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/entityRegistryIds.anyOf'
       - $ref: '#/components/parameters/fieldset.anyOf'
+      - $ref: '#/components/parameters/folder.eq'
       - $ref: '#/components/parameters/id.anyOf'
       - $ref: '#/components/parameters/mentionedIn.anyOf'
       - $ref: '#/components/parameters/modifiedAt.gt'
@@ -100,12 +138,6 @@ paths:
           - modifiedAt:asc
           - modifiedAt:desc
           type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -127,7 +159,6 @@ paths:
       summary: List DnaOligo items
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 4
   /dna-oligo/{dna_oligo_id}:
     get:
       description: Get a single DnaOligo by ID.
@@ -141,12 +172,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -168,21 +193,26 @@ paths:
       summary: Get DnaOligo by ID
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 5
     patch:
-      description: Update DnaOligo.
+      description: 'Update a DNA Oligo. The `id` path parameter identifies the Oligo to update.
+
+
+        ## Sequence specification
+
+
+        To replace the sequence, provide exactly one of the following. Omit all sequence fields to keep the existing sequence.
+
+        - `bases` — plain nucleotide sequence
+
+        - `helm` — HELM notation (requires the modified nucleotides feature to be enabled)
+
+        - `customNotation` with `customNotationId` — vendor-specific notation (requires custom syntaxes to be enabled; both fields must be set together)'
       operationId: DnaOligo.Update
       parameters:
       - description: ID of the DnaOligo.
         in: path
         name: dna_oligo_id
         required: true
-        schema:
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
         schema:
           type: string
       requestBody:
@@ -203,6 +233,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -210,7 +242,40 @@ paths:
       summary: Update DnaOligo
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 4
+  /dna-oligo/{dna_oligo_id}/annotations/items:
+    get:
+      description: List NucleotideAnnotation items.
+      operationId: DnaOligo.annotations.List
+      parameters:
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: ID of the DnaOligo.
+        in: path
+        name: dna_oligo_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NucleotideAnnotationPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List NucleotideAnnotation items
+      tags:
+      - DnaOligo
   /dna-oligo/{dna_oligo_id}/authors/items:
     get:
       description: List Principal items.
@@ -249,7 +314,6 @@ paths:
       summary: List Principal items
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 4
   /dna-oligo/{dna_oligo_id}/modified-nucleotides/items:
     get:
       description: List ModifiedNucleotide items.
@@ -261,12 +325,6 @@ paths:
         in: path
         name: dna_oligo_id
         required: true
-        schema:
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
         schema:
           type: string
       responses:
@@ -290,18 +348,13 @@ paths:
       summary: List ModifiedNucleotide items
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 4
   /dna-oligo:batch-create:
     post:
-      description: Batch create DnaOligo synchronously in one transaction. Maximum 25 items per request.
+      description: 'Batch create DNA Oligos synchronously in one transaction. Maximum 25 items per request.
+
+
+        Each item follows the same field requirements as the single-create endpoint. If any item fails validation, the transaction fails and no DNA Oligos are created.'
       operationId: DnaOligo.BatchCreate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -338,6 +391,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -345,18 +400,13 @@ paths:
       summary: Batch create DnaOligo
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 3
   /dna-oligo:batch-update:
     patch:
-      description: Batch update DnaOligo synchronously in one transaction. Maximum 25 items per request.
+      description: 'Batch update DNA Oligos synchronously in one transaction. Maximum 25 items per request.
+
+
+        Each item follows the same field requirements and archive constraints as the single-update endpoint. If any item fails validation, the transaction fails and no DNA Oligos are updated.'
       operationId: DnaOligo.BatchUpdate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -393,6 +443,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -400,18 +452,16 @@ paths:
       summary: Batch update DnaOligo
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 3
   /dna-oligo:bulk-create:
     post:
-      description: Bulk create DnaOligo.
+      description: 'Bulk create DNA Oligos asynchronously.
+
+
+        Each item follows the same field requirements as the single-create endpoint. The response returns an async task; poll the task to inspect row-level successes and validation errors.
+
+
+        If any item uses `customNotation`, all items in the bulk request that use `customNotation` must use the same `customNotationId`.'
       operationId: DnaOligo.BulkCreate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -430,6 +480,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -437,18 +489,16 @@ paths:
       summary: Bulk create DnaOligo
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 2
   /dna-oligo:bulk-update:
     patch:
-      description: Bulk update DnaOligo.
+      description: 'Bulk update DNA Oligos asynchronously.
+
+
+        Each item follows the same field requirements and archive constraints as the single-update endpoint. The response returns an async task; poll the task to inspect row-level successes and validation errors.
+
+
+        If any item uses `customNotation`, all items in the bulk request that use `customNotation` must use the same `customNotationId`.'
       operationId: DnaOligo.BulkUpdate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -467,6 +517,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -474,7 +526,6 @@ paths:
       summary: Bulk update DnaOligo
       tags:
       - DnaOligo
-      x-bnch-rate-limit-tier: 2
 webhooks:
   v3.dnaOligo.created:
     post:
@@ -512,129 +563,94 @@ webhooks:
       - DnaOligo
 components:
   schemas:
-    PrincipalUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Principal'
-          type: array
-      type: object
-    AssayRunFeatureValue:
-      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+    LegacyAppInstallation:
+      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
 
-        tenant. The featureId identifies the feature from the app definition, and resourceId
+        are configured directly with webhook URLs and configuration specs rather than through
 
-        references the tenant-specific resource it''s bound to.'
+        app definition versions. This type is maintained for backward compatibility with older
+
+        app integrations. For new apps, see `AppInstallation`.'
       properties:
         __typename:
           type: string
-        featureId:
-          description: Developer-specified feature ID as defined in the app manifest / app definition version
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationSpecs:
+          items:
+            $ref: '#/components/schemas/AppConfigOption'
+          type: array
+        configurationValues:
+          format: uri
           type: string
-        resourceId:
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        description:
+          type:
+          - 'null'
+          - string
+        featureSpecs:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CanvasFeatureSpec'
+            - $ref: '#/components/schemas/AssayRunFeatureSpec'
+            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
+            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
+            discriminator:
+              mapping:
+                AppHomepageFeatureSpec: '#/components/schemas/AppHomepageFeatureSpec'
+                AssayRunFeatureSpec: '#/components/schemas/AssayRunFeatureSpec'
+                CanvasFeatureSpec: '#/components/schemas/CanvasFeatureSpec'
+              propertyName: __typename
+          type: array
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        messageSubscriptions:
+          items:
+            $ref: '#/components/schemas/AppMessageSubscription'
+          type: array
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        publicKey:
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          type:
+          - 'null'
+          - string
+        webhookUrl:
           type:
           - 'null'
           - string
       type: object
-    SecureTextAppConfigSpec:
-      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
-
-        Used for sensitive data like API keys or credentials.'
+    FieldValueInput:
+      additionalProperties: false
       properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    NucleotideSequenceRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    FloatAppConfigSpec:
-      description: Specifies that an app configuration field should accept a floating-point number.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these floats.
-          oneOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ArrayAppConfigSpec:
-      description: Specifies that an app configuration field should accept an array of values.
-      properties:
-        __typename:
-          type: string
-        elementDefinition:
-          description: Defines the named config options allowed within this array and their type constraints.
-          items:
-            $ref: '#/components/schemas/ArrayAppConfigOption'
-          type: array
-        maxElements:
-          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
-          type:
-          - 'null'
-          - integer
-        minElements:
-          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
-          type:
-          - 'null'
-          - integer
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    BooleanAppConfigSpec:
-      description: Specifies that an app configuration field should accept a boolean value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    WebhookApp:
-      description: The Benchling App the webhook was delivered to.
-      properties:
-        id:
-          description: API ID of the app.
-          examples:
-          - app_1jdbvuo2740aslk
-          type: string
+        value:
+          $ref: '#/components/schemas/AnyType'
       required:
-      - id
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
+      - value
       type: object
     JsonAppConfigSpec:
       description: Specifies that an app configuration field should accept a JSON value.
@@ -646,15 +662,314 @@ components:
           - 'null'
           - boolean
       type: object
-    DnaOligoPaginatedList:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DnaOligoSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    AppConfigFieldDefinition:
+      description: 'Defines a field within an app configuration that references schema fields. Specifies the
+
+        field name, type, whether it accepts multiple values, and whether it is required.'
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        isMulti:
+          description: Whether the field must be multi-valued — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        isRequired:
+          description: Whether the field must be required — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          description: Type constraint for the field — null means any type is acceptable.
+          enum:
+          - DNA_SEQUENCE_LINK
+          - AA_SEQUENCE_LINK
+          - CUSTOM_ENTITY_LINK
+          - ENTITY_LINK
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - DROPDOWN
+          - PART_LINK
+          - AA_PART_LINK
+          - TRANSLATION_LINK
+          - BLOB_LINK
+          - TEXT
+          - LONG_TEXT
+          - BATCH_LINK
+          - STORAGE_LINK
+          - ENTRY_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BOOLEAN
+          - FLOAT
+          - INTEGER
+          - DATETIME
+          - DATE
+          - JSON
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              mapping:
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
+              propertyName: __typename
+          type: array
+      type: object
+    DocumentLikeRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DateAppConfigSpec:
+      description: Specifies that an app configuration field should accept a date value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    ResourceAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a Benchling object instance.
+
+        The type field identifies the kind of object required, matching the BenchlingAppType
+
+        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
+
+        reference types with no additional spec constraints beyond requiredConfig. For schema
+
+        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DnaOligo:
+      allOf:
+      - $ref: '#/components/schemas/IDnaOligo'
+      - description: 'Represents a short single-stranded DNA oligonucleotide in Benchling''s molecular biology
+
+          platform. DNA oligos are typically synthetic sequences used as primers for PCR, probes
+
+          for hybridization assays, or components in cloning workflows. Each oligo stores its
+
+          nucleotide base sequence, annotations for features of interest, and any chemical
+
+          modifications (see ModifiedNucleotide) such as phosphorothioate backbones or fluorescent
+
+          labels. Oligos can be registered in the Registry with unique identifiers, organized in
+
+          folders, and linked to other entities via schema fields. Unlike DnaSequence, oligos are
+
+          specifically designed for shorter, synthesizable sequences. Also referred to as primers
+
+          or probes depending on their application.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            oneOf:
+            - $ref: '#/components/schemas/PrincipalRef'
+            - type: 'null'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    PrincipalUnpaginatedList:
       additionalProperties: false
       properties:
         items:
           items:
-            $ref: '#/components/schemas/DnaOligo'
+            $ref: '#/components/schemas/Principal'
           type: array
-        nextToken:
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
           type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    DropdownAppConfigSpec:
+      description: Specifies that an app configuration field should be a dropdown with predefined options.
+      properties:
+        __typename:
+          type: string
+        options:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigDropdownOption'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
       type: object
     DnaOligoCreatedWebhookV3:
       allOf:
@@ -669,100 +984,6 @@ components:
         - type
         type: object
       description: Message body of a `v3.dnaOligo.created` event.
-    DateValue:
-      description: A type that represents date values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The date value.
-          format: date
-          type: string
-      type: object
-    CreateDnaOligoInput:
-      additionalProperties: false
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        annotations:
-          description: Annotations on the Oligo.
-          items:
-            $ref: '#/components/schemas/OligoAnnotationInput'
-          type: array
-        authorIds:
-          items:
-            type: string
-          type: array
-        bases:
-          description: Bases of the Oligo.
-          type: string
-        customFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          description: Custom fields set on the Oligo.
-          type: object
-        customNotation:
-          type: string
-        customNotationId:
-          type: string
-        entityRegistryId:
-          description: Registry ID of the Oligo if registered.
-          type: string
-        folderId:
-          type: string
-        helm:
-          type: string
-        name:
-          description: Name of the Oligo.
-          type: string
-        namingStrategy:
-          enum:
-          - NEW_IDS
-          - IDS_FROM_NAMES
-          - DELETE_NAMES
-          - SET_FROM_NAME_PARTS
-          - REPLACE_NAMES_FROM_PARTS
-          - KEEP_NAMES
-          - REPLACE_ID_AND_NAME_FROM_PARTS
-          type: string
-        registryId:
-          type:
-          - 'null'
-          - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          type: string
-      required:
-      - folderId
-      - name
-      type: object
-    DnaOligoUpdatedWebhookV3:
-      allOf:
-      - $ref: '#/components/schemas/V3UpdateEventBase'
-      - properties:
-          type:
-            description: The event type.
-            enum:
-            - v3.dnaOligo.updated
-            type: string
-        required:
-        - type
-        type: object
-      description: Message body of a `v3.dnaOligo.updated` event.
-    EntitySchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     SchemaAppConfigSpec:
       description: 'Specifies that an app configuration field should reference one of the schema types
 
@@ -830,6 +1051,105 @@ components:
           - 'null'
           - string
       type: object
+    EntitySchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference an entity schema.
+
+        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        subtype:
+          description: 'Optional subtype constraint — if present, the referenced schema must be of this
+
+            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
+          enum:
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    DnaOligoCreatedWebhookEnvelopeV3:
+      allOf:
+      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
+      - properties:
+          message:
+            $ref: '#/components/schemas/DnaOligoCreatedWebhookV3'
+        required:
+        - message
+        type: object
+      description: Request body Benchling sends for a `v3.dnaOligo.created` event.
+    SchemaFieldDefinitionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RegistrationOrigin:
+      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
+
+        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
+
+        providing traceability back to the original experimental context. The `registeredAt` timestamp
+
+        records when the registration occurred. This information helps scientists understand where
+
+        registered entities came from and when they were added to the registry.'
+      properties:
+        __typename:
+          type: string
+        originEntry:
+          oneOf:
+          - $ref: '#/components/schemas/DocumentLikeRef'
+          - type: 'null'
+        registeredAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+      type: object
+    WebhookApp:
+      description: The Benchling App the webhook was delivered to.
+      properties:
+        id:
+          description: API ID of the app.
+          examples:
+          - app_1jdbvuo2740aslk
+          type: string
+      required:
+      - id
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Attachment, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, OligoConjugate, OligoDuplex, WellPlate, MatrixPlate, Protein, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
     ServicePrincipal:
       description: 'Represents a non-human identity used for system integrations and automated processes
 
@@ -861,23 +1181,151 @@ components:
           - 'null'
           - string
       type: object
-    IntegerValue:
-      description: A type that represents integer values.
+    AppHomepageFeatureSpec:
+      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
+
+        the Benchling application for the app''s functionality.'
       properties:
         __typename:
           type: string
-        value:
-          description: The integer value.
-          type: integer
+        featureId:
+          type: string
+        name:
+          type: string
       type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+    CreateDnaOligoInput:
+      additionalProperties: false
+      example:
+        annotations:
+        - color: '#84B0DC'
+          end: 8
+          name: Binding site
+          notes: 5' binding region
+          start: 0
+          type: primer_bind
+        bases: ATCGATCG
+        folderId: lib_o2thOLlq
+        name: Forward primer 1
+        schemaFields:
+          target_gene:
+            value: BRCA1
+        schemaId: ts_o2thOLlq
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        annotations:
+          description: Annotations on the Oligo.
+          items:
+            $ref: '#/components/schemas/OligoAnnotationInput'
+          type: array
+        authorIds:
+          items:
+            type: string
+          type: array
+        bases:
+          description: Bases of the Oligo. Mutually exclusive with `helm` and `customNotation`.
+          type: string
+        customFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          description: Custom fields set on the Oligo.
+          type: object
+        customNotation:
+          description: Sequence in a vendor-specific custom notation syntax. Requires custom syntaxes to be enabled. When `customNotation` is set, `customNotationId` is required. Mutually exclusive with `bases` and `helm`.
+          type: string
+        customNotationId:
+          description: ID of the custom notation syntax used to interpret `customNotation`. When `customNotation` is set, `customNotationId` is required; omit both when using `bases` or `helm`.
+          type: string
+        entityRegistryId:
+          description: Registry ID to assign to the entity. If one is specified, the labeling_strategy must be unspecified.
+          type: string
+        folderId:
+          type: string
+        helm:
+          description: HELM notation for the oligo sequence and chemical modifications. Requires the modified nucleotides feature to be enabled. Mutually exclusive with `bases` and `customNotation`.
+          type: string
+        name:
+          description: Name of the item.
+          type: string
+        namingStrategy:
+          description: Strategy to use for labeling the item in the registry. If one is specified, the entity_registry_id must be unspecified.
+          enum:
+          - NEW_IDS
+          - IDS_FROM_NAMES
+          - DELETE_NAMES
+          - SET_FROM_NAME_PARTS
+          - REPLACE_NAMES_FROM_PARTS
+          - KEEP_NAMES
+          - REPLACE_ID_AND_NAME_FROM_PARTS
+          type: string
+        registryId:
+          description: A not null value means the entity should be registered. If not null, the value must match the registry of the item's schema.
+          type:
+          - 'null'
+          - string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          type: string
+      required:
+      - folderId
+      - name
+      type: object
+    ArrayAppConfigSpec:
+      description: Specifies that an app configuration field should accept an array of values.
       properties:
         __typename:
           type: string
-        value:
+        elementDefinition:
+          description: Defines the named config options allowed within this array and their type constraints.
           items:
-            anyOf:
+            $ref: '#/components/schemas/ArrayAppConfigOption'
+          type: array
+        maxElements:
+          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
+          type:
+          - 'null'
+          - integer
+        minElements:
+          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
+          type:
+          - 'null'
+          - integer
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    SchemaFieldValue:
+      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
+
+        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
+
+        date, or link to another object). The value may be null if no value has been set. Used within
+
+        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
+
+        custom field values defined by the object''s schema.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinition:
+          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
+        id:
+          type: string
+        linkedEntityId:
+          type:
+          - 'null'
+          - string
+        value:
+          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
+          oneOf:
+          - anyOf:
             - $ref: '#/components/schemas/BooleanValue'
             - $ref: '#/components/schemas/DateTimeValue'
             - $ref: '#/components/schemas/DateValue'
@@ -888,10 +1336,22 @@ components:
             - $ref: '#/components/schemas/ObjectLinkListValue'
             - $ref: '#/components/schemas/TextAndUrlValue'
             - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            - $ref: '#/components/schemas/ArrayValue'
             discriminator:
+              mapping:
+                ArrayValue: '#/components/schemas/ArrayValue'
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
               propertyName: __typename
-          type: array
+          - type: 'null'
       type: object
     AppMessageSubscription:
       description: 'Represents an app''s subscription to a specific event type, specifying the event type and
@@ -954,200 +1414,17 @@ components:
           - V3_RUN_CREATED
           type: string
       type: object
-    OligoAnnotationInput:
+    CustomFieldInput:
       additionalProperties: false
       properties:
-        color:
-          description: Color will be set at random if not specified.
-          type: string
-        customFields:
-          items:
-            $ref: '#/components/schemas/CustomFieldInput'
-          type: array
-        end:
-          type: integer
         name:
+          description: Name of the custom field.
           type: string
-        notes:
-          description: Field will be set to an empty string if not specified.
-          type: string
-        start:
-          type: integer
-        strand:
-          description: Strand direction. Only forward strand is supported. Leaving the field empty or skipping it will mark the Oligo as Strandless.
-          enum:
-          - FORWARD
-          - null
-          type:
-          - 'null'
-          - string
-        type:
+        value:
+          description: Value of the custom field. Defaults to an empty string if omitted.
           type: string
       required:
       - name
-      - start
-      - end
-      - type
-      type: object
-    UpdateDnaOligoInputWithPathParams:
-      additionalProperties: false
-      properties:
-        aliases:
-          description: Array of aliases
-          items:
-            type: string
-          type: array
-        annotations:
-          description: Annotations on the Oligo.
-          items:
-            $ref: '#/components/schemas/OligoAnnotationInput'
-          type: array
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        authorIds:
-          items:
-            type: string
-          type: array
-        bases:
-          description: Bases of the Oligo.
-          type: string
-        customFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          description: Custom fields set on the Oligo.
-          type: object
-        customNotation:
-          type: string
-        customNotationId:
-          type: string
-        entityRegistryId:
-          description: Registry ID of the Oligo if registered.
-          type: string
-        folderId:
-          type: string
-        helm:
-          type: string
-        id:
-          type: string
-        name:
-          description: Name of the Oligo.
-          type: string
-        namingStrategy:
-          enum:
-          - NEW_IDS
-          - IDS_FROM_NAMES
-          - DELETE_NAMES
-          - SET_FROM_NAME_PARTS
-          - REPLACE_NAMES_FROM_PARTS
-          - KEEP_NAMES
-          - REPLACE_ID_AND_NAME_FROM_PARTS
-          type: string
-        registryId:
-          type:
-          - 'null'
-          - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          type: string
-      required:
-      - id
-      type: object
-    WorkflowTaskSchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a workflow task schema.
-
-        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        output:
-          description: Output field definitions for the workflow task schema.
-          oneOf:
-          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    TextAndUrlValue:
-      description: A type that represents text (string) values with an associated URL.
-      properties:
-        __typename:
-          type: string
-        url:
-          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    AssayRunFeatureSpec:
-      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
-
-        lab automation run data.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ObjectLinkValue:
-      description: A type that represents links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          $ref: '#/components/schemas/ObjectRef'
-          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
-      type: object
-    DateAppConfigSpec:
-      description: Specifies that an app configuration field should accept a date value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
       type: object
     V3UpdateEventBase:
       allOf:
@@ -1165,6 +1442,117 @@ components:
         - properties
         type: object
       description: Fields common to every v3 update event message.
+    UpdateDnaOligoInputWithPathParams:
+      additionalProperties: false
+      example:
+        annotations:
+        - color: '#00FF00'
+          end: 7
+          name: Updated binding site
+          start: 1
+          type: primer_bind
+        bases: GATTACA
+        id: seq_a1B2c3D4
+        name: Updated forward primer
+      properties:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the entity but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        annotations:
+          description: Annotations on the Oligo.
+          items:
+            $ref: '#/components/schemas/OligoAnnotationInput'
+          type: array
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        authorIds:
+          items:
+            type: string
+          type: array
+        bases:
+          description: Bases of the Oligo. Mutually exclusive with `helm` and `customNotation`.
+          type: string
+        customFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          description: Custom fields set on the Oligo.
+          type: object
+        customNotation:
+          description: Sequence in a vendor-specific custom notation syntax. Requires custom syntaxes to be enabled. When `customNotation` is set, `customNotationId` is required. Mutually exclusive with `bases` and `helm`.
+          type: string
+        customNotationId:
+          description: ID of the custom notation syntax used to interpret `customNotation`. When `customNotation` is set, `customNotationId` is required; omit both when using `bases` or `helm`.
+          type: string
+        entityRegistryId:
+          description: Registry ID to assign to the entity. When registering, specifying this value sets the registry ID of the entity. When already registered, specifying this value updates the entity's registry ID. If set, naming_strategy must be unspecified.
+          type: string
+        folderId:
+          type: string
+        helm:
+          description: HELM notation for the oligo sequence and chemical modifications. Requires the modified nucleotides feature to be enabled. Mutually exclusive with `bases` and `customNotation`.
+          type: string
+        id:
+          description: API identifier of the registry item to update.
+          type: string
+        name:
+          description: Name of the item.
+          type: string
+        namingStrategy:
+          description: Strategy to use for labeling the item in the registry if registering. If one is specified, the entity_registry_id must be unspecified.
+          enum:
+          - NEW_IDS
+          - IDS_FROM_NAMES
+          - DELETE_NAMES
+          - SET_FROM_NAME_PARTS
+          - REPLACE_NAMES_FROM_PARTS
+          - KEEP_NAMES
+          - REPLACE_ID_AND_NAME_FROM_PARTS
+          type: string
+        registryId:
+          description: A not null value means the entity should be registered. A null value means it should be unregistered. If not null, the value must match the registry of the item's schema.
+          type:
+          - 'null'
+          - string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          type: string
+      required:
+      - id
+      type: object
+    AppConfigDropdownOption:
+      description: Defines an option within a dropdown-type app configuration field.
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    FolderRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     ModifiedNucleotide:
       description: 'Represents a chemically modified nucleotide at a specific position in an oligonucleotide
 
@@ -1174,7 +1562,7 @@ components:
 
         2''-O-methyl sugars for stability, phosphorothioate backbones for nuclease resistance, or
 
-        modified bases for binding affinity. Used in NucleotideSimplePolymer to capture the
+        modified bases for binding affinity. Exposed on nucleotide sequence entities to capture the
 
         modification pattern of therapeutic oligonucleotides.'
       properties:
@@ -1205,21 +1593,125 @@ components:
           $ref: '#/components/schemas/NucleotideMonomerRef'
           description: The sugar monomer for the modification.
       type: object
-    SchemaFieldDefinitionRef:
+    UpdateDnaOligoInput:
+      additionalProperties: false
+      example:
+        annotations:
+        - color: '#00FF00'
+          end: 7
+          name: Updated binding site
+          start: 1
+          type: primer_bind
+        bases: GATTACA
+        name: Updated forward primer
       properties:
-        __typename:
+        aliases:
+          description: Array of aliases
+          items:
+            type: string
+          type: array
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the entity but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        annotations:
+          description: Annotations on the Oligo.
+          items:
+            $ref: '#/components/schemas/OligoAnnotationInput'
+          type: array
+        archiveReason:
           type: string
-        id:
-          format: api_id
+        archived:
+          type: boolean
+        authorIds:
+          items:
+            type: string
+          type: array
+        bases:
+          description: Bases of the Oligo. Mutually exclusive with `helm` and `customNotation`.
+          type: string
+        customFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          description: Custom fields set on the Oligo.
+          type: object
+        customNotation:
+          description: Sequence in a vendor-specific custom notation syntax. Requires custom syntaxes to be enabled. When `customNotation` is set, `customNotationId` is required. Mutually exclusive with `bases` and `helm`.
+          type: string
+        customNotationId:
+          description: ID of the custom notation syntax used to interpret `customNotation`. When `customNotation` is set, `customNotationId` is required; omit both when using `bases` or `helm`.
+          type: string
+        entityRegistryId:
+          description: Registry ID to assign to the entity. When registering, specifying this value sets the registry ID of the entity. When already registered, specifying this value updates the entity's registry ID. If set, naming_strategy must be unspecified.
+          type: string
+        folderId:
+          type: string
+        helm:
+          description: HELM notation for the oligo sequence and chemical modifications. Requires the modified nucleotides feature to be enabled. Mutually exclusive with `bases` and `customNotation`.
+          type: string
+        name:
+          description: Name of the item.
+          type: string
+        namingStrategy:
+          description: Strategy to use for labeling the item in the registry if registering. If one is specified, the entity_registry_id must be unspecified.
+          enum:
+          - NEW_IDS
+          - IDS_FROM_NAMES
+          - DELETE_NAMES
+          - SET_FROM_NAME_PARTS
+          - REPLACE_NAMES_FROM_PARTS
+          - KEEP_NAMES
+          - REPLACE_ID_AND_NAME_FROM_PARTS
+          type: string
+        registryId:
+          description: A not null value means the entity should be registered. A null value means it should be unregistered. If not null, the value must match the registry of the item's schema.
+          type:
+          - 'null'
+          - string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
           type: string
       type: object
-    DocumentLikeRef:
+    DnaOligoUpdatedWebhookEnvelopeV3:
+      allOf:
+      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
+      - properties:
+          message:
+            $ref: '#/components/schemas/DnaOligoUpdatedWebhookV3'
+        required:
+        - message
+        type: object
+      description: Request body Benchling sends for a `v3.dnaOligo.updated` event.
+    DnaOligoPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DnaOligo'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    FloatAppConfigSpec:
+      description: Specifies that an app configuration field should accept a floating-point number.
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
-          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these floats.
+          oneOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
       type: object
     V3EventBase:
       description: Fields common to every v3 event message.
@@ -1260,230 +1752,66 @@ components:
       - stability
       - deprecated
       type: object
-    CustomFieldInput:
+    ModifiedNucleotidePaginatedList:
       additionalProperties: false
       properties:
-        name:
-          type: string
-        value:
-          type: string
-      required:
-      - name
-      type: object
-    UpdateDnaOligoInput:
-      additionalProperties: false
-      properties:
-        aliases:
-          description: Array of aliases
+        items:
           items:
-            type: string
+            $ref: '#/components/schemas/ModifiedNucleotide'
           type: array
-        annotations:
-          description: Annotations on the Oligo.
-          items:
-            $ref: '#/components/schemas/OligoAnnotationInput'
-          type: array
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        authorIds:
-          items:
-            type: string
-          type: array
-        bases:
-          description: Bases of the Oligo.
-          type: string
-        customFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          description: Custom fields set on the Oligo.
-          type: object
-        customNotation:
-          type: string
-        customNotationId:
-          type: string
-        entityRegistryId:
-          description: Registry ID of the Oligo if registered.
-          type: string
-        folderId:
-          type: string
-        helm:
-          type: string
-        name:
-          description: Name of the Oligo.
-          type: string
-        namingStrategy:
-          enum:
-          - NEW_IDS
-          - IDS_FROM_NAMES
-          - DELETE_NAMES
-          - SET_FROM_NAME_PARTS
-          - REPLACE_NAMES_FROM_PARTS
-          - KEEP_NAMES
-          - REPLACE_ID_AND_NAME_FROM_PARTS
-          type: string
-        registryId:
+        nextToken:
           type:
-          - 'null'
           - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          type: string
+          - 'null'
       type: object
-    IntegerAppConfigSpec:
-      description: Specifies that an app configuration field should accept an integer value.
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
       properties:
         __typename:
           type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these integers.
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    WorkflowTaskSchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a workflow task schema.
+
+        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
           oneOf:
           - items:
-              type: integer
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
             type: array
+          - type: 'null'
+        output:
+          description: Output field definitions for the workflow task schema.
+          oneOf:
+          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
           - type: 'null'
         requiredConfig:
           type:
           - 'null'
           - boolean
-      type: object
-    NucleotideMonomerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ArrayAppConfigOption:
-      description: 'A config option nested within an array-type app configuration field. Structurally
-
-        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
-
-        accepts the same config types as the top level except nested arrays (see
-
-        ArrayAppConfigElementSpec).'
-      properties:
-        __typename:
-          type: string
-        configSpec:
-          anyOf:
-          - $ref: '#/components/schemas/BooleanAppConfigSpec'
-          - $ref: '#/components/schemas/IntegerAppConfigSpec'
-          - $ref: '#/components/schemas/FloatAppConfigSpec'
-          - $ref: '#/components/schemas/TextAppConfigSpec'
-          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
-          - $ref: '#/components/schemas/DateAppConfigSpec'
-          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
-          - $ref: '#/components/schemas/JsonAppConfigSpec'
-          - $ref: '#/components/schemas/DropdownAppConfigSpec'
-          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
-          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
-          - $ref: '#/components/schemas/SchemaAppConfigSpec'
-          - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
-          discriminator:
-            propertyName: __typename
-        description:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-      type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
-          type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
-          type:
-          - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
-          type:
-          - 'null'
-          - string
-      type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
-          items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
-          type: array
-      type: object
-    ResourceAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a Benchling object instance.
-
-        The type field identifies the kind of object required, matching the BenchlingAppType
-
-        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
-
-        reference types with no additional spec constraints beyond requiredConfig. For schema
-
-        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
-          type:
-          - 'null'
-          - string
       type: object
     WebhookEnvelopeBaseV0:
       description: Fields common to every webhook request body. The event itself is carried in the `message` property of the event-specific payload.
@@ -1514,183 +1842,7 @@ components:
       - app
       - appDefinition
       type: object
-    DateTimeAppConfigSpec:
-      description: Specifies that an app configuration field should accept a datetime value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    EntitySchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference an entity schema.
-
-        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        subtype:
-          description: 'Optional subtype constraint — if present, the referenced schema must be of this
-
-            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
-          enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    AnyType: {}
-    ProjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AppConfigFieldDefinition:
-      description: 'Defines a field within an app configuration that references schema fields. Specifies the
-
-        field name, type, whether it accepts multiple values, and whether it is required.'
-      properties:
-        __typename:
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        isMulti:
-          description: Whether the field must be multi-valued — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        isRequired:
-          description: Whether the field must be required — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        name:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          description: Type constraint for the field — null means any type is acceptable.
-          enum:
-          - DNA_SEQUENCE_LINK
-          - AA_SEQUENCE_LINK
-          - CUSTOM_ENTITY_LINK
-          - ENTITY_LINK
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - DROPDOWN
-          - PART_LINK
-          - AA_PART_LINK
-          - TRANSLATION_LINK
-          - BLOB_LINK
-          - TEXT
-          - LONG_TEXT
-          - BATCH_LINK
-          - STORAGE_LINK
-          - ENTRY_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BOOLEAN
-          - FLOAT
-          - INTEGER
-          - DATETIME
-          - DATE
-          - JSON
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    CustomField:
-      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
-
-        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
-
-        datasets, and other Benchling objects without modifying their schemas. Objects that can
-
-        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
-
-        custom fields are not validated against a schema and can be freely added or modified.'
-      properties:
-        __typename:
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    SchemaFieldValue:
-      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
-
-        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
-
-        date, or link to another object). The value may be null if no value has been set. Used within
-
-        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
-
-        custom field values defined by the object''s schema.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinition:
-          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
-        id:
-          type: string
-        linkedEntityId:
-          type:
-          - 'null'
-          - string
-        value:
-          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
-          oneOf:
-          - anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            - $ref: '#/components/schemas/ArrayValue'
-            discriminator:
-              propertyName: __typename
-          - type: 'null'
-      type: object
-    GeneralError:
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -1698,6 +1850,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -1714,25 +1868,27 @@ components:
       - status
       - instance
       type: object
-    Principal:
-      anyOf:
-      - $ref: '#/components/schemas/AppInstallation'
-      - $ref: '#/components/schemas/LegacyAppInstallation'
-      - $ref: '#/components/schemas/ServicePrincipal'
-      - $ref: '#/components/schemas/User'
-      discriminator:
-        propertyName: __typename
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
       type: object
-    DnaOligoCreatedWebhookEnvelopeV3:
-      allOf:
-      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
-      - properties:
-          message:
-            $ref: '#/components/schemas/DnaOligoCreatedWebhookV3'
-        required:
-        - message
-        type: object
-      description: Request body Benchling sends for a `v3.dnaOligo.created` event.
+    NucleotideAnnotationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/NucleotideAnnotation'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
     AppConfigOption:
       description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
 
@@ -1758,6 +1914,21 @@ components:
           - $ref: '#/components/schemas/ResourceAppConfigSpec'
           description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
           discriminator:
+            mapping:
+              ArrayAppConfigSpec: '#/components/schemas/ArrayAppConfigSpec'
+              BooleanAppConfigSpec: '#/components/schemas/BooleanAppConfigSpec'
+              DateAppConfigSpec: '#/components/schemas/DateAppConfigSpec'
+              DateTimeAppConfigSpec: '#/components/schemas/DateTimeAppConfigSpec'
+              DropdownAppConfigSpec: '#/components/schemas/DropdownAppConfigSpec'
+              EntitySchemaAppConfigSpec: '#/components/schemas/EntitySchemaAppConfigSpec'
+              FloatAppConfigSpec: '#/components/schemas/FloatAppConfigSpec'
+              IntegerAppConfigSpec: '#/components/schemas/IntegerAppConfigSpec'
+              JsonAppConfigSpec: '#/components/schemas/JsonAppConfigSpec'
+              ResourceAppConfigSpec: '#/components/schemas/ResourceAppConfigSpec'
+              SchemaAppConfigSpec: '#/components/schemas/SchemaAppConfigSpec'
+              SecureTextAppConfigSpec: '#/components/schemas/SecureTextAppConfigSpec'
+              TextAppConfigSpec: '#/components/schemas/TextAppConfigSpec'
+              WorkflowTaskSchemaAppConfigSpec: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
             propertyName: __typename
         description:
           type:
@@ -1766,141 +1937,32 @@ components:
         name:
           type: string
       type: object
-    AppHomepageFeatureSpec:
-      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
-
-        the Benchling application for the app''s functionality.'
+    DateTimeAppConfigSpec:
+      description: Specifies that an app configuration field should accept a datetime value.
       properties:
         __typename:
           type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    WebhookAppDefinition:
-      description: The app definition the receiving app was installed from.
-      properties:
-        id:
-          description: API ID of the app definition.
-          examples:
-          - appdef_1jdbvuo2740aslk
+        requiredConfig:
           type:
           - 'null'
-          - string
-        versionNumber:
-          description: Version of the app definition the receiving app is installed at.
-          examples:
-          - 0.0.1
-          type: string
-      required:
-      - id
-      - versionNumber
+          - boolean
       type: object
-    DnaOligo:
-      allOf:
-      - $ref: '#/components/schemas/IDnaOligo'
-      - description: 'Represents a short single-stranded DNA oligonucleotide in Benchling''s molecular biology
-
-          platform. DNA oligos are typically synthetic sequences used as primers for PCR, probes
-
-          for hybridization assays, or components in cloning workflows. Each oligo stores its
-
-          nucleotide base sequence, annotations for features of interest, and any chemical
-
-          modifications (see ModifiedNucleotide) such as phosphorothioate backbones or fluorescent
-
-          labels. Oligos can be registered in the Registry with unique identifiers, organized in
-
-          folders, and linked to other entities via schema fields. Unlike DnaSequence, oligos are
-
-          specifically designed for shorter, synthesizable sequences. Also referred to as primers
-
-          or probes depending on their application.'
-        properties:
-          __typename:
-            type: string
-          authors:
-            oneOf:
-            - format: uri
-              type: string
-            - type: 'null'
-          creator:
-            oneOf:
-            - $ref: '#/components/schemas/PrincipalRef'
-            - type: 'null'
-          schemaFields:
-            oneOf:
-            - items:
-                $ref: '#/components/schemas/SchemaFieldValue'
-              type: array
-            - type: 'null'
-        type: object
-    TextAppConfigSpec:
-      description: Specifies that an app configuration field should accept a text string.
+    IntegerAppConfigSpec:
+      description: Specifies that an app configuration field should accept an integer value.
       properties:
         __typename:
           type: string
         enum:
-          description: Optional enum constraint — if present, the value must be one of these strings.
+          description: Optional enum constraint — if present, the value must be one of these integers.
           oneOf:
           - items:
-              type: string
+              type: integer
             type: array
           - type: 'null'
         requiredConfig:
           type:
           - 'null'
           - boolean
-      type: object
-    AppConfigWorkflowTaskSchemaOutput:
-      description: Defines the output field structure for a workflow task schema configuration.
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
-          type: string
-      type: object
-    FieldValueInput:
-      additionalProperties: false
-      properties:
-        value:
-          $ref: '#/components/schemas/AnyType'
-      required:
-      - value
-      type: object
-    JsonValue:
-      description: A type that represents JSON values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The JSON value.
-          type: object
-      type: object
-    ModifiedNucleotidePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ModifiedNucleotide'
-          type: array
-        nextToken:
-          type: string
       type: object
     IDnaOligo:
       properties:
@@ -1915,9 +1977,8 @@ components:
           - type: 'null'
         annotations:
           description: Annotations on the Oligo.
-          items:
-            $ref: '#/components/schemas/NucleotideAnnotation'
-          type: array
+          format: uri
+          type: string
         archiveReason:
           type:
           - 'null'
@@ -1926,6 +1987,9 @@ components:
           type: boolean
         bases:
           description: Bases of the Oligo.
+          type: string
+        canonicalHelm:
+          description: Normalized HELM notation for this oligo.
           type: string
         createdAt:
           description: DateTime the Oligo was created.
@@ -1941,12 +2005,14 @@ components:
             type: array
           - type: 'null'
         entityRegistryId:
-          description: Registry ID of the Oligo if registered.
+          description: 'The registry-assigned identifier for this item (e.g. its registry ID shown in the UI),
+
+            present only once the item has been registered. Null if the item is not registered.'
           type:
           - 'null'
           - string
         folder:
-          description: ID of the folder that contains the Oligo.
+          description: Folder containing the oligo.
           oneOf:
           - $ref: '#/components/schemas/FolderRef'
           - type: 'null'
@@ -1964,24 +2030,31 @@ components:
           format: uri
           type: string
         name:
-          description: Name of the Oligo.
+          description: Name of the item.
           type: string
         project:
           oneOf:
           - $ref: '#/components/schemas/ProjectRef'
           - type: 'null'
         registrationOrigin:
+          description: Provenance of this item's registration — where and when it was registered. Null if unregistered.
           oneOf:
           - $ref: '#/components/schemas/RegistrationOrigin'
           - type: 'null'
         registry:
-          description: Registry the Oligo is registered in.
+          description: The Registry this item belongs to, if registered. Null if unregistered.
           oneOf:
           - $ref: '#/components/schemas/RegistryRef'
           - type: 'null'
         schema:
+          deprecated: true
+          description: Use typedSchema instead, which returns the per-type schema.
           oneOf:
           - $ref: '#/components/schemas/EntitySchemaRef'
+          - type: 'null'
+        typedSchema:
+          oneOf:
+          - $ref: '#/components/schemas/DnaOligoSchemaRef'
           - type: 'null'
       type: object
     NucleotideAnnotation:
@@ -2002,23 +2075,38 @@ components:
         color:
           description: Hex color when displaying the annotation.
           type: string
+        customFields:
+          description: Custom fields on the annotation.
+          items:
+            $ref: '#/components/schemas/CustomField'
+          type: array
         end:
           description: '0-based exclusive end index. For ranges ending at the end of a circular sequence, this value is
 
             always the length of the sequence, never 0.'
           type: integer
+        id:
+          description: The ID of the nucleotide annotation.
+          type: string
         name:
           description: Name of the annotation.
           type: string
         notes:
           description: Text notes on the annotation.
           type: string
+        nucleotideSequence:
+          $ref: '#/components/schemas/NucleotideSequenceRef'
+          description: The nucleotide sequence that this annotation belongs to.
         start:
           description: 0-based inclusive start index.
           type: integer
         strand:
-          description: Strand for this annotation; 1 for forward strand, -1 for reverse strand, and 0 for no strand.
-          type: integer
+          description: Strand orientation for this annotation. One of `FORWARD`, `REVERSE`, or `STRANDLESS`.
+          enum:
+          - FORWARD
+          - REVERSE
+          - STRANDLESS
+          type: string
         type:
           description: Feature type of the annotation.
           type:
@@ -2035,136 +2123,19 @@ components:
       required:
       - fileId
       type: object
-    CanvasFeatureSpec:
-      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
-
-        entries or templates. Canvases allow apps to render custom interactive content.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        locations:
-          oneOf:
-          - items:
-              enum:
-              - ENTRY
-              - ENTRY_TEMPLATE
-              - APP_HOME
-              type: string
-            type: array
-          - type: 'null'
-        name:
-          type: string
-      type: object
-    RegistrationOrigin:
-      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
-
-        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
-
-        providing traceability back to the original experimental context. The `registeredAt` timestamp
-
-        records when the registration occurred. This information helps scientists understand where
-
-        registered entities came from and when they were added to the registry.'
-      properties:
-        __typename:
-          type: string
-        originEntry:
-          oneOf:
-          - $ref: '#/components/schemas/DocumentLikeRef'
-          - type: 'null'
-        registeredAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-      type: object
-    TextValue:
-      description: A type that represents text (string) values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    LegacyAppInstallation:
-      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
-
-        are configured directly with webhook URLs and configuration specs rather than through
-
-        app definition versions. This type is maintained for backward compatibility with older
-
-        app integrations. For new apps, see `AppInstallation`.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        configurationSpecs:
-          items:
-            $ref: '#/components/schemas/AppConfigOption'
-          type: array
-        configurationValues:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        description:
-          type:
-          - 'null'
-          - string
-        featureSpecs:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CanvasFeatureSpec'
-            - $ref: '#/components/schemas/AssayRunFeatureSpec'
-            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
-            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
-            discriminator:
-              propertyName: __typename
-          type: array
-        featureValues:
-          items:
-            $ref: '#/components/schemas/AssayRunFeatureValue'
-          type: array
-        id:
-          type: string
-        messageSubscriptions:
-          items:
-            $ref: '#/components/schemas/AppMessageSubscription'
-          type: array
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        publicKey:
-          type:
-          - 'null'
-          - string
-        versionNumber:
-          type:
-          - 'null'
-          - string
-        webhookUrl:
-          type:
-          - 'null'
-          - string
+    Principal:
+      anyOf:
+      - $ref: '#/components/schemas/AppInstallation'
+      - $ref: '#/components/schemas/LegacyAppInstallation'
+      - $ref: '#/components/schemas/ServicePrincipal'
+      - $ref: '#/components/schemas/User'
+      discriminator:
+        mapping:
+          AppInstallation: '#/components/schemas/AppInstallation'
+          LegacyAppInstallation: '#/components/schemas/LegacyAppInstallation'
+          ServicePrincipal: '#/components/schemas/ServicePrincipal'
+          User: '#/components/schemas/User'
+        propertyName: __typename
       type: object
     AppInstallation:
       description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
@@ -2207,28 +2178,43 @@ components:
         name:
           type: string
       type: object
-    FolderRef:
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+
+        tenant. The featureId identifies the feature from the app definition, and resourceId
+
+        references the tenant-specific resource it''s bound to.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
           type: string
+        resourceId:
+          type:
+          - 'null'
+          - string
       type: object
-    RegistryRef:
+    CanvasFeatureSpec:
+      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+
+        entries or templates. Canvases allow apps to render custom interactive content.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        featureId:
           type: string
-      type: object
-    ObjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
+        locations:
+          oneOf:
+          - items:
+              enum:
+              - ENTRY
+              - ENTRY_TEMPLATE
+              - APP_HOME
+              type: string
+            type: array
+          - type: 'null'
+        name:
           type: string
       type: object
     BooleanValue:
@@ -2240,32 +2226,34 @@ components:
           description: The boolean value.
           type: boolean
       type: object
-    DropdownAppConfigSpec:
-      description: Specifies that an app configuration field should be a dropdown with predefined options.
+    AnyType: {}
+    DecimalValue:
+      description: A type that represents decimal value as strings.
       properties:
         __typename:
           type: string
-        options:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigDropdownOption'
-            type: array
-          - type: 'null'
-        requiredConfig:
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
           type:
           - 'null'
-          - boolean
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
       type: object
-    DnaOligoUpdatedWebhookEnvelopeV3:
-      allOf:
-      - $ref: '#/components/schemas/WebhookEnvelopeBaseV0'
-      - properties:
-          message:
-            $ref: '#/components/schemas/DnaOligoUpdatedWebhookV3'
-        required:
-        - message
-        type: object
-      description: Request body Benchling sends for a `v3.dnaOligo.updated` event.
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
     User:
       description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
 
@@ -2310,32 +2298,287 @@ components:
         username:
           type: string
       type: object
-    AppConfigDropdownOption:
-      description: Defines an option within a dropdown-type app configuration field.
+    TextAppConfigSpec:
+      description: Specifies that an app configuration field should accept a text string.
       properties:
         __typename:
           type: string
-        description:
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these strings.
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DnaOligoUpdatedWebhookV3:
+      allOf:
+      - $ref: '#/components/schemas/V3UpdateEventBase'
+      - properties:
+          type:
+            description: The event type.
+            enum:
+            - v3.dnaOligo.updated
+            type: string
+        required:
+        - type
+        type: object
+      description: Message body of a `v3.dnaOligo.updated` event.
+    GeneralError:
+      properties:
+        detail:
           type:
           - 'null'
           - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OligoAnnotationInput:
+      additionalProperties: false
+      properties:
+        color:
+          description: Hex color when displaying the annotation. A random color is assigned if omitted.
+          type: string
+        customFields:
+          description: Custom fields on the annotation.
+          items:
+            $ref: '#/components/schemas/CustomFieldInput'
+          type: array
+        end:
+          description: 0-based exclusive end index. For ranges ending at the sequence end, API responses return `sequenceLength`, never `0`. On input, `sequenceLength` or `0` may be used.
+          type: integer
         name:
+          description: Name of the annotation.
+          type: string
+        notes:
+          description: Text notes on the annotation. Defaults to an empty string if omitted.
+          type: string
+        start:
+          description: 0-based inclusive start index.
+          type: integer
+        type:
+          description: Feature type of the annotation.
+          type: string
+      required:
+      - name
+      - start
+      - end
+      - type
+      type: object
+    NucleotideMonomerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    WebhookAppDefinition:
+      description: The app definition the receiving app was installed from.
+      properties:
+        id:
+          description: API ID of the app definition.
+          examples:
+          - appdef_1jdbvuo2740aslk
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          description: Version of the app definition the receiving app is installed at.
+          examples:
+          - 0.0.1
+          type: string
+      required:
+      - id
+      - versionNumber
+      type: object
+    NucleotideSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BooleanAppConfigSpec:
+      description: Specifies that an app configuration field should accept a boolean value.
+      properties:
+        __typename:
           type: string
         requiredConfig:
           type:
           - 'null'
           - boolean
       type: object
-  parameters:
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
           type: string
-        type: array
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    EntitySchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    ArrayAppConfigOption:
+      description: 'A config option nested within an array-type app configuration field. Structurally
+
+        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
+
+        accepts the same config types as the top level except nested arrays (see
+
+        ArrayAppConfigElementSpec).'
+      properties:
+        __typename:
+          type: string
+        configSpec:
+          anyOf:
+          - $ref: '#/components/schemas/BooleanAppConfigSpec'
+          - $ref: '#/components/schemas/IntegerAppConfigSpec'
+          - $ref: '#/components/schemas/FloatAppConfigSpec'
+          - $ref: '#/components/schemas/TextAppConfigSpec'
+          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
+          - $ref: '#/components/schemas/DateAppConfigSpec'
+          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
+          - $ref: '#/components/schemas/JsonAppConfigSpec'
+          - $ref: '#/components/schemas/DropdownAppConfigSpec'
+          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
+          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+          - $ref: '#/components/schemas/SchemaAppConfigSpec'
+          - $ref: '#/components/schemas/ResourceAppConfigSpec'
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          discriminator:
+            mapping:
+              BooleanAppConfigSpec: '#/components/schemas/BooleanAppConfigSpec'
+              DateAppConfigSpec: '#/components/schemas/DateAppConfigSpec'
+              DateTimeAppConfigSpec: '#/components/schemas/DateTimeAppConfigSpec'
+              DropdownAppConfigSpec: '#/components/schemas/DropdownAppConfigSpec'
+              EntitySchemaAppConfigSpec: '#/components/schemas/EntitySchemaAppConfigSpec'
+              FloatAppConfigSpec: '#/components/schemas/FloatAppConfigSpec'
+              IntegerAppConfigSpec: '#/components/schemas/IntegerAppConfigSpec'
+              JsonAppConfigSpec: '#/components/schemas/JsonAppConfigSpec'
+              ResourceAppConfigSpec: '#/components/schemas/ResourceAppConfigSpec'
+              SchemaAppConfigSpec: '#/components/schemas/SchemaAppConfigSpec'
+              SecureTextAppConfigSpec: '#/components/schemas/SecureTextAppConfigSpec'
+              TextAppConfigSpec: '#/components/schemas/TextAppConfigSpec'
+              WorkflowTaskSchemaAppConfigSpec: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+            propertyName: __typename
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    AppConfigWorkflowTaskSchemaOutput:
+      description: Defines the output field structure for a workflow task schema configuration.
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    SecureTextAppConfigSpec:
+      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
+
+        Used for sensitive data like API keys or credentials.'
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AssayRunFeatureSpec:
+      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+
+        lab automation run data.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
+          type: string
+      type: object
+  parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
     archiveReason.anyOf:
       description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
       explode: false
@@ -2346,6 +2589,173 @@ components:
           type: string
         maxItems: 10
         type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    authors.anyOf:
+      description: Restricts results to those whose author matches any of the specified user or author IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: authors.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    mentionedIn.anyOf:
+      description: Restricts results to items mentioned in entries matching any of the specified entry IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: mentionedIn.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    folder.eq:
+      description: ID of a folder. Restricts results to its direct children.
+      in: query
+      name: folder.eq
+      schema:
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    bases.anyOf:
+      description: Restricts results to those whose sequence exactly matches any of the specified DNA base sequences (case-insensitive, accounting for circular and reverse complement). Comma-separated list.
+      explode: false
+      in: query
+      name: bases.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    entityRegistryIds.anyOf:
+      description: Restricts results to those that match any of the specified entity registry IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: entityRegistryIds.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    fieldset.anyOf:
+      description: Restricts results to those whose schema implements any of the specified fieldset API IDs (custom schema interfaces). Comma-separated list.
+      explode: false
+      in: query
+      name: fieldset.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    registry.eq:
+      description: ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+      in: query
+      name: registry.eq
+      schema:
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    schema.eq:
+      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
+      in: query
+      name: schema.eq
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    schema.anyOf:
+      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: schema.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
     creator.anyOf:
       description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
       explode: false
@@ -2356,32 +2766,24 @@ components:
           type: string
         maxItems: 100
         type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: modifiedAt.gte
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
       schema:
         format: datetime
         type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    project.eq:
+      description: ID of a project. Restricts results to those in the project.
       in: query
-      name: modifiedAt.lt
+      name: project.eq
       schema:
-        format: datetime
-        type: string
-    schema.eq:
-      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
-      in: query
-      name: schema.eq
-      schema:
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
         type: string
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
@@ -2400,38 +2802,6 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    project.eq:
-      description: ID of a project. Restricts results to those in the project.
-      in: query
-      name: project.eq
-      schema:
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    registry.eq:
-      description: ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
-      in: query
-      name: registry.eq
-      schema:
-        type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
@@ -2442,137 +2812,56 @@ components:
           type: string
         maxItems: 100
         type: array
-    mentionedIn.anyOf:
-      description: Restricts results to items mentioned in entries matching any of the specified entry IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: mentionedIn.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    schema.anyOf:
-      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: schema.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    authors.anyOf:
-      description: Restricts results to those whose author matches any of the specified user or author IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: authors.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    fieldset.anyOf:
-      description: Restricts results to those whose schema implements any of the specified fieldset API IDs (custom schema interfaces). Comma-separated list.
-      explode: false
-      in: query
-      name: fieldset.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
   responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
-    BadRequest:
+    Conflict:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
+      description: Conflict
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

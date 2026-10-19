@@ -1,0 +1,682 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Document Part Unstructured Table API
+  version: 2.0.0
+  description: Represents an unstructured table embedded within a notebook entry or other document. Unstructured tables use freeform cells without schema-backed columns. Cells may contain text, formulas with evaluated values, formatting, and merged regions.
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: Represents an unstructured table embedded within a notebook entry or other document. Unstructured tables use freeform cells without schema-backed columns. Cells may contain text, formulas with evaluated values, formatting, and merged regions.
+  name: DocumentPartUnstructuredTable
+  x-bnch-organization: Benchling
+  x-displayName: Document Part Unstructured Table
+paths:
+  /document-part-unstructured-table/{document_part_unstructured_table_id}/rows/items:
+    get:
+      description: List UnstructuredTableRow items.
+      operationId: DocumentPartUnstructuredTable.rows.List
+      parameters:
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: ID of the DocumentPartUnstructuredTable.
+        in: path
+        name: document_part_unstructured_table_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnstructuredTableRowPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List UnstructuredTableRow items
+      tags:
+      - DocumentPartUnstructuredTable
+components:
+  schemas:
+    StringCellEvaluationValue:
+      description: Specifies a string evaluation value.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: Specifies the evaluated string value.
+          type: string
+      type: object
+    UnstructuredTableRowPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/UnstructuredTableRow'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UnsupportedCellEvaluationValue:
+      description: Specifies an evaluation value for types that cannot be represented in the current API. Use the cell input value as a fallback.
+      properties:
+        __typename:
+          type: string
+        errorReason:
+          description: Specifies the reason the evaluation value could not be represented.
+          type: string
+      type: object
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    UnstructuredTableRow:
+      description: Specifies a row within an unstructured table.
+      properties:
+        __typename:
+          type: string
+        cells:
+          description: Lists cells in the row in column order. A cell in a merged region reports its anchor's absolute coordinates, so the anchor may be on an earlier page than the cell.
+          items:
+            $ref: '#/components/schemas/TableCell'
+          type: array
+        documentPart:
+          $ref: '#/components/schemas/DocumentPartRef'
+          description: Specifies the document part that contains this row.
+        id:
+          description: Identifies the table row. The ID changes when rows are inserted or deleted above this row.
+          type: string
+        rowIndex:
+          description: Specifies the row's absolute position within the table, zero-based.
+          type: integer
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DateTimeCellEvaluationValue:
+      description: Specifies a datetime evaluation value.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: Specifies the evaluated datetime value.
+          format: datetime
+          type: string
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              mapping:
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
+              propertyName: __typename
+          type: array
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Attachment, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, OligoConjugate, OligoDuplex, WellPlate, MatrixPlate, Protein, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    NumberCellEvaluationValue:
+      description: Specifies a numeric evaluation value. Display formatting lives on TableCell.format.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: Specifies the evaluated numeric value, carrying the most precise representation available for the cell's typed value. Serialized as a string and never pre-formatted; use TableCell.format for display formatting.
+          format: decimal
+          type: string
+      type: object
+    BooleanCellEvaluationValue:
+      description: Specifies a boolean evaluation value.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: Specifies the evaluated boolean value.
+          type: boolean
+      type: object
+    DateCellEvaluationValue:
+      description: Specifies a date evaluation value.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: Specifies the evaluated date value.
+          format: date
+          type: string
+      type: object
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DocumentPartRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    ObjectLinkCellEvaluationValue:
+      description: 'The evaluation-value counterpart of ObjectLinkValue: a flat id/name pair for any
+
+        LinkableDomainObject a cell links to, which includes non-entity targets such as users, teams,
+
+        studies, inventory items, attachments, and dropdown options. Resolve inputValue to get the concrete type.'
+      properties:
+        __typename:
+          type: string
+        id:
+          description: Identifies the linked object.
+          type: string
+        name:
+          description: Specifies the display name of the linked entity.
+          type: string
+      type: object
+    TableCellFormat:
+      description: Specifies formatting properties applied to an entire table cell.
+      properties:
+        __typename:
+          type: string
+        alignment:
+          description: Specifies horizontal text alignment for the cell, when set.
+          enum:
+          - LEFT
+          - CENTER
+          - RIGHT
+          - null
+          type:
+          - 'null'
+          - string
+        backgroundColor:
+          description: Specifies the background color applied to the cell, when set.
+          type:
+          - 'null'
+          - string
+        foregroundColor:
+          description: Specifies the text color applied to the cell, when set.
+          type:
+          - 'null'
+          - string
+        link:
+          description: Specifies a hyperlink URL applied to the cell, when set.
+          type:
+          - 'null'
+          - string
+        precision:
+          description: Specifies the decimal precision used to display a numeric cell.
+          type:
+          - 'null'
+          - integer
+        properties:
+          description: Lists character style properties applied to the cell.
+          items:
+            enum:
+            - BOLD
+            - ITALIC
+            - UNDERLINE
+            - STRIKETHROUGH
+            - IMPORTANT
+            type: string
+          type: array
+        scientificNotation:
+          description: Specifies whether a numeric cell is displayed in scientific notation.
+          type:
+          - 'null'
+          - boolean
+      type: object
+    MergedCellAnchor:
+      description: Specifies coordinates of the anchor cell for a cell within a merged region.
+      properties:
+        __typename:
+          type: string
+        col:
+          description: Specifies the zero-based column index of the anchor cell.
+          type: integer
+        row:
+          description: Specifies the zero-based row index of the anchor cell.
+          type: integer
+      type: object
+    TableMergeRange:
+      description: Specifies the extent of a merged cell region, set on the anchor cell.
+      properties:
+        __typename:
+          type: string
+        mergeColSpan:
+          description: Specifies the number of columns in the merged region, including the anchor cell.
+          type: integer
+        mergeRowSpan:
+          description: Specifies the number of rows in the merged region, including the anchor cell.
+          type: integer
+      type: object
+    BooleanValue:
+      description: A type that represents boolean values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The boolean value.
+          type: boolean
+      type: object
+    ArrayCellEvaluationValue:
+      description: Specifies an array evaluation value containing multiple cell evaluation values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: Lists the evaluated values in the array.
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/StringCellEvaluationValue'
+            - $ref: '#/components/schemas/NumberCellEvaluationValue'
+            - $ref: '#/components/schemas/BooleanCellEvaluationValue'
+            - $ref: '#/components/schemas/DateCellEvaluationValue'
+            - $ref: '#/components/schemas/DateTimeCellEvaluationValue'
+            - $ref: '#/components/schemas/ObjectLinkCellEvaluationValue'
+            - $ref: '#/components/schemas/ArrayCellEvaluationValue'
+            - $ref: '#/components/schemas/UnsupportedCellEvaluationValue'
+            description: Union of StringCellEvaluationValue, NumberCellEvaluationValue, BooleanCellEvaluationValue, DateCellEvaluationValue, DateTimeCellEvaluationValue, ObjectLinkCellEvaluationValue, ArrayCellEvaluationValue, UnsupportedCellEvaluationValue
+            discriminator:
+              mapping:
+                ArrayCellEvaluationValue: '#/components/schemas/ArrayCellEvaluationValue'
+                BooleanCellEvaluationValue: '#/components/schemas/BooleanCellEvaluationValue'
+                DateCellEvaluationValue: '#/components/schemas/DateCellEvaluationValue'
+                DateTimeCellEvaluationValue: '#/components/schemas/DateTimeCellEvaluationValue'
+                NumberCellEvaluationValue: '#/components/schemas/NumberCellEvaluationValue'
+                ObjectLinkCellEvaluationValue: '#/components/schemas/ObjectLinkCellEvaluationValue'
+                StringCellEvaluationValue: '#/components/schemas/StringCellEvaluationValue'
+                UnsupportedCellEvaluationValue: '#/components/schemas/UnsupportedCellEvaluationValue'
+              propertyName: __typename
+          type: array
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    TableCell:
+      description: Specifies a cell within an unstructured table row. Cells may be standalone or participate in a merged region. The anchor cell holds the merged region span; other cells in the region reference the anchor cell coordinates.
+      properties:
+        __typename:
+          type: string
+        errors:
+          description: Lists evaluation and validation errors present on the cell. Inspect the error type on each error to distinguish evaluation failures from validation failures.
+          items:
+            $ref: '#/components/schemas/CellError'
+          type: array
+        evaluationValue:
+          description: Specifies the evaluated value computed by formula evaluation, when present. Read-only.
+          oneOf:
+          - anyOf:
+            - $ref: '#/components/schemas/StringCellEvaluationValue'
+            - $ref: '#/components/schemas/NumberCellEvaluationValue'
+            - $ref: '#/components/schemas/BooleanCellEvaluationValue'
+            - $ref: '#/components/schemas/DateCellEvaluationValue'
+            - $ref: '#/components/schemas/DateTimeCellEvaluationValue'
+            - $ref: '#/components/schemas/ObjectLinkCellEvaluationValue'
+            - $ref: '#/components/schemas/ArrayCellEvaluationValue'
+            - $ref: '#/components/schemas/UnsupportedCellEvaluationValue'
+            discriminator:
+              mapping:
+                ArrayCellEvaluationValue: '#/components/schemas/ArrayCellEvaluationValue'
+                BooleanCellEvaluationValue: '#/components/schemas/BooleanCellEvaluationValue'
+                DateCellEvaluationValue: '#/components/schemas/DateCellEvaluationValue'
+                DateTimeCellEvaluationValue: '#/components/schemas/DateTimeCellEvaluationValue'
+                NumberCellEvaluationValue: '#/components/schemas/NumberCellEvaluationValue'
+                ObjectLinkCellEvaluationValue: '#/components/schemas/ObjectLinkCellEvaluationValue'
+                StringCellEvaluationValue: '#/components/schemas/StringCellEvaluationValue'
+                UnsupportedCellEvaluationValue: '#/components/schemas/UnsupportedCellEvaluationValue'
+              propertyName: __typename
+          - type: 'null'
+        format:
+          description: Specifies formatting properties applied to the cell. Null when the cell has no formatting.
+          oneOf:
+          - $ref: '#/components/schemas/TableCellFormat'
+          - type: 'null'
+        inputValue:
+          anyOf:
+          - $ref: '#/components/schemas/BooleanValue'
+          - $ref: '#/components/schemas/DateTimeValue'
+          - $ref: '#/components/schemas/DateValue'
+          - $ref: '#/components/schemas/DecimalValue'
+          - $ref: '#/components/schemas/IntegerValue'
+          - $ref: '#/components/schemas/JsonValue'
+          - $ref: '#/components/schemas/ObjectLinkValue'
+          - $ref: '#/components/schemas/ObjectLinkListValue'
+          - $ref: '#/components/schemas/TextAndUrlValue'
+          - $ref: '#/components/schemas/TextValue'
+          - $ref: '#/components/schemas/ArrayValue'
+          description: Specifies the cell input value. For unstructured tables this is always a text value.
+          discriminator:
+            mapping:
+              ArrayValue: '#/components/schemas/ArrayValue'
+              BooleanValue: '#/components/schemas/BooleanValue'
+              DateTimeValue: '#/components/schemas/DateTimeValue'
+              DateValue: '#/components/schemas/DateValue'
+              DecimalValue: '#/components/schemas/DecimalValue'
+              IntegerValue: '#/components/schemas/IntegerValue'
+              JsonValue: '#/components/schemas/JsonValue'
+              ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+              ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+              TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+              TextValue: '#/components/schemas/TextValue'
+            propertyName: __typename
+        mergeRange:
+          description: Specifies the merged region span on the anchor cell. Present only on anchor cells.
+          oneOf:
+          - $ref: '#/components/schemas/TableMergeRange'
+          - type: 'null'
+        mergeRangeParent:
+          description: Specifies coordinates of the anchor cell. Present on cells within a merged region that are not the anchor.
+          oneOf:
+          - $ref: '#/components/schemas/MergedCellAnchor'
+          - type: 'null'
+        selectorId:
+          description: Specifies the dropdown selector identifier for this cell, when present. Match this value to selectorId on dropdown selectors defined on the document.
+          type:
+          - 'null'
+          - string
+      type: object
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
+    CellError:
+      description: Specifies a single error present on a table cell. The error type field distinguishes evaluation failures from validation failures; message is the error description.
+      properties:
+        __typename:
+          type: string
+        errorType:
+          description: Specifies whether the error is an evaluation failure or a validation failure.
+          enum:
+          - EVALUATION
+          - VALIDATION
+          type: string
+        message:
+          description: Specifies the error message.
+          type: string
+        type:
+          description: Specifies the display name for the specific error, such as reference error or value error. Populated for evaluation errors; null for validation errors.
+          type:
+          - 'null'
+          - string
+      type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
+  parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+  securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

@@ -31,10 +31,15 @@ tags:
     values.'
   name: DropdownOption
   x-bnch-organization: Benchling
+  x-displayName: Dropdown Option
 paths:
   /dropdown-option/items:
     get:
-      description: List DropdownOption items.
+      deprecated: true
+      description: 'List DropdownOption items.
+
+
+        DEPRECATION GUIDANCE: Access dropdown options through the parent Dropdown endpoints. Use GET /dropdown/{dropdown_id}/options/items to list options for a dropdown.'
       operationId: DropdownOption.List
       parameters:
       - $ref: '#/components/parameters/id.anyOf'
@@ -63,10 +68,13 @@ paths:
       summary: List DropdownOption items
       tags:
       - DropdownOption
-      x-bnch-rate-limit-tier: 4
   /dropdown-option/{dropdown_option_id}:
     get:
-      description: Get a single DropdownOption by ID.
+      deprecated: true
+      description: 'Get a single DropdownOption by ID.
+
+
+        DEPRECATION GUIDANCE: Access dropdown options through the parent Dropdown endpoints. Use GET /dropdown/{dropdown_id}/options/items to list options for a dropdown.'
       operationId: DropdownOption.Get
       parameters:
       - description: ID of the DropdownOption.
@@ -98,51 +106,9 @@ paths:
       summary: Get DropdownOption by ID
       tags:
       - DropdownOption
-      x-bnch-rate-limit-tier: 5
 components:
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
   schemas:
-    GeneralError:
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -150,6 +116,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -165,16 +133,6 @@ components:
       - detail
       - status
       - instance
-      type: object
-    DropdownOptionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/DropdownOption'
-          type: array
-        nextToken:
-          type: string
       type: object
     DropdownOption:
       description: 'An individual selectable value within a Dropdown. Each DropdownOption represents one valid
@@ -199,6 +157,44 @@ components:
           type: string
         name:
           type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DropdownOptionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DropdownOption'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
       type: object
     InternalServerError:
       properties:
@@ -226,25 +222,67 @@ components:
       - status
       - instance
       type: object
+  parameters:
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
   responses:
-    NotFound:
+    TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
     BadRequest:
       content:
         application/problem+json:
@@ -257,7 +295,18 @@ components:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

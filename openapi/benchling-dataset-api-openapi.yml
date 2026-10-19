@@ -25,7 +25,39 @@ tags:
     `DataFrame`.'
   name: Dataset
   x-bnch-organization: Benchling
+  x-displayName: Dataset
 paths:
+  /dataset:
+    post:
+      description: Create Dataset.
+      operationId: Dataset.Create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatasetInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create Dataset
+      tags:
+      - Dataset
   /dataset/items:
     get:
       description: List Dataset items.
@@ -37,7 +69,10 @@ paths:
       - $ref: '#/components/parameters/createdAt.gte'
       - $ref: '#/components/parameters/createdAt.lt'
       - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/folder.eq'
       - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/mentionedIn.anyOf'
       - $ref: '#/components/parameters/modifiedAt.gt'
       - $ref: '#/components/parameters/modifiedAt.gte'
       - $ref: '#/components/parameters/modifiedAt.lt'
@@ -58,12 +93,6 @@ paths:
           - createdAt:desc
           - modifiedAt:asc
           - modifiedAt:desc
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
           type: string
       responses:
         '200':
@@ -86,7 +115,6 @@ paths:
       summary: List Dataset items
       tags:
       - Dataset
-      x-bnch-rate-limit-tier: 4
   /dataset/{dataset_id}:
     get:
       description: Get a single Dataset by ID.
@@ -100,12 +128,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -127,9 +149,258 @@ paths:
       summary: Get Dataset by ID
       tags:
       - Dataset
-      x-bnch-rate-limit-tier: 5
+    patch:
+      description: Update Dataset.
+      operationId: Dataset.Update
+      parameters:
+      - description: ID of the Dataset.
+        in: path
+        name: dataset_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDatasetInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update Dataset
+      tags:
+      - Dataset
+  /dataset:batch-create:
+    post:
+      description: Batch create Dataset synchronously in one transaction. Maximum 25 items per request.
+      operationId: Dataset.BatchCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateDatasetInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Dataset'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create Dataset
+      tags:
+      - Dataset
+  /dataset:batch-update:
+    patch:
+      description: Batch update Dataset synchronously in one transaction. Maximum 25 items per request.
+      operationId: Dataset.BatchUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateDatasetInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Dataset'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update Dataset
+      tags:
+      - Dataset
+  /dataset:bulk-create:
+    post:
+      description: Bulk create Dataset.
+      operationId: Dataset.BulkCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create Dataset
+      tags:
+      - Dataset
+  /dataset:bulk-update:
+    patch:
+      description: Bulk update Dataset.
+      operationId: Dataset.BulkUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update Dataset
+      tags:
+      - Dataset
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -137,6 +408,22 @@ components:
       schema:
         format: datetime
         type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -145,22 +432,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -182,51 +453,26 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+    mentionedIn.anyOf:
+      description: Restricts results to items mentioned in entries matching any of the specified entry IDs. Comma-separated list.
       explode: false
       in: query
-      name: archiveReason.anyOf
+      name: mentionedIn.anyOf
       schema:
         items:
           type: string
-        maxItems: 10
+        maxItems: 100
         type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
+    folder.eq:
+      description: ID of a folder. Restricts results to its direct children.
       in: query
-      name: archived.anyOf
+      name: folder.eq
       schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
         type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -237,32 +483,30 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: creator.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
       in: query
-      name: pageSize
+      name: name.anyOf
       schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -271,14 +515,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -291,6 +536,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -298,13 +555,17 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   schemas:
-    PrincipalRef:
+    DatasetPaginatedList:
+      additionalProperties: false
       properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
+        items:
+          items:
+            $ref: '#/components/schemas/Dataset'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
       type: object
     InternalServerError:
       properties:
@@ -332,17 +593,53 @@ components:
       - status
       - instance
       type: object
-    DatasetPaginatedList:
-      additionalProperties: false
+    AsyncTaskLink:
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Dataset'
-          type: array
-        nextToken:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
           type: string
       type: object
-    GeneralError:
+    CreateDatasetInput:
+      additionalProperties: false
+      properties:
+        customFields:
+          type: object
+        dataFrameId:
+          type: string
+        folderId:
+          type: string
+        name:
+          type: string
+      required:
+      - name
+      - folderId
+      - dataFrameId
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -350,6 +647,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -366,13 +665,31 @@ components:
       - status
       - instance
       type: object
-    FolderRef:
+    GeneralError:
       properties:
-        __typename:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
           type: string
-        id:
-          format: api_id
+        invalidId:
           type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     Dataset:
       description: '`Dataset` stores non-schematized tabular data, with Benchling-aware column types.
@@ -384,19 +701,10 @@ components:
       properties:
         __typename:
           type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
         archiveReason:
           type:
           - 'null'
           - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
         archived:
           type: boolean
         createdAt:
@@ -404,11 +712,18 @@ components:
           type: string
         creator:
           $ref: '#/components/schemas/PrincipalRef'
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
         dataFrameId:
           type:
           - 'null'
           - string
         displayId:
+          description: A human-readable identifier for this dataset (e.g. "DATASET-1"). Automatically generated and unique within the tenant.
           type:
           - 'null'
           - string
@@ -424,7 +739,76 @@ components:
           - 'null'
           - string
       type: object
+    UpdateDatasetInput:
+      additionalProperties: false
+      properties:
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the object but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        customFields:
+          type: object
+        folderId:
+          type: string
+        name:
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    FolderRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    UpdateDatasetInputWithPathParams:
+      additionalProperties: false
+      properties:
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the object but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        customFields:
+          type: object
+        folderId:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      type: object
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

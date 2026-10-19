@@ -23,10 +23,17 @@ tags:
     when the link was created via `createdAt` and who created it via `creator`.'
   name: StudyItemAssociation
   x-bnch-organization: Benchling
+  x-displayName: Study Item Association
 paths:
   /study-item-association:
     post:
-      description: Create StudyItemAssociation.
+      description: 'Create a StudyItemAssociation.
+
+
+        ## Idempotency
+
+
+        If an association with the same `(studyId, itemId)` pair already exists, the request succeeds without creating a duplicate association.'
       operationId: StudyItemAssociation.Create
       requestBody:
         content:
@@ -46,6 +53,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -53,7 +62,6 @@ paths:
       summary: Create StudyItemAssociation
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 4
   /study-item-association/items:
     get:
       description: List StudyItemAssociation items.
@@ -100,7 +108,6 @@ paths:
       summary: List StudyItemAssociation items
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 4
   /study-item-association/{study_item_association_id}:
     delete:
       description: Delete StudyItemAssociation.
@@ -121,6 +128,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -128,7 +137,6 @@ paths:
       summary: Delete StudyItemAssociation
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 4
     get:
       description: Get a single StudyItemAssociation by ID.
       operationId: StudyItemAssociation.Get
@@ -162,10 +170,15 @@ paths:
       summary: Get StudyItemAssociation by ID
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 5
   /study-item-association:batch-create:
     post:
-      description: Batch create StudyItemAssociation synchronously in one transaction. Maximum 25 items per request.
+      description: 'Batch create StudyItemAssociation synchronously in one transaction. Maximum 25 items per request.
+
+
+        ## Idempotency
+
+
+        Inputs with a `(studyId, itemId)` pair that already exists, including duplicate pairs in the same request, are accepted and ignored. They do not produce an error or create a duplicate association.'
       operationId: StudyItemAssociation.BatchCreate
       requestBody:
         content:
@@ -203,6 +216,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -210,7 +225,6 @@ paths:
       summary: Batch create StudyItemAssociation
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 3
   /study-item-association:batch-delete:
     post:
       description: Batch delete StudyItemAssociation synchronously in one transaction. Maximum 25 items per request.
@@ -257,6 +271,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -264,10 +280,15 @@ paths:
       summary: Batch delete StudyItemAssociation
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 3
   /study-item-association:bulk-create:
     post:
-      description: Bulk create StudyItemAssociation.
+      description: 'Bulk create StudyItemAssociation asynchronously. Returns a task link that can be polled for the result.
+
+
+        ## Idempotency
+
+
+        Submitted inputs with a `(studyId, itemId)` pair that already exists, including duplicate pairs in the submitted items, are accepted and ignored. They do not produce an error or create a duplicate association.'
       operationId: StudyItemAssociation.BulkCreate
       requestBody:
         content:
@@ -287,6 +308,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -294,74 +317,28 @@ paths:
       summary: Bulk create StudyItemAssociation
       tags:
       - StudyItemAssociation
-      x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    StudyItemAssociationPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/StudyItemAssociation'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    StudyableRef:
+    StudyItemAssociation:
+      description: 'Represents the link between a Study and a Studyable item (such as entities or molecules).
+
+        Each association is identified by id and links a specific `study` to a specific `item`, and records
+
+        when the link was created via `createdAt` and who created it via `creator`.'
       properties:
         __typename:
           type: string
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
         id:
-          format: api_id
           type: string
-      type: object
-    CreateStudyItemAssociationInput:
-      additionalProperties: false
-      example:
-        itemId: bfi_ldOK8IUg
-        studyId: stdy_9CYiCggY
-      properties:
-        itemId:
-          type: string
-        studyId:
-          type: string
-      required:
-      - studyId
-      - itemId
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    StudyRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
+        item:
+          $ref: '#/components/schemas/StudyableRef'
+        study:
+          $ref: '#/components/schemas/StudyRef'
       type: object
     InternalServerError:
       properties:
@@ -389,7 +366,15 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -397,6 +382,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -413,6 +400,84 @@ components:
       - status
       - instance
       type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateStudyItemAssociationInput:
+      additionalProperties: false
+      example:
+        itemId: bfi_ldOK8IUg
+        studyId: stdy_9CYiCggY
+      properties:
+        itemId:
+          type: string
+        studyId:
+          type: string
+      required:
+      - studyId
+      - itemId
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    StudyableRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    StudyItemAssociationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/StudyItemAssociation'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
     DeleteStudyItemAssociationInputWithPathParams:
       additionalProperties: false
       properties:
@@ -421,28 +486,37 @@ components:
       required:
       - id
       type: object
-    StudyItemAssociation:
-      description: 'Represents the link between a Study and a Studyable item (such as entities or molecules).
-
-        Each association is identified by id and links a specific `study` to a specific `item`, and records
-
-        when the link was created via `createdAt` and who created it via `creator`.'
+    StudyRef:
       properties:
         __typename:
           type: string
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
         id:
+          format: api_id
           type: string
-        item:
-          $ref: '#/components/schemas/StudyableRef'
-        study:
-          $ref: '#/components/schemas/StudyRef'
       type: object
   parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    study.anyOf:
+      description: Restricts results to those associated with any of the specified study IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: study.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -450,17 +524,27 @@ components:
       schema:
         format: datetime
         type: string
-    nextToken:
-      description: Token for pagination
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: nextToken
+      name: createdAt.gte
       schema:
+        format: datetime
         type: string
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
       name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
       schema:
         items:
           type: string
@@ -475,18 +559,11 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    study.anyOf:
-      description: Restricts results to those associated with any of the specified study IDs. Comma-separated list.
+    item.anyOf:
+      description: Restricts results to only those associated with any of the specified item IDs. Comma-separated list.
       explode: false
       in: query
-      name: study.anyOf
+      name: item.anyOf
       schema:
         items:
           type: string
@@ -499,35 +576,10 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    item.anyOf:
-      description: Restricts results to only those associated with any of the specified item IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: item.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -536,14 +588,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -556,6 +609,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -563,6 +628,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

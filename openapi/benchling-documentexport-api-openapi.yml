@@ -58,6 +58,7 @@ paths:
                 id:
                   description: API ID of the item to export.
                   example: etr_aBcD1234
+                  maxLength: 255
                   type: string
               required:
               - id
@@ -94,14 +95,15 @@ paths:
       summary: Export a single item to a downloadable file
       tags:
       - DocumentExport
-      x-bnch-rate-limit-tier: 2
   /tasks/document-export/{task_id}:
     get:
       description: 'Get the current status of a single-item document export task. When the export completes
 
         successfully, the response populates a `downloadUrl` where the result can be downloaded.
 
-        The download URL is usable for a limited time after completion.'
+        The download URL is usable for a limited time after completion. Returns 404 if the task is
+
+        not found, including when its result has expired.'
       operationId: DocumentExport.Get
       parameters:
       - in: path
@@ -169,7 +171,6 @@ paths:
       summary: Get document export task status
       tags:
       - DocumentExport
-      x-bnch-rate-limit-tier: 5
   /tasks/document-export/{task_id}/download:
     get:
       description: 'Redirects (303) to a presigned URL to download the exported file. Returns 404 if no
@@ -215,9 +216,34 @@ paths:
       summary: Download a completed document export
       tags:
       - DocumentExport
-      x-bnch-rate-limit-tier: 5
 components:
   schemas:
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     GeneralError:
       properties:
         detail:
@@ -226,6 +252,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -269,37 +297,49 @@ components:
       - instance
       type: object
   responses:
-    NotFound:
+    TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
+            minimum: 1
+            type: integer
     BadRequest:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Bad Request
-    TooManyRequests:
+    Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
+      description: Forbidden
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

@@ -5,16 +5,45 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Procedure API
   version: 2.0.0
-  description: A reusable template that defines a structured experimental workflow.
+  description: 'A reusable template that defines a structured experimental workflow. Procedures specify a
+
+    sequence of method steps (see `ProcedureMethodDefinitionVersion`) connected in a flowchart
+
+    (see `workflowFlowchartConfig` and `WorkflowFlowchartConfigVersion`) that scientists follow when running
+
+    experiments. The `procedureType` determines whether this is a recipe (synthesis/production
+
+    workflow) or an assay (analytical workflow). Procedures belong to a `TemplateCollection` for
+
+    organization and access control, and support versioning through publishing (see `Publishable`
+
+    and `publishingRecords`). When scientists execute a procedure, they create a `ProcedureRun`
+
+    that tracks the actual experiment execution.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: A reusable template that defines a structured experimental workflow.
+- description: 'A reusable template that defines a structured experimental workflow. Procedures specify a
+
+    sequence of method steps (see `ProcedureMethodDefinitionVersion`) connected in a flowchart
+
+    (see `workflowFlowchartConfig` and `WorkflowFlowchartConfigVersion`) that scientists follow when running
+
+    experiments. The `procedureType` determines whether this is a recipe (synthesis/production
+
+    workflow) or an assay (analytical workflow). Procedures belong to a `TemplateCollection` for
+
+    organization and access control, and support versioning through publishing (see `Publishable`
+
+    and `publishingRecords`). When scientists execute a procedure, they create a `ProcedureRun`
+
+    that tracks the actual experiment execution.'
   name: Procedure
   x-bnch-organization: Benchling
+  x-displayName: Procedure
 paths:
   /procedure/items:
     get:
@@ -77,7 +106,6 @@ paths:
       summary: List Procedure items
       tags:
       - Procedure
-      x-bnch-rate-limit-tier: 4
   /procedure/{procedure_id}:
     get:
       description: Get a single Procedure by ID.
@@ -118,13 +146,72 @@ paths:
       summary: Get Procedure by ID
       tags:
       - Procedure
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
       name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -137,21 +224,14 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: name.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -173,61 +253,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -238,162 +267,35 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: creator.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
       in: query
-      name: pageSize
+      name: name.anyOf
       schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   schemas:
-    ProcedureFlowchartRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    Procedure:
-      description: 'A reusable template that defines a structured experimental workflow. Procedures specify a
-
-        sequence of method steps (see `ProcedureMethodDefinitionVersion`) connected in a flowchart
-
-        (see `workflowFlowchartConfig` and `WorkflowFlowchartConfigVersion`) that scientists follow when running
-
-        experiments. The `procedureType` determines whether this is a recipe (synthesis/production
-
-        workflow) or an assay (analytical workflow). Procedures belong to a `TemplateCollection` for
-
-        organization and access control, and support versioning through publishing (see `Publishable`
-
-        and `publishingRecords`). When scientists execute a procedure, they create a `ProcedureRun`
-
-        that tracks the actual experiment execution.'
-      properties:
-        __typename:
-          type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        id:
-          type: string
-        latestProcedureFlowchartConfigVersionProxy:
-          description: 'A simplified view of the latest version of the flowchart config. This is the
-
-            preferred way to access the latest flowchart config for procedures.'
-          oneOf:
-          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionProxyRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        procedureFlowchart:
-          deprecated: true
-          description: Use latestProcedureFlowchartConfigVersionProxy for the latest flowchart version and publishedProcedureFlowchartConfigVersionProxy for the published flowchart version.
-          oneOf:
-          - $ref: '#/components/schemas/ProcedureFlowchartRef'
-          - type: 'null'
-        procedureType:
-          enum:
-          - RECIPE
-          - ASSAY
-          type: string
-        publishedProcedureFlowchartConfigVersionProxy:
-          description: 'A simplified view of the published version of the flowchart config. This is
-
-            the preferred way to access the published flowchart config for procedures.'
-          oneOf:
-          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionProxyRef'
-          - type: 'null'
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        webUrl:
-          type:
-          - 'null'
-          - string
-      type: object
     TemplateCollectionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    PrincipalRef:
       properties:
         __typename:
           type: string
@@ -427,7 +329,76 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    Procedure:
+      description: 'A reusable template that defines a structured experimental workflow. Procedures specify a
+
+        sequence of method steps (see `ProcedureMethodDefinitionVersion`) connected in a flowchart
+
+        (see `workflowFlowchartConfig` and `WorkflowFlowchartConfigVersion`) that scientists follow when running
+
+        experiments. The `procedureType` determines whether this is a recipe (synthesis/production
+
+        workflow) or an assay (analytical workflow). Procedures belong to a `TemplateCollection` for
+
+        organization and access control, and support versioning through publishing (see `Publishable`
+
+        and `publishingRecords`). When scientists execute a procedure, they create a `ProcedureRun`
+
+        that tracks the actual experiment execution.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        id:
+          type: string
+        latestProcedureFlowchartConfigVersion:
+          description: 'A simplified view of the latest version of the flowchart config. This is the
+
+            preferred way to access the latest flowchart config for procedures.'
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        procedureFlowchart:
+          deprecated: true
+          description: Use latestProcedureFlowchartConfigVersion for the latest flowchart version and publishedProcedureFlowchartConfigVersion for the published flowchart version.
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartRef'
+          - type: 'null'
+        procedureType:
+          enum:
+          - RECIPE
+          - ASSAY
+          type: string
+        publishedProcedureFlowchartConfigVersion:
+          description: 'A simplified view of the published version of the flowchart config. This is
+
+            the preferred way to access the published flowchart config for procedures.'
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionRef'
+          - type: 'null'
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+        webUrl:
+          type:
+          - 'null'
+          - string
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -435,6 +406,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -451,6 +424,56 @@ components:
       - status
       - instance
       type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureFlowchartRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureFlowchartConfigVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     ProcedurePaginatedList:
       additionalProperties: false
       properties:
@@ -459,17 +482,54 @@ components:
             $ref: '#/components/schemas/Procedure'
           type: array
         nextToken:
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
-    ProcedureFlowchartConfigVersionProxyRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

@@ -7,7 +7,23 @@ info:
   version: 2.0.0
   description: 'A reusable template that defines the structure and configuration for requests
 
-    in Benchling.'
+    in Benchling. Also known as a "Request Template" in the UI. Each RequestV2Definition
+
+    specifies a `templateDocument` that serves as the document template for requests, a
+
+    `workflowTaskSchema` that defines the task structure and fields, and a `prefix` used
+
+    to generate human-readable display IDs (e.g., "REQ-001") for submissions created from
+
+    this template. Request templates are organized within `TemplateCollection` folders and
+
+    support collaboration features like starring (see `Starrable`). When users submit a
+
+    request, they create a `RequestV2Submission` based on this definition. The template
+
+    can include a `description` to explain its intended use and can be archived when no
+
+    longer needed.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +32,26 @@ security:
 tags:
 - description: 'A reusable template that defines the structure and configuration for requests
 
-    in Benchling.'
+    in Benchling. Also known as a "Request Template" in the UI. Each RequestV2Definition
+
+    specifies a `templateDocument` that serves as the document template for requests, a
+
+    `workflowTaskSchema` that defines the task structure and fields, and a `prefix` used
+
+    to generate human-readable display IDs (e.g., "REQ-001") for submissions created from
+
+    this template. Request templates are organized within `TemplateCollection` folders and
+
+    support collaboration features like starring (see `Starrable`). When users submit a
+
+    request, they create a `RequestV2Submission` based on this definition. The template
+
+    can include a `description` to explain its intended use and can be archived when no
+
+    longer needed.'
   name: RequestV2Definition
   x-bnch-organization: Benchling
+  x-displayName: Request V2 Definition
 paths:
   /request-v2-definition:
     post:
@@ -49,6 +82,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -56,7 +91,6 @@ paths:
       summary: Create RequestV2Definition
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 4
   /request-v2-definition/items:
     get:
       description: List RequestV2Definition items.
@@ -117,7 +151,6 @@ paths:
       summary: List RequestV2Definition items
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 4
   /request-v2-definition/{request_v2_definition_id}:
     get:
       description: Get a single RequestV2Definition by ID.
@@ -158,7 +191,6 @@ paths:
       summary: Get RequestV2Definition by ID
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 5
     patch:
       description: Update RequestV2Definition.
       operationId: RequestV2Definition.Update
@@ -193,6 +225,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -200,7 +234,6 @@ paths:
       summary: Update RequestV2Definition
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 4
   /request-v2-definition:batch-create:
     post:
       description: Batch create RequestV2Definition synchronously in one transaction. Maximum 25 items per request.
@@ -248,6 +281,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -255,7 +290,6 @@ paths:
       summary: Batch create RequestV2Definition
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 3
   /request-v2-definition:batch-update:
     patch:
       description: Batch update RequestV2Definition synchronously in one transaction. Maximum 25 items per request.
@@ -303,6 +337,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -310,7 +346,6 @@ paths:
       summary: Batch update RequestV2Definition
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 3
   /request-v2-definition:bulk-create:
     post:
       description: Bulk create RequestV2Definition.
@@ -340,6 +375,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -347,7 +384,6 @@ paths:
       summary: Bulk create RequestV2Definition
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 2
   /request-v2-definition:bulk-update:
     patch:
       description: Bulk update RequestV2Definition.
@@ -377,6 +413,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -384,224 +422,33 @@ paths:
       summary: Bulk update RequestV2Definition
       tags:
       - RequestV2Definition
-      x-bnch-rate-limit-tier: 2
 components:
-  parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
   schemas:
-    UpdateRequestV2DefinitionInputWithPathParams:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          description: Description of the request template.
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        prefix:
-          description: The prefix for the displayId of tasks of this schema.
-          type: string
-        templateCollectionId:
-          type: string
-      required:
-      - id
-      type: object
-    WorkflowTaskSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     CreateRequestV2DefinitionInput:
       additionalProperties: false
       properties:
         description:
-          description: Description of the request template.
+          description: Description of the request template. Must not exceed 1024 characters and must not contain a null character.
           type:
           - 'null'
           - string
         name:
+          description: Name of the request template. Must not be empty, must not exceed 255 characters, and must not contain a null character.
           type: string
         prefix:
-          description: The prefix for the displayId of tasks of this schema.
+          description: Prefix for the displayId of requests created from this template.
           type: string
         taskSchemaId:
+          description: API ID of the workflow task schema that defines the task structure and fields for this request template.
           type: string
         templateCollectionId:
+          description: API ID of the template collection that this request template belongs to.
           type: string
       required:
       - name
       - taskSchemaId
       - templateCollectionId
       - prefix
-      type: object
-    UpdateRequestV2DefinitionInput:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          description: Description of the request template.
-          type: string
-        name:
-          type: string
-        prefix:
-          description: The prefix for the displayId of tasks of this schema.
-          type: string
-        templateCollectionId:
-          type: string
-      type: object
-    TemplateCollectionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
       type: object
     RequestV2DefinitionPaginatedList:
       additionalProperties: false
@@ -611,7 +458,159 @@ components:
             $ref: '#/components/schemas/RequestV2Definition'
           type: array
         nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdateRequestV2DefinitionInputWithPathParams:
+      additionalProperties: false
+      properties:
+        archiveReason:
           type: string
+        archived:
+          type: boolean
+        description:
+          description: Description of the request template. Must not exceed 1024 characters and must not contain a null character.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        name:
+          description: Name of the request template. Must not be empty, must not exceed 255 characters, and must not contain a null character.
+          type: string
+        prefix:
+          description: Prefix for the displayId of requests created from this template.
+          type: string
+        templateCollectionId:
+          description: API ID of the template collection to move this request template to.
+          type: string
+      required:
+      - id
+      type: object
+    TemplateCollectionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    UpdateRequestV2DefinitionInput:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Description of the request template. Must not exceed 1024 characters and must not contain a null character.
+          type:
+          - 'null'
+          - string
+        name:
+          description: Name of the request template. Must not be empty, must not exceed 255 characters, and must not contain a null character.
+          type: string
+        prefix:
+          description: Prefix for the displayId of requests created from this template.
+          type: string
+        templateCollectionId:
+          description: API ID of the template collection to move this request template to.
+          type: string
+      type: object
+    WorkflowTaskSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     RequestV2Definition:
       description: 'A reusable template that defines the structure and configuration for requests
@@ -636,21 +635,10 @@ components:
       properties:
         __typename:
           type: string
-        archivableParent:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
         archiveReason:
           type:
           - 'null'
           - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
         archived:
           type: boolean
         createdAt:
@@ -687,14 +675,6 @@ components:
           $ref: '#/components/schemas/WorkflowTaskSchemaRef'
           description: The task schema backing this configuration.
       type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
     BulkImport:
       example:
         fileId: scrfile_jdf8BV24kLmN
@@ -713,69 +693,157 @@ components:
           format: api_id
           type: string
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
+  parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
           type: string
-        instance:
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
           type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
           type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
           type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   responses:
     TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -788,6 +856,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -795,6 +875,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

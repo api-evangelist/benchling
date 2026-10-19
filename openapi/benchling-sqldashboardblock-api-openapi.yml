@@ -5,16 +5,41 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Sql Dashboard Block API
   version: 2.0.0
-  description: Represents a single query and visualization pane within a SqlDashboard.
+  description: 'Represents a single query and visualization pane within a SqlDashboard. Each block
+
+    contains a SQL query (sqlQuery) that runs against the Benchling data warehouse, along
+
+    with a BlockVisualization that defines how the query results are displayed (as a chart,
+
+    table, heatmap, etc.). Blocks are ordered by index within their parent dashboard and
+
+    have a name and description for identification. SQL Dashboard Blocks enable users to
+
+    build interactive analytics dashboards by combining multiple query-driven visualizations
+
+    on a single page.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: Represents a single query and visualization pane within a SqlDashboard.
+- description: 'Represents a single query and visualization pane within a SqlDashboard. Each block
+
+    contains a SQL query (sqlQuery) that runs against the Benchling data warehouse, along
+
+    with a BlockVisualization that defines how the query results are displayed (as a chart,
+
+    table, heatmap, etc.). Blocks are ordered by index within their parent dashboard and
+
+    have a name and description for identification. SQL Dashboard Blocks enable users to
+
+    build interactive analytics dashboards by combining multiple query-driven visualizations
+
+    on a single page.'
   name: SqlDashboardBlock
   x-bnch-organization: Benchling
+  x-displayName: Sql Dashboard Block
 paths:
   /sql-dashboard-block/items:
     get:
@@ -74,7 +99,6 @@ paths:
       summary: List SqlDashboardBlock items
       tags:
       - SqlDashboardBlock
-      x-bnch-rate-limit-tier: 4
   /sql-dashboard-block/{sql_dashboard_block_id}:
     get:
       description: Get a single SqlDashboardBlock by ID.
@@ -115,7 +139,6 @@ paths:
       summary: Get SqlDashboardBlock by ID
       tags:
       - SqlDashboardBlock
-      x-bnch-rate-limit-tier: 5
     patch:
       description: Update SqlDashboardBlock.
       operationId: SqlDashboardBlock.Update
@@ -150,6 +173,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -157,7 +182,6 @@ paths:
       summary: Update SqlDashboardBlock
       tags:
       - SqlDashboardBlock
-      x-bnch-rate-limit-tier: 4
   /sql-dashboard-block:batch-update:
     patch:
       description: Batch update SqlDashboardBlock synchronously in one transaction. Maximum 25 items per request.
@@ -205,6 +229,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -212,7 +238,6 @@ paths:
       summary: Batch update SqlDashboardBlock
       tags:
       - SqlDashboardBlock
-      x-bnch-rate-limit-tier: 3
   /sql-dashboard-block:bulk-update:
     patch:
       description: Bulk update SqlDashboardBlock.
@@ -242,6 +267,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -249,13 +276,52 @@ paths:
       summary: Bulk update SqlDashboardBlock
       tags:
       - SqlDashboardBlock
-      x-bnch-rate-limit-tier: 2
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
       name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -268,21 +334,14 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: name.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -304,31 +363,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -339,81 +377,68 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
-    UpdateSqlDashboardBlockInputWithPathParams:
-      additionalProperties: false
-      properties:
-        description:
-          description: A human-readable description of the block.
-          type: string
-        id:
-          type: string
-        name:
-          description: The display name of the block.
-          type: string
-        sqlQuery:
-          description: The SQL query executed against the Benchling data warehouse. May reference dashboard parameters using {{parameter_name}} placeholder syntax.
-          type: string
-      required:
-      - id
-      type: object
-    SqlDashboardBlockPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/SqlDashboardBlock'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -440,7 +465,15 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -448,6 +481,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -463,6 +498,84 @@ components:
       - detail
       - status
       - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    SqlDashboardBlockPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/SqlDashboardBlock'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    UpdateSqlDashboardBlockInputWithPathParams:
+      additionalProperties: false
+      properties:
+        description:
+          description: A human-readable description of the block.
+          type: string
+        id:
+          type: string
+        name:
+          description: The display name of the block.
+          type: string
+        sqlQuery:
+          description: The SQL query executed against the Benchling data warehouse. May reference dashboard parameters using {{parameter_name}} placeholder syntax.
+          type: string
+      required:
+      - id
+      type: object
+    UpdateSqlDashboardBlockInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: A human-readable description of the block.
+          type: string
+        name:
+          description: The display name of the block.
+          type: string
+        sqlQuery:
+          description: The SQL query executed against the Benchling data warehouse. May reference dashboard parameters using {{parameter_name}} placeholder syntax.
+          type: string
       type: object
     SqlDashboardBlock:
       description: 'Represents a single query and visualization pane within a SqlDashboard. Each block
@@ -492,51 +605,12 @@ components:
         sqlQuery:
           type: string
       type: object
-    UpdateSqlDashboardBlockInput:
-      additionalProperties: false
-      properties:
-        description:
-          description: A human-readable description of the block.
-          type: string
-        name:
-          description: The display name of the block.
-          type: string
-        sqlQuery:
-          description: The SQL query executed against the Benchling data warehouse. May reference dashboard parameters using {{parameter_name}} placeholder syntax.
-          type: string
-      type: object
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

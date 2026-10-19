@@ -5,16 +5,55 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Nucleotide Alignment API
   version: 2.0.0
-  description: Represents a multiple sequence alignment of nucleotide sequences (DNA or RNA).
+  description: 'Represents a multiple sequence alignment of nucleotide sequences (DNA or RNA). Nucleotide
+
+    alignments are used to compare sequence reads against a reference template for verification
+
+    (see AlignmentType TEMPLATE) or to align multiple sequences for consensus building (see
+
+    AlignmentType CONSENSUS). Each alignment contains a referenceSequence (the template or
+
+    consensus) and a collection of AlignedNucleotideSequence entries representing the individual sequences
+
+    being compared. Alignments are commonly used in Sanger sequencing verification workflows
+
+    to confirm that a cloned construct matches the expected design.
+
+
+    NucleotideAlignments are created asynchronously via custom methods (CreateConsensusAlignment or
+
+    CreateTemplateAlignment) and can be deleted via DeleteNucleotideAlignment. They cannot be updated
+
+    after creation.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: Represents a multiple sequence alignment of nucleotide sequences (DNA or RNA).
+- description: 'Represents a multiple sequence alignment of nucleotide sequences (DNA or RNA). Nucleotide
+
+    alignments are used to compare sequence reads against a reference template for verification
+
+    (see AlignmentType TEMPLATE) or to align multiple sequences for consensus building (see
+
+    AlignmentType CONSENSUS). Each alignment contains a referenceSequence (the template or
+
+    consensus) and a collection of AlignedNucleotideSequence entries representing the individual sequences
+
+    being compared. Alignments are commonly used in Sanger sequencing verification workflows
+
+    to confirm that a cloned construct matches the expected design.
+
+
+    NucleotideAlignments are created asynchronously via custom methods (CreateConsensusAlignment or
+
+    CreateTemplateAlignment) and can be deleted via DeleteNucleotideAlignment. They cannot be updated
+
+    after creation.'
   name: NucleotideAlignment
   x-bnch-organization: Benchling
+  x-displayName: Nucleotide Alignment
 paths:
   /nucleotide-alignment/items:
     get:
@@ -35,6 +74,7 @@ paths:
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/omit'
       - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/parentId.eq'
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/sequenceIds.anyOf'
       - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
@@ -47,12 +87,6 @@ paths:
           - createdAt:desc
           - modifiedAt:asc
           - modifiedAt:desc
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
           type: string
       responses:
         '200':
@@ -75,7 +109,6 @@ paths:
       summary: List NucleotideAlignment items
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 4
   /nucleotide-alignment/{nucleotide_alignment_id}:
     delete:
       description: Delete NucleotideAlignment.
@@ -87,12 +120,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '204':
           description: No Content
@@ -102,6 +129,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -109,7 +138,6 @@ paths:
       summary: Delete NucleotideAlignment
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 4
     get:
       description: Get a single NucleotideAlignment by ID.
       operationId: NucleotideAlignment.Get
@@ -122,12 +150,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -149,7 +171,6 @@ paths:
       summary: Get NucleotideAlignment by ID
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 5
   /nucleotide-alignment/{nucleotide_alignment_id}/aligned-nucleotide-sequences/items:
     get:
       description: List AlignedNucleotideSequence items.
@@ -161,12 +182,6 @@ paths:
         in: path
         name: nucleotide_alignment_id
         required: true
-        schema:
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
         schema:
           type: string
       responses:
@@ -190,18 +205,10 @@ paths:
       summary: List AlignedNucleotideSequence items
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 4
   /nucleotide-alignment:batch-delete:
     post:
       description: Batch delete NucleotideAlignment synchronously in one transaction. Maximum 25 items per request.
       operationId: NucleotideAlignment.BatchDelete
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -244,6 +251,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -251,17 +260,9 @@ paths:
       summary: Batch delete NucleotideAlignment
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 3
   /nucleotide-alignment:create-consensus-alignment:
     post:
       operationId: NucleotideAlignment.CreateConsensusAlignment
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -280,6 +281,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -287,17 +290,9 @@ paths:
       summary: Create a consensus nucleotide alignment
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 4
   /nucleotide-alignment:create-template-alignment:
     post:
       operationId: NucleotideAlignment.CreateTemplateAlignment
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -316,6 +311,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -323,7 +320,6 @@ paths:
       summary: Create a template nucleotide alignment
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 4
   /tasks/nucleotide-alignment/create-consensus-alignment/{task_id}:
     get:
       description: Poll status for Create a consensus nucleotide alignment.
@@ -335,12 +331,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -360,6 +350,9 @@ paths:
                     - COMPLETED
                     - FAILED
                     type: string
+                required:
+                - status
+                - message
                 type: object
           description: OK
         '400':
@@ -375,7 +368,6 @@ paths:
       summary: Poll async task status
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 5
   /tasks/nucleotide-alignment/create-template-alignment/{task_id}:
     get:
       description: Poll status for Create a template nucleotide alignment.
@@ -387,12 +379,6 @@ paths:
         required: true
         schema:
           type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -412,6 +398,9 @@ paths:
                     - COMPLETED
                     - FAILED
                     type: string
+                required:
+                - status
+                - message
                 type: object
           description: OK
         '400':
@@ -427,13 +416,62 @@ paths:
       summary: Poll async task status
       tags:
       - NucleotideAlignment
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    sequenceIds.anyOf:
+      description: Restricts results to Nucleotide Alignments owned by any of the specified sequence IDs (i.e. sequences used as the template in a Template Alignment or created as the consensus sequence from a Consensus Alignment). Fails and reports any invalid IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: sequenceIds.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
       name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -446,21 +484,14 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: name.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -472,11 +503,41 @@ components:
           type: string
         maxItems: 100
         type: array
+    parentId.eq:
+      description: ID of a DnaSequence or RnaSequence used as the reference sequence.
+      in: query
+      name: parentId.eq
+      schema:
+        type: string
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
       in: query
       name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
       schema:
         items:
           type: string
@@ -489,110 +550,12 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    sequenceIds.anyOf:
-      description: Restricts results to Nucleotide Alignments owned by any of the specified sequence IDs (i.e. sequences used as the template in a Template Alignment or created as the consensus sequence from a Consensus Alignment). Fails and reports any invalid IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: sequenceIds.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   schemas:
     MafftOptionsInput:
       additionalProperties: false
       properties:
         adjustDirection:
-          description: Adjust direction.
+          description: Controls whether and how MAFFT auto-detects reverse-complement sequences.
           enum:
           - FAST
           - ACCURATE
@@ -617,220 +580,6 @@ components:
           - SIXMER
           - LOCALPAIR
           - GLOBALPAIR
-          type: string
-      type: object
-    AlignedNucleotideSequence:
-      description: 'Represents a single sequence row within a NucleotideAlignment. Each AlignedNucleotideSequence contains
-
-        the aligned bases (including gap characters for insertions/deletions), the original
-
-        NucleotideSequence if it exists in the registry, and quality trim boundaries. The trimStart
-
-        and trimEnd fields define the high-quality region of the sequence used for alignment and
-
-        pairwise identity calculations—bases outside this region are typically low-quality ends
-
-        from Sanger sequencing reads. For template alignments, pairwiseIdentity indicates the
-
-        fraction of matching bases within the trimmed region compared to the reference.'
-      properties:
-        __typename:
-          type: string
-        bases:
-          description: The bases of the Aligned Nucleotide Sequence, including gaps.
-          type: string
-        createdAt:
-          description: DateTime the parent Alignment was created.
-          format: datetime
-          type: string
-        id:
-          description: The ID of the Aligned Nucleotide Sequence.
-          type: string
-        name:
-          description: The name of the Aligned Nucleotide Sequence.
-          type: string
-        nucleotideAlignment:
-          $ref: '#/components/schemas/NucleotideAlignmentRef'
-          description: The Nucleotide Alignment the Aligned Nucleotide Sequence belongs to.
-        sequence:
-          description: The Nucleotide Sequence the Aligned Nucleotide Sequence is associated with.
-          oneOf:
-          - $ref: '#/components/schemas/NucleotideSequenceRef'
-          - type: 'null'
-        trimEnd:
-          description: 'End index of the region of bases included in the alignment. Bases outside the trimmed region are excluded
-
-            from the alignment and from the pairwise identity calculation. The trim region is determined by trace data,
-
-            but can also be edited manually.'
-          type: integer
-        trimStart:
-          description: 'Start index of the region of bases included in the alignment. Bases outside the trimmed region are excluded
-
-            from the alignment and from the pairwise identity calculation. The trim region is determined by trace data,
-
-            but can also be edited manually.'
-          type: integer
-      type: object
-    NucleotideSequenceRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    NewSequenceInput:
-      additionalProperties: false
-      properties:
-        folderId:
-          type: string
-      required:
-      - folderId
-      type: object
-    ClustalOOptionsInput:
-      additionalProperties: false
-      properties:
-        maxGuidetreeIterations:
-          description: Max guide tree iterations within combined iterations. Can be in the range -1 to 5 (-1 = no max).
-          type: integer
-        maxHmmIterations:
-          description: Max HMM iterations within combined iterations. Can be in the range -1 to 5 (-1 = no max).
-          type: integer
-        mbedGuideTree:
-          description: Whether mBed-like clustering guide tree should be used (faster to use it).
-          type: boolean
-        mbedIteration:
-          description: Whether mBed-like clustering iteration should be used (faster to use it).
-          type: boolean
-        numCombinedIterations:
-          description: Number of (combined guide-tree/HMM) iterations. Can be in the range 0 to 5.
-          type: integer
-      type: object
-    CreateTemplateAlignmentInput:
-      additionalProperties: false
-      properties:
-        algorithm:
-          enum:
-          - MAFFT
-          - CLUSTALO
-          type: string
-        clustaloOptions:
-          $ref: '#/components/schemas/ClustalOOptionsInput'
-          description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
-        disableCircularSequenceRotation:
-          description: When true, disables circular sequence rotation during template alignment.
-          type: boolean
-        files:
-          description: Sequence files to align against the template. Minimum 1.
-          items:
-            $ref: '#/components/schemas/AlignmentFileInput'
-          type: array
-        mafftOptions:
-          $ref: '#/components/schemas/MafftOptionsInput'
-          description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
-        name:
-          description: The name of the alignment. When omitted, a name is automatically generated. If specified, it must contain at least one non-whitespace character. Up to 255 characters.
-          type: string
-        templateSequenceId:
-          description: The API ID of the template (reference) sequence to align against.
-          type: string
-      required:
-      - templateSequenceId
-      - files
-      - algorithm
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    CreateConsensusAlignmentInput:
-      additionalProperties: false
-      properties:
-        algorithm:
-          enum:
-          - MAFFT
-          - CLUSTALO
-          type: string
-        clustaloOptions:
-          $ref: '#/components/schemas/ClustalOOptionsInput'
-          description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
-        files:
-          description: Sequence files to align. Minimum 2.
-          items:
-            $ref: '#/components/schemas/AlignmentFileInput'
-          type: array
-        mafftOptions:
-          $ref: '#/components/schemas/MafftOptionsInput'
-          description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
-        name:
-          description: The name of the alignment. When omitted, a name is automatically generated. If specified, it must contain at least one non-whitespace character. Up to 255 characters.
-          type: string
-        newSequence:
-          $ref: '#/components/schemas/NewSequenceInput'
-        sequenceId:
-          type: string
-      required:
-      - files
-      - algorithm
-      type: object
-    NucleotideAlignment:
-      description: 'Represents a multiple sequence alignment of nucleotide sequences (DNA or RNA). Nucleotide
-
-        alignments are used to compare sequence reads against a reference template for verification
-
-        (see AlignmentType TEMPLATE) or to align multiple sequences for consensus building (see
-
-        AlignmentType CONSENSUS). Each alignment contains a referenceSequence (the template or
-
-        consensus) and a collection of AlignedNucleotideSequence entries representing the individual sequences
-
-        being compared. Alignments are commonly used in Sanger sequencing verification workflows
-
-        to confirm that a cloned construct matches the expected design.'
-      properties:
-        __typename:
-          type: string
-        alignedNucleotideSequences:
-          description: The Aligned Nucleotide Sequences of the Alignment.
-          format: uri
-          type: string
-        alignmentType:
-          description: The type of the Alignment, whether it is a consensus or template alignment.
-          enum:
-          - TEMPLATE
-          - CONSENSUS
-          type: string
-        createdAt:
-          description: DateTime the Alignment was created.
-          format: datetime
-          type: string
-        id:
-          description: The ID of the Alignment.
-          type: string
-        modifiedAt:
-          description: DateTime the Alignment was last modified.
-          format: datetime
-          type: string
-        name:
-          description: The name of the Alignment.
-          type: string
-        referenceSequence:
-          $ref: '#/components/schemas/NucleotideSequenceRef'
-          description: The template or consensus Nucleotide Sequence associated with the Alignment.
-      type: object
-    NucleotideAlignmentPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/NucleotideAlignment'
-          type: array
-        nextToken:
           type: string
       type: object
     InternalServerError:
@@ -859,7 +608,76 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    CreateTemplateAlignmentInput:
+      additionalProperties: false
+      properties:
+        algorithm:
+          description: Multiple sequence alignment algorithm to use.
+          enum:
+          - MAFFT
+          - CLUSTALO
+          type: string
+        clustaloOptions:
+          $ref: '#/components/schemas/ClustalOOptionsInput'
+          description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
+        disableCircularSequenceRotation:
+          description: When true, disables circular sequence rotation during template alignment.
+          type: boolean
+        files:
+          description: Sequence files to align against the template. Minimum 1, maximum 250.
+          items:
+            $ref: '#/components/schemas/AlignmentFileInput'
+          type: array
+        mafftOptions:
+          $ref: '#/components/schemas/MafftOptionsInput'
+          description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
+        name:
+          description: The name of the alignment. When omitted, a name is automatically generated. If specified, it must contain at least one non-whitespace character. Up to 255 characters.
+          type: string
+        templateSequenceId:
+          description: The API ID of the template (reference) sequence to align against.
+          type: string
+      required:
+      - templateSequenceId
+      - files
+      - algorithm
+      type: object
+    NucleotideAlignmentRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ClustalOOptionsInput:
+      additionalProperties: false
+      properties:
+        maxGuidetreeIterations:
+          description: Max guide tree iterations within combined iterations. Can be in the range -1 to 5 (-1 = no max).
+          type: integer
+        maxHmmIterations:
+          description: Max HMM iterations within combined iterations. Can be in the range -1 to 5 (-1 = no max).
+          type: integer
+        mbedGuideTree:
+          description: Whether mBed-like clustering guide tree should be used (faster to use it).
+          type: boolean
+        mbedIteration:
+          description: Whether mBed-like clustering iteration should be used (faster to use it).
+          type: boolean
+        numCombinedIterations:
+          description: Number of (combined guide-tree/HMM) iterations. Can be in the range 0 to 5.
+          type: integer
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -867,6 +685,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -883,13 +703,236 @@ components:
       - status
       - instance
       type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    NewSequenceInput:
+      additionalProperties: false
+      properties:
+        folderId:
+          description: API ID of the folder in which to create the new NucleotideSequence.
+          type: string
+      required:
+      - folderId
+      type: object
+    AlignmentFileInput:
+      additionalProperties: false
+      properties:
+        data:
+          description: Base64-encoded file content for the sequence to align. Required when providing name instead of sequenceId.
+          type: string
+        name:
+          description: File name for a raw sequence file (for example, an .ab1 trace file). Required when providing data instead of sequenceId.
+          type: string
+        sequenceId:
+          description: API ID of an existing NucleotideSequence to align. Mutually exclusive with name and data.
+          type: string
+      type: object
+    NucleotideAlignmentPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/NucleotideAlignment'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    NucleotideSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     DeleteNucleotideAlignmentInputWithPathParams:
       additionalProperties: false
       properties:
         id:
+          description: API ID of the NucleotideAlignment to delete.
           type: string
       required:
       - id
+      type: object
+    AlignedNucleotideSequence:
+      description: 'Represents a single sequence row within a NucleotideAlignment (also referred to as an alignment row
+
+        in the Benchling UI). Each AlignedNucleotideSequence contains the aligned bases (including gap
+
+        characters for insertions/deletions), the original NucleotideSequence if it exists in the registry,
+
+        and quality trim boundaries.
+
+
+        The trimStart and trimEnd fields are 0-based indices into the gapped bases string, with trimEnd
+
+        exclusive. They define the high-quality region used for alignment and pairwise identity
+
+        calculations—bases outside this region are typically low-quality ends from Sanger sequencing reads.'
+      properties:
+        __typename:
+          type: string
+        bases:
+          description: 'The aligned bases for this row, including gap characters (-) for insertions and deletions
+
+            relative to the reference sequence.'
+          type: string
+        id:
+          description: The ID of the Aligned Nucleotide Sequence.
+          type: string
+        name:
+          description: The name of the Aligned Nucleotide Sequence.
+          type: string
+        nucleotideAlignment:
+          $ref: '#/components/schemas/NucleotideAlignmentRef'
+          description: The Nucleotide Alignment the Aligned Nucleotide Sequence belongs to.
+        pairwiseIdentity:
+          description: 'Fraction of bases between trimStart and trimEnd that match the reference sequence within the
+
+            trimmed region.'
+          type: number
+        sequence:
+          description: 'The persisted NucleotideSequence referenced by this row, if the alignment row is linked to a
+
+            stored sequence. Returns null when the row was created from an uploaded file that is not linked
+
+            to a persisted sequence.'
+          oneOf:
+          - $ref: '#/components/schemas/NucleotideSequenceRef'
+          - type: 'null'
+        trimEnd:
+          description: 'Exclusive end index into the gapped bases string for the region included in the alignment.
+
+            Bases outside the trimmed region are excluded from the alignment and from the pairwise identity
+
+            calculation. The trim region is determined by trace data, but can also be edited manually.'
+          type: integer
+        trimStart:
+          description: 'Inclusive start index into the gapped bases string for the region included in the alignment.
+
+            Bases outside the trimmed region are excluded from the alignment and from the pairwise identity
+
+            calculation. The trim region is determined by trace data, but can also be edited manually.'
+          type: integer
+      type: object
+    NucleotideAlignment:
+      description: 'Represents a multiple sequence alignment of nucleotide sequences (DNA or RNA). Nucleotide
+
+        alignments are used to compare sequence reads against a reference template for verification
+
+        (see AlignmentType TEMPLATE) or to align multiple sequences for consensus building (see
+
+        AlignmentType CONSENSUS). Each alignment contains a referenceSequence (the template or
+
+        consensus) and a collection of AlignedNucleotideSequence entries representing the individual sequences
+
+        being compared. Alignments are commonly used in Sanger sequencing verification workflows
+
+        to confirm that a cloned construct matches the expected design.
+
+
+        NucleotideAlignments are created asynchronously via custom methods (CreateConsensusAlignment or
+
+        CreateTemplateAlignment) and can be deleted via DeleteNucleotideAlignment. They cannot be updated
+
+        after creation.'
+      properties:
+        __typename:
+          type: string
+        alignedNucleotideSequences:
+          description: 'The individual sequence rows in the alignment, including the reference sequence and each
+
+            aligned read or input sequence. Each row contains the gapped bases and trim boundaries that
+
+            define the high-quality region used for alignment and pairwise identity calculations.'
+          format: uri
+          type: string
+        alignmentType:
+          description: The type of the Alignment, whether it is a consensus or template alignment.
+          enum:
+          - TEMPLATE
+          - CONSENSUS
+          type: string
+        createdAt:
+          description: DateTime the Alignment was created.
+          format: datetime
+          type: string
+        id:
+          description: The ID of the Alignment.
+          type: string
+        modifiedAt:
+          description: DateTime the Alignment was last modified.
+          format: datetime
+          type: string
+        name:
+          description: The name of the Alignment.
+          type: string
+        referenceSequence:
+          $ref: '#/components/schemas/NucleotideSequenceRef'
+          description: 'The reference NucleotideSequence for the alignment. For template alignments, this is the
+
+            template sequence that other sequences are compared against. For consensus alignments,
+
+            this is the derived consensus sequence.'
+      type: object
+    CreateConsensusAlignmentInput:
+      additionalProperties: false
+      properties:
+        algorithm:
+          description: Multiple sequence alignment algorithm to use.
+          enum:
+          - MAFFT
+          - CLUSTALO
+          type: string
+        clustaloOptions:
+          $ref: '#/components/schemas/ClustalOOptionsInput'
+          description: Options to pass to the ClustalO algorithm, only applicable for ClustalO.
+        files:
+          description: Sequence files to align. Minimum 2, maximum 250.
+          items:
+            $ref: '#/components/schemas/AlignmentFileInput'
+          type: array
+        mafftOptions:
+          $ref: '#/components/schemas/MafftOptionsInput'
+          description: Options to pass to the MAFFT algorithm, only applicable for MAFFT.
+        name:
+          description: The name of the alignment. When omitted, a name is automatically generated. If specified, it must contain at least one non-whitespace character. Up to 255 characters.
+          type: string
+        newSequence:
+          $ref: '#/components/schemas/NewSequenceInput'
+          description: Specifies a folder in which to create a new NucleotideSequence to store the consensus alignment result. Mutually exclusive with sequenceId.
+        sequenceId:
+          description: API ID of an existing empty NucleotideSequence to overwrite with the consensus alignment result. The target sequence must have no bases; requests fail with 'Sequence must be empty' otherwise. Mutually exclusive with newSequence.
+          type: string
+      required:
+      - files
+      - algorithm
       type: object
     AlignedNucleotideSequencePaginatedList:
       additionalProperties: false
@@ -899,27 +942,60 @@ components:
             $ref: '#/components/schemas/AlignedNucleotideSequence'
           type: array
         nextToken:
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
-    NucleotideAlignmentRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AlignmentFileInput:
-      additionalProperties: false
-      properties:
-        data:
-          type: string
-        name:
-          type: string
-        sequenceId:
-          type: string
-      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

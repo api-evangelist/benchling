@@ -5,21 +5,54 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Matrix Plate API
   version: 2.0.0
-  description: 'A MatrixPlate is a rack-style storage plate where Containers (tubes, vials) can be
+  description: 'A MatrixPlate is a rack-style storage plate in Benchling''s inventory system.
 
-    inserted into and removed from grid positions.'
+    Each position in a MatrixPlate can be empty or can hold a movable Container object.
+
+    Note that this behavior differs from that of WellPlates, in which each well is
+
+    a permanent part of the plate.
+
+    MatrixPlates are ideal for modeling tube racks,
+
+    sample storage boxes with removable tubes, and other flexible storage formats. Each
+
+    plate tracks its capacity (totalCapacity, availableCapacity, occupiedCapacity) and
+
+    conforms to a MatrixPlateSchema that defines the grid dimensions and optionally
+
+    restricts which ContainerSchema types can be stored. MatrixPlates can be stored in
+
+    Locations, associated with Studies, and identified by barcode.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: 'A MatrixPlate is a rack-style storage plate where Containers (tubes, vials) can be
+- description: 'A MatrixPlate is a rack-style storage plate in Benchling''s inventory system.
 
-    inserted into and removed from grid positions.'
+    Each position in a MatrixPlate can be empty or can hold a movable Container object.
+
+    Note that this behavior differs from that of WellPlates, in which each well is
+
+    a permanent part of the plate.
+
+    MatrixPlates are ideal for modeling tube racks,
+
+    sample storage boxes with removable tubes, and other flexible storage formats. Each
+
+    plate tracks its capacity (totalCapacity, availableCapacity, occupiedCapacity) and
+
+    conforms to a MatrixPlateSchema that defines the grid dimensions and optionally
+
+    restricts which ContainerSchema types can be stored. MatrixPlates can be stored in
+
+    Locations, associated with Studies, and identified by barcode.'
   name: MatrixPlate
   x-bnch-core-type: MatrixPlate
   x-bnch-organization: Benchling
+  x-displayName: Matrix Plate
 paths:
   /matrix-plate:
     post:
@@ -50,6 +83,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -57,7 +92,6 @@ paths:
       summary: Create MatrixPlate
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 4
   /matrix-plate/items:
     get:
       description: List MatrixPlate items.
@@ -83,6 +117,8 @@ paths:
       - $ref: '#/components/parameters/pageSize'
       - $ref: '#/components/parameters/parentStorage.eq'
       - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/schema.anyOf'
+      - $ref: '#/components/parameters/schema.eq'
       - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
         in: query
         name: sort
@@ -121,7 +157,6 @@ paths:
       summary: List MatrixPlate items
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 4
   /matrix-plate/{matrix_plate_id}:
     get:
       description: Get a single MatrixPlate by ID.
@@ -162,7 +197,6 @@ paths:
       summary: Get MatrixPlate by ID
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 5
     patch:
       description: Update MatrixPlate.
       operationId: MatrixPlate.Update
@@ -197,6 +231,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -204,7 +240,6 @@ paths:
       summary: Update MatrixPlate
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 4
   /matrix-plate:batch-create:
     post:
       description: Batch create MatrixPlate synchronously in one transaction. Maximum 10 items per request.
@@ -252,6 +287,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -259,7 +296,6 @@ paths:
       summary: Batch create MatrixPlate
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 3
   /matrix-plate:batch-update:
     patch:
       description: Batch update MatrixPlate synchronously in one transaction. Maximum 10 items per request.
@@ -307,6 +343,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -314,7 +352,6 @@ paths:
       summary: Batch update MatrixPlate
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 3
   /matrix-plate:bulk-create:
     post:
       description: Bulk create MatrixPlate.
@@ -344,6 +381,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -351,7 +390,6 @@ paths:
       summary: Bulk create MatrixPlate
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 2
   /matrix-plate:bulk-update:
     patch:
       description: Bulk update MatrixPlate.
@@ -381,6 +419,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -388,36 +428,15 @@ paths:
       summary: Bulk update MatrixPlate
       tags:
       - MatrixPlate
-      x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    UpdateMatrixPlateInput:
+    FieldValueInput:
       additionalProperties: false
       properties:
-        archiveReason:
-          description: Why the plate is archived
-          type: string
-        archived:
-          description: Whether the plate is archived
-          type: boolean
-        barcode:
-          description: Barcode of the plate
-          type: string
-        name:
-          description: Name of the plate; defaults to barcode if name is not provided
-          type: string
-        parentStorageId:
-          type:
-          - 'null'
-          - string
-        projectId:
-          type:
-          - 'null'
-          - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
+        value:
+          $ref: '#/components/schemas/AnyType'
+      required:
+      - value
       type: object
     MatrixPlateSchemaRef:
       properties:
@@ -427,138 +446,52 @@ components:
           format: api_id
           type: string
       type: object
-    IntegerValue:
-      description: A type that represents integer values.
+    SchemaFieldDefinitionRef:
       properties:
         __typename:
           type: string
-        value:
-          description: The integer value.
-          type: integer
-      type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
-      properties:
-        __typename:
+        id:
+          format: api_id
           type: string
-        value:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
-            discriminator:
-              propertyName: __typename
-          type: array
       type: object
-    FieldValueInput:
+    CreateMatrixPlateInput:
       additionalProperties: false
       properties:
-        value:
-          $ref: '#/components/schemas/AnyType'
-      required:
-      - value
-      type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
+        barcode:
+          description: Barcode of the plate
           type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
-          type:
-          - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
-          type:
-          - 'null'
-          - string
-      type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
-      properties:
-        __typename:
+        containerSchemaId:
           type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+        name:
+          description: Name of the plate; defaults to barcode if name is not provided
+          type: string
+        parentStorageId:
+          type: string
+        positions:
+          description: The wells of the plate
           items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
+            $ref: '#/components/schemas/MatrixPlatePositionInput'
           type: array
-      type: object
-    TextAndUrlValue:
-      description: A type that represents text (string) values with an associated URL.
-      properties:
-        __typename:
+        projectId:
           type: string
-        url:
-          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    JsonValue:
-      description: A type that represents JSON values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The JSON value.
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
           type: object
-      type: object
-    AnyType: {}
-    ProjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+        schemaId:
           type: string
       required:
-      - fileId
+      - schemaId
       type: object
-    LocationRef:
+    MatrixPlatePositionInput:
+      additionalProperties: false
       properties:
-        __typename:
+        barcode:
           type: string
-        id:
-          format: api_id
+        position:
           type: string
+      required:
+      - position
       type: object
     InternalServerError:
       properties:
@@ -586,6 +519,214 @@ components:
       - status
       - instance
       type: object
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              mapping:
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
+              propertyName: __typename
+          type: array
+      type: object
+    LocationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Attachment, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, OligoConjugate, OligoDuplex, WellPlate, MatrixPlate, Protein, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GridCoordinates:
+      description: Read model representing a fillable position in a box or plate.
+      properties:
+        __typename:
+          type: string
+        column:
+          description: The 0-indexed column index of the position
+          type: integer
+        index:
+          description: 'The 1-indexed position determined by counting across rows.
+
+            For example, for a six-well plate:
+
+            +---+---+---+
+
+            | 1 | 2 | 3 |
+
+            +---+---+---+
+
+            | 4 | 5 | 6 |
+
+            +---+---+---+'
+          type: integer
+        position:
+          description: 'The alphanumeric position, where rows are indexed alphabetically and columns are indexed numerically,
+
+            starting from "A1"'
+          type: string
+        row:
+          description: The 0-indexed row index of the position
+          type: integer
+      type: object
+    MatrixPlate:
+      allOf:
+      - $ref: '#/components/schemas/IMatrixPlate'
+      - description: 'A MatrixPlate is a rack-style storage plate in Benchling''s inventory system.
+
+          Each position in a MatrixPlate can be empty or can hold a movable Container object.
+
+          Note that this behavior differs from that of WellPlates, in which each well is
+
+          a permanent part of the plate.
+
+          MatrixPlates are ideal for modeling tube racks,
+
+          sample storage boxes with removable tubes, and other flexible storage formats. Each
+
+          plate tracks its capacity (totalCapacity, availableCapacity, occupiedCapacity) and
+
+          conforms to a MatrixPlateSchema that defines the grid dimensions and optionally
+
+          restricts which ContainerSchema types can be stored. MatrixPlates can be stored in
+
+          Locations, associated with Studies, and identified by barcode.'
+        properties:
+          __typename:
+            type: string
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+            description: The user who created the plate
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
     SchemaFieldValue:
       description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
 
@@ -623,97 +764,76 @@ components:
             - $ref: '#/components/schemas/TextValue'
             - $ref: '#/components/schemas/ArrayValue'
             discriminator:
+              mapping:
+                ArrayValue: '#/components/schemas/ArrayValue'
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
               propertyName: __typename
           - type: 'null'
       type: object
-    MatrixPlate:
-      allOf:
-      - $ref: '#/components/schemas/IMatrixPlate'
-      - description: 'A MatrixPlate is a rack-style storage plate where Containers (tubes, vials) can be
-
-          inserted into and removed from grid positions. Unlike FixedPlate or WellPlate where
-
-          wells are permanently attached, MatrixPlate positions (see MatrixPlatePosition) can
-
-          be empty or hold movable containers. This makes MatrixPlates ideal for tube racks,
-
-          sample storage boxes with removable tubes, and other flexible storage formats. Each
-
-          plate tracks its capacity (totalCapacity, availableCapacity, occupiedCapacity) and
-
-          conforms to a MatrixPlateSchema that defines the grid dimensions and optionally
-
-          restricts which ContainerSchema types can be stored. MatrixPlates can be stored in
-
-          Locations, associated with Studies, and identified by barcode.'
-        properties:
-          __typename:
-            type: string
-          creator:
-            $ref: '#/components/schemas/PrincipalRef'
-            description: The user who created the plate
-          schemaFields:
-            oneOf:
-            - items:
-                $ref: '#/components/schemas/SchemaFieldValue'
-              type: array
-            - type: 'null'
-        type: object
-    ObjectLinkValue:
-      description: A type that represents links to other objects.
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DateValue:
+      description: A type that represents date values.
       properties:
         __typename:
           type: string
         value:
-          $ref: '#/components/schemas/ObjectRef'
-          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+          description: The date value.
+          format: date
+          type: string
       type: object
-    MatrixPlatePosition:
-      description: A well position within a MatrixPlate.
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    ContainerRef:
       properties:
         __typename:
           type: string
-        container:
-          description: Container at the current position within the matrix plate.
-          oneOf:
-          - $ref: '#/components/schemas/ContainerRef'
-          - type: 'null'
-        coordinates:
-          $ref: '#/components/schemas/GridCoordinates'
-          description: Coordinates of the current position within the matrix plate.
+        id:
+          format: api_id
+          type: string
       type: object
-    TextValue:
-      description: A type that represents text (string) values.
+    PrincipalRef:
       properties:
         __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
           type: string
         value:
           description: The text value. It may or may not be an empty string.
           type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     IMatrixPlate:
       properties:
@@ -774,139 +894,33 @@ components:
           description: The total capacity of a matrix plate (i.e. how many containers it can store).
           type: integer
       type: object
-    DateValue:
-      description: A type that represents date values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The date value.
-          format: date
-          type: string
-      type: object
-    MatrixPlatePaginatedList:
+    UpdateMatrixPlateInput:
       additionalProperties: false
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/MatrixPlate'
-          type: array
-        nextToken:
+        archiveReason:
+          description: Why the plate is archived
           type: string
-      type: object
-    GridCoordinates:
-      description: Read model representing a fillable position in a box or plate.
-      properties:
-        __typename:
-          type: string
-        column:
-          description: The 0-indexed column index of the position
-          type: integer
-        index:
-          description: 'The 1-indexed position determined by counting across rows.
-
-            For example, for a six-well plate:
-
-            +---+---+---+
-
-            | 1 | 2 | 3 |
-
-            +---+---+---+
-
-            | 4 | 5 | 6 |
-
-            +---+---+---+'
-          type: integer
-        position:
-          description: 'The alphanumeric position, where rows are indexed alphabetically and columns are indexed numerically,
-
-            starting from "A1"'
-          type: string
-        row:
-          description: The 0-indexed row index of the position
-          type: integer
-      type: object
-    MatrixPlatePositionInput:
-      additionalProperties: false
-      properties:
-        barcode:
-          type: string
-        position:
-          type: string
-      required:
-      - position
-      type: object
-    ObjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ContainerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    BooleanValue:
-      description: A type that represents boolean values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The boolean value.
+        archived:
+          description: Whether the plate is archived
           type: boolean
-      type: object
-    SchemaFieldDefinitionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CreateMatrixPlateInput:
-      additionalProperties: false
-      properties:
         barcode:
           description: Barcode of the plate
-          type: string
-        containerSchemaId:
           type: string
         name:
           description: Name of the plate; defaults to barcode if name is not provided
           type: string
         parentStorageId:
-          type: string
-        positions:
-          description: The wells of the plate
-          items:
-            $ref: '#/components/schemas/MatrixPlatePositionInput'
-          type: array
+          type:
+          - 'null'
+          - string
         projectId:
-          type: string
+          type:
+          - 'null'
+          - string
         schemaFields:
           additionalProperties:
             $ref: '#/components/schemas/FieldValueInput'
           type: object
-        schemaId:
-          type: string
-      required:
-      - schemaId
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
-          type: string
       type: object
     UpdateMatrixPlateInputWithPathParams:
       additionalProperties: false
@@ -940,11 +954,143 @@ components:
       required:
       - id
       type: object
+    BooleanValue:
+      description: A type that represents boolean values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The boolean value.
+          type: boolean
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AnyType: {}
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
+    MatrixPlatePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/MatrixPlate'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    MatrixPlatePosition:
+      description: A well position within a MatrixPlate.
+      properties:
+        __typename:
+          type: string
+        container:
+          description: Container at the current position within the matrix plate.
+          oneOf:
+          - $ref: '#/components/schemas/ContainerRef'
+          - type: 'null'
+        coordinates:
+          $ref: '#/components/schemas/GridCoordinates'
+          description: Coordinates of the current position within the matrix plate.
+      type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    barcode.anyOf:
+      description: Restricts results to those matching any of the specified barcodes. Fails and reports any invalid barcodes. Comma-separated list.
+      explode: false
+      in: query
+      name: barcode.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    schema.eq:
+      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
+      in: query
+      name: schema.eq
+      schema:
+        type: string
+    parentStorage.eq:
+      description: ID of a location. Restricts results to those located in the specified inventory.
+      in: query
+      name: parentStorage.eq
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -954,6 +1100,39 @@ components:
       name: nextToken
       schema:
         type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -963,11 +1142,11 @@ components:
         items:
           type: string
         type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    schema.anyOf:
+      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf
+      name: schema.anyOf
       schema:
         items:
           type: string
@@ -993,16 +1172,13 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archiveReason.anyOf
+      name: modifiedAt.lte
       schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
+        format: datetime
+        type: string
     creator.anyOf:
       description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
       explode: false
@@ -1013,60 +1189,16 @@ components:
           type: string
         maxItems: 100
         type: array
-    barcode.anyOf:
-      description: Restricts results to those matching any of the specified barcodes. Fails and reports any invalid barcodes. Comma-separated list.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: barcode.anyOf
+      name: name.anyOf
       schema:
         items:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    parentStorage.eq:
-      description: ID of a location. Restricts results to those located in the specified inventory.
-      in: query
-      name: parentStorage.eq
-      schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
     createdAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
@@ -1074,32 +1206,10 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -1108,26 +1218,39 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
     NotFound:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -1135,6 +1258,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

@@ -5,16 +5,41 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Event Subscription API
   version: 2.0.0
-  description: Configures delivery of Benchling events to external systems via AWS EventBridge.
+  description: 'Configures delivery of Benchling events to external systems via AWS EventBridge. Event
+
+    subscriptions enable real-time integration by streaming events (such as entity creation,
+
+    updates, or workflow state changes) to a customer''s AWS EventBridge event bus. The
+
+    subscription includes the destination AWS ARN (see `destinationAddress`), routing metadata,
+
+    and lifecycle management through expiration (see `expiresAt`) and pause controls. Paused
+
+    subscriptions stop emitting events but retain their configuration for later resumption.
+
+    Event subscriptions are typically managed through Benchling Apps (see `BenchlingApp`).'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: Configures delivery of Benchling events to external systems via AWS EventBridge.
+- description: 'Configures delivery of Benchling events to external systems via AWS EventBridge. Event
+
+    subscriptions enable real-time integration by streaming events (such as entity creation,
+
+    updates, or workflow state changes) to a customer''s AWS EventBridge event bus. The
+
+    subscription includes the destination AWS ARN (see `destinationAddress`), routing metadata,
+
+    and lifecycle management through expiration (see `expiresAt`) and pause controls. Paused
+
+    subscriptions stop emitting events but retain their configuration for later resumption.
+
+    Event subscriptions are typically managed through Benchling Apps (see `BenchlingApp`).'
   name: EventSubscription
   x-bnch-organization: Benchling
+  x-displayName: Event Subscription
 paths:
   /event-subscription/items:
     get:
@@ -66,7 +91,6 @@ paths:
       summary: List EventSubscription items
       tags:
       - EventSubscription
-      x-bnch-rate-limit-tier: 4
   /event-subscription/{event_subscription_id}:
     get:
       description: Get a single EventSubscription by ID.
@@ -107,9 +131,15 @@ paths:
       summary: Get EventSubscription by ID
       tags:
       - EventSubscription
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
@@ -123,19 +153,10 @@ components:
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -144,30 +165,6 @@ components:
       in: query
       name: nextToken
       schema:
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
         type: string
     returning:
       description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
@@ -178,7 +175,123 @@ components:
         items:
           type: string
         type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     GeneralError:
       properties:
         detail:
@@ -187,6 +300,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -283,66 +398,16 @@ components:
             $ref: '#/components/schemas/EventSubscription'
           type: array
         nextToken:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
           type:
-          - 'null'
           - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
           - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

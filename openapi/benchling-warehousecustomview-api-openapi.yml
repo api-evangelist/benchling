@@ -7,7 +7,17 @@ info:
   version: 2.0.0
   description: 'A custom SQL view created by users in Benchling''s data warehouse, allowing them to
 
-    define reusable queries that can be accessed like tables.'
+    define reusable queries that can be accessed like tables.
+
+    Views appear in a dedicated schema and can be queried via Insights Dashboards or Direct Access.
+
+    View names are unique within the tenant.
+
+    View''s `viewQuery` field contains the SQL SELECT statement that defines the view.
+
+    View''s `existsInWarehouse` flag indicates whether the view exists in the warehouse. It is updated
+
+    asynchronously, so it may be out of date for a brief period of time.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +26,20 @@ security:
 tags:
 - description: 'A custom SQL view created by users in Benchling''s data warehouse, allowing them to
 
-    define reusable queries that can be accessed like tables.'
+    define reusable queries that can be accessed like tables.
+
+    Views appear in a dedicated schema and can be queried via Insights Dashboards or Direct Access.
+
+    View names are unique within the tenant.
+
+    View''s `viewQuery` field contains the SQL SELECT statement that defines the view.
+
+    View''s `existsInWarehouse` flag indicates whether the view exists in the warehouse. It is updated
+
+    asynchronously, so it may be out of date for a brief period of time.'
   name: WarehouseCustomView
   x-bnch-organization: Benchling
+  x-displayName: Warehouse Custom View
 paths:
   /warehouse-custom-view/items:
     get:
@@ -76,7 +97,6 @@ paths:
       summary: List WarehouseCustomView items
       tags:
       - WarehouseCustomView
-      x-bnch-rate-limit-tier: 4
   /warehouse-custom-view/{warehouse_custom_view_id}:
     get:
       description: Get a single WarehouseCustomView by ID.
@@ -117,45 +137,25 @@ paths:
       summary: Get WarehouseCustomView by ID
       tags:
       - WarehouseCustomView
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: omit
+      name: pageSize
       schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
+      name: modifiedAt.gt
       schema:
         format: datetime
         type: string
@@ -166,24 +166,23 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: modifiedAt.lt
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -196,12 +195,25 @@ components:
         items:
           type: string
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: pageSize
+      name: omit
       schema:
-        type: integer
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -209,10 +221,17 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -221,14 +240,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -241,6 +261,12 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -248,14 +274,6 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   schemas:
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -282,6 +300,32 @@ components:
       - status
       - instance
       type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     GeneralError:
       properties:
         detail:
@@ -290,6 +334,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -346,6 +392,14 @@ components:
         viewQuery:
           type: string
       type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     WarehouseCustomViewPaginatedList:
       additionalProperties: false
       properties:
@@ -354,9 +408,16 @@ components:
             $ref: '#/components/schemas/WarehouseCustomView'
           type: array
         nextToken:
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

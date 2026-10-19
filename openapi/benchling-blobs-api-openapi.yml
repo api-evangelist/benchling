@@ -370,22 +370,16 @@ paths:
       - Blobs
 components:
   schemas:
-    EmptyObject:
-      type: object
-    BlobComplete:
-      additionalProperties: false
+    BadRequestError:
       properties:
-        parts:
-          items:
-            $ref: '#/components/schemas/BlobPart'
-          type: array
-      type: object
-    BlobsBulkGet:
-      properties:
-        blobs:
-          items:
-            $ref: '#/components/schemas/Blob'
-          type: array
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     BlobPart:
       properties:
@@ -396,15 +390,6 @@ components:
           maximum: 10000
           minimum: 1
           type: integer
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
       type: object
     BlobCreate:
       additionalProperties: false
@@ -441,39 +426,38 @@ components:
       - data64
       - md5
       type: object
-    BadRequestError:
+    BlobMultipartCreate:
+      additionalProperties: false
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    BlobUrl:
-      properties:
-        downloadURL:
-          description: a pre-signed download url.
-          format: uri
+        mimeType:
+          default: application/octet-stream
+          description: eg. application/jpeg
+          maxLength: 100
           type: string
-        expiresAt:
-          description: The unix time that the download URL expires at.
-          type: integer
+        name:
+          description: Name of the blob
+          maxLength: 1000
+          type: string
+        type:
+          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
+
+            '
+          enum:
+          - RAW_FILE
+          - VISUALIZATION
+          type: string
+      required:
+      - name
+      - type
       type: object
-    NotFoundError:
+    BaseError:
       properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
       type: object
     Blob:
       properties:
@@ -507,6 +491,31 @@ components:
           - ABORTED
           type: string
       type: object
+    BlobUrl:
+      properties:
+        downloadURL:
+          description: a pre-signed download url.
+          format: uri
+          type: string
+        expiresAt:
+          description: The unix time that the download URL expires at.
+          type: integer
+      type: object
+    EmptyObject:
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
     BlobPartCreate:
       additionalProperties: false
       properties:
@@ -527,29 +536,20 @@ components:
       - data64
       - md5
       type: object
-    BlobMultipartCreate:
+    BlobsBulkGet:
+      properties:
+        blobs:
+          items:
+            $ref: '#/components/schemas/Blob'
+          type: array
+      type: object
+    BlobComplete:
       additionalProperties: false
       properties:
-        mimeType:
-          default: application/octet-stream
-          description: eg. application/jpeg
-          maxLength: 100
-          type: string
-        name:
-          description: Name of the blob
-          maxLength: 1000
-          type: string
-        type:
-          description: 'One of RAW_FILE or VISUALIZATION. If VISUALIZATION, the blob may be displayed as an image preview.
-
-            '
-          enum:
-          - RAW_FILE
-          - VISUALIZATION
-          type: string
-      required:
-      - name
-      - type
+        parts:
+          items:
+            $ref: '#/components/schemas/BlobPart'
+          type: array
       type: object
   securitySchemes:
     basicApiKeyAuth:

@@ -296,46 +296,88 @@ paths:
       - Assay Runs
 components:
   schemas:
-    SchemaSummary:
+    AssayRunsBulkCreateErrorResponse:
       properties:
-        id:
-          type: string
-        name:
-          type: string
+        assayRuns:
+          default: null
+          items:
+            type: object
+          type:
+          - array
+          - 'null'
+        errors:
+          items:
+            properties:
+              fields:
+                type: object
+              global:
+                items:
+                  type: string
+                type: array
+            type: object
+          type: array
       type: object
-    AutomationProgressStats:
-      description: Processing progress information.
+    LabAutomationBenchlingAppErrors:
       properties:
-        rowsFailed:
-          type: integer
-        rowsSucceeded:
-          type: integer
-        rowsUnprocessed:
-          type: integer
+        topLevelErrors:
+          items:
+            properties:
+              errorMessage:
+                type: string
+            type: object
+          type: array
       type: object
-    AutomationFile:
+    AutomationInputGenerator:
+      allOf:
+      - $ref: '#/components/schemas/AutomationFile'
+      - properties:
+          apiURL:
+            description: The canonical url of the Automation Input Generator in the API.
+            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
+            format: uri
+            readOnly: true
+            type: string
+          createdAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          id:
+            example: aif_C3wGA9HF
+            type: string
+          modifiedAt:
+            description: DateTime the Automation Input Generator was last modified
+            format: date-time
+            readOnly: true
+            type: string
+          transforms:
+            items:
+              allOf:
+              - $ref: '#/components/schemas/LabAutomationTransform'
+            type: array
+        type: object
+    AssayRunsArchive:
+      additionalProperties: false
+      description: 'The request body for archiving Assay Runs.
+
+        '
       properties:
-        assayRunId:
-          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
-          type: string
-        automationFileConfig:
-          properties:
-            name:
-              example: MyInstrumentName
-              type: string
-          type: object
-        file:
-          allOf:
-          - $ref: '#/components/schemas/Blob'
-        id:
-          type: string
-        status:
+        assayRunIds:
+          items:
+            type: string
+          type: array
+        reason:
+          description: 'The reason for archiving the provided Assay Runs. Accepted reasons may differ based on tenant configuration.
+
+            '
           enum:
-          - SUCCEEDED
-          - FAILED
-          - NOT_STARTED
-          - RUNNING
+          - Archived
+          - Made in error
+          - Other
           type: string
+      required:
+      - reason
+      - assayRunIds
       type: object
     Blob:
       properties:
@@ -369,6 +411,35 @@ components:
           - ABORTED
           type: string
       type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
     AssayRunValidationStatus:
       description: Must be either VALID or INVALID
       enum:
@@ -413,37 +484,6 @@ components:
               - $ref: '#/components/schemas/LabAutomationTransform'
             type: array
         type: object
-    AssayFieldsCreate:
-      additionalProperties: true
-      type: object
-    AssayRunsBulkGet:
-      properties:
-        assayRuns:
-          items:
-            $ref: '#/components/schemas/AssayRun'
-          type: array
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    LabAutomationBenchlingAppErrors:
-      properties:
-        topLevelErrors:
-          items:
-            properties:
-              errorMessage:
-                type: string
-            type: object
-          type: array
-      type: object
     AssayRunsBulkCreateRequest:
       additionalProperties: false
       properties:
@@ -453,34 +493,6 @@ components:
           type: array
       required:
       - assayRuns
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    AutomationFileInputsPaginatedList:
-      properties:
-        automationInputGenerators:
-          items:
-            $ref: '#/components/schemas/AutomationInputGenerator'
-          type: array
-        nextToken:
-          example: Im5ldyB0ZXN0Ig==
-          type: string
-      type: object
-    AssayRunsBulkCreateResponse:
-      properties:
-        assayRuns:
-          items:
-            type: string
-          type: array
-        errors:
-          default: null
-          type:
-          - object
-          - 'null'
       type: object
     AssayRunsUnarchive:
       additionalProperties: false
@@ -495,6 +507,23 @@ components:
       required:
       - assayRunIds
       type: object
+    AutomationFileInputsPaginatedList:
+      properties:
+        automationInputGenerators:
+          items:
+            $ref: '#/components/schemas/AutomationInputGenerator'
+          type: array
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
     AssayRunsArchivalChange:
       description: 'IDs of all Assay Runs that were archived / unarchived.
 
@@ -505,23 +534,12 @@ components:
             type: string
           type: array
       type: object
-    PartySummary:
+    AssayRunsBulkGet:
       properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        assayRuns:
+          items:
+            $ref: '#/components/schemas/AssayRun'
+          type: array
       type: object
     AssayRunCreate:
       properties:
@@ -550,75 +568,15 @@ components:
       - schemaId
       - fields
       type: object
-    AutomationInputGenerator:
-      allOf:
-      - $ref: '#/components/schemas/AutomationFile'
-      - properties:
-          apiURL:
-            description: The canonical url of the Automation Input Generator in the API.
-            example: https://benchling.com/api/v2/automation-input-generators/aif_C3wGA9HF
-            format: uri
-            readOnly: true
-            type: string
-          createdAt:
-            description: DateTime the Automation Input Generator was last modified
-            format: date-time
-            readOnly: true
-            type: string
-          id:
-            example: aif_C3wGA9HF
-            type: string
-          modifiedAt:
-            description: DateTime the Automation Input Generator was last modified
-            format: date-time
-            readOnly: true
-            type: string
-          transforms:
-            items:
-              allOf:
-              - $ref: '#/components/schemas/LabAutomationTransform'
-            type: array
-        type: object
-    LabAutomationTransform:
+    DeprecatedAutomationOutputProcessorsPaginatedList:
+      description: Deprecated - A paginated list of automation output processors
       properties:
-        apiURL:
-          description: The canonical url of the transform in the API.
-          format: uri
-          readOnly: true
-          type: string
-        blobId:
-          format: uuid
-          type:
-          - string
-          - 'null'
-        customTransformId:
-          format: uuid
-          type:
-          - string
-          - 'null'
-        errors:
-          $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
-        id:
-          type: string
-        inputGeneratorId:
-          type:
-          - string
-          - 'null'
-        modifiedAt:
-          description: DateTime the transform was last modified.
-          format: date-time
-          readOnly: true
-          type: string
-        outputProcessorId:
-          type:
-          - string
-          - 'null'
-        status:
-          enum:
-          - NOT_STARTED
-          - RUNNING
-          - FAILED
-          - SUCCEEDED
+        automationOutputProcessors:
+          items:
+            $ref: '#/components/schemas/AutomationOutputProcessor'
+          type: array
+        nextToken:
+          example: Im5ldyB0ZXN0Ig==
           type: string
       type: object
     AssayRun:
@@ -679,59 +637,111 @@ components:
         validationStatus:
           $ref: '#/components/schemas/AssayRunValidationStatus'
       type: object
-    AssayRunsPaginatedList:
+    AutomationProgressStats:
+      description: Processing progress information.
       properties:
-        assayRuns:
-          items:
-            $ref: '#/components/schemas/AssayRun'
-          type: array
-        nextToken:
+        rowsFailed:
+          type: integer
+        rowsSucceeded:
+          type: integer
+        rowsUnprocessed:
+          type: integer
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
           type: string
       type: object
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
-      type: object
-    AssayRunUpdate:
-      additionalProperties: false
+    LabAutomationTransform:
       properties:
-        equipmentId:
-          description: The equipment that the assay run should be associated with.  This attribute is only supported if the equipment feature is enabled for the tenant; otherwise, supplying it leads to a 400 request error
+        apiURL:
+          description: The canonical url of the transform in the API.
+          format: uri
+          readOnly: true
+          type: string
+        blobId:
+          format: uuid
           type:
           - string
           - 'null'
-        fields:
-          $ref: '#/components/schemas/Fields'
+        customTransformId:
+          format: uuid
+          type:
+          - string
+          - 'null'
+        errors:
+          $ref: '#/components/schemas/LabAutomationBenchlingAppErrors'
+        id:
+          type: string
+        inputGeneratorId:
+          type:
+          - string
+          - 'null'
+        modifiedAt:
+          description: DateTime the transform was last modified.
+          format: date-time
+          readOnly: true
+          type: string
+        outputProcessorId:
+          type:
+          - string
+          - 'null'
+        status:
+          enum:
+          - NOT_STARTED
+          - RUNNING
+          - FAILED
+          - SUCCEEDED
+          type: string
       type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
+    AutomationFile:
+      properties:
+        assayRunId:
+          example: 588aca02-1a20-4b94-a40f-b3f3a0081749
+          type: string
+        automationFileConfig:
+          properties:
+            name:
+              example: MyInstrumentName
+              type: string
+          type: object
+        file:
+          allOf:
+          - $ref: '#/components/schemas/Blob'
+        id:
+          type: string
+        status:
+          enum:
+          - SUCCEEDED
+          - FAILED
+          - NOT_STARTED
+          - RUNNING
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    AssayFieldsCreate:
+      additionalProperties: true
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
     Field:
       properties:
         displayValue:
@@ -769,66 +779,56 @@ components:
       required:
       - value
       type: object
-    AssayRunsBulkCreateErrorResponse:
+    AssayRunUpdate:
+      additionalProperties: false
+      properties:
+        equipmentId:
+          description: The equipment that the assay run should be associated with.  This attribute is only supported if the equipment feature is enabled for the tenant; otherwise, supplying it leads to a 400 request error
+          type:
+          - string
+          - 'null'
+        fields:
+          $ref: '#/components/schemas/Fields'
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
+    AssayRunsBulkCreateResponse:
       properties:
         assayRuns:
-          default: null
-          items:
-            type: object
-          type:
-          - array
-          - 'null'
-        errors:
-          items:
-            properties:
-              fields:
-                type: object
-              global:
-                items:
-                  type: string
-                type: array
-            type: object
-          type: array
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    AssayRunsArchive:
-      additionalProperties: false
-      description: 'The request body for archiving Assay Runs.
-
-        '
-      properties:
-        assayRunIds:
           items:
             type: string
           type: array
-        reason:
-          description: 'The reason for archiving the provided Assay Runs. Accepted reasons may differ based on tenant configuration.
-
-            '
-          enum:
-          - Archived
-          - Made in error
-          - Other
-          type: string
-      required:
-      - reason
-      - assayRunIds
+        errors:
+          default: null
+          type:
+          - object
+          - 'null'
       type: object
-    DeprecatedAutomationOutputProcessorsPaginatedList:
-      description: Deprecated - A paginated list of automation output processors
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    SchemaSummary:
       properties:
-        automationOutputProcessors:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AssayRunsPaginatedList:
+      properties:
+        assayRuns:
           items:
-            $ref: '#/components/schemas/AutomationOutputProcessor'
+            $ref: '#/components/schemas/AssayRun'
           type: array
         nextToken:
-          example: Im5ldyB0ZXN0Ig==
           type: string
       type: object
   securitySchemes:

@@ -1,0 +1,1483 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Plate Record API
+  version: 2.0.0
+  description: 'A plate design or record used for designing, tracking, and analyzing experimental plates
+
+    outside of the inventory.
+
+
+    Plate records are the working surface for plate-based workflows: you build up
+
+    a plate''s layout (well roles, contents, concentrations, metadata, measurements)
+
+    through one or more creates and updates, then optionally convert it to a
+
+    persistent inventory plate via the `bulk-put-in-inventory` endpoint.
+
+
+    Each layer of data (label, content, concentration, metadata, measurements, etc.)
+
+    is accessible via its `dataFrame`.
+
+
+    These endpoints are not generally available and may fail depending on your tenant configuration.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'A plate design or record used for designing, tracking, and analyzing experimental plates
+
+    outside of the inventory.
+
+
+    Plate records are the working surface for plate-based workflows: you build up
+
+    a plate''s layout (well roles, contents, concentrations, metadata, measurements)
+
+    through one or more creates and updates, then optionally convert it to a
+
+    persistent inventory plate via the `bulk-put-in-inventory` endpoint.
+
+
+    Each layer of data (label, content, concentration, metadata, measurements, etc.)
+
+    is accessible via its `dataFrame`.
+
+
+    These endpoints are not generally available and may fail depending on your tenant configuration.'
+  name: PlateRecord
+  x-bnch-organization: Benchling
+  x-displayName: Plate Record
+paths:
+  /plate-record:
+    post:
+      description: 'Create one or more PlateRecords. Three creation modes are supported:
+
+
+        **From scratch**: Provide `name`, `height`, `width`, and any layer fields (`wells`, `concentrationLayers`, `metadataLayers`, etc.).
+
+
+        **From a design template**: Provide `plateDesignTemplateId` to clone a plate design. `height` and `width` default to the design''s dimensions. Omitting a layer field preserves the design''s layer; supplying an explicit empty list removes it.'
+      operationId: PlateRecord.Create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlateRecordInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlateRecord'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create PlateRecord
+      tags:
+      - PlateRecord
+  /plate-record/items:
+    get:
+      description: List PlateRecord items.
+      operationId: PlateRecord.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlateRecordPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List PlateRecord items
+      tags:
+      - PlateRecord
+  /plate-record/{plate_record_id}:
+    get:
+      description: Get a single PlateRecord by ID.
+      operationId: PlateRecord.Get
+      parameters:
+      - description: ID of the PlateRecord.
+        in: path
+        name: plate_record_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlateRecord'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get PlateRecord by ID
+      tags:
+      - PlateRecord
+    patch:
+      description: Update PlateRecord.
+      operationId: PlateRecord.Update
+      parameters:
+      - description: ID of the PlateRecord.
+        in: path
+        name: plate_record_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlateRecordInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlateRecord'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update PlateRecord
+      tags:
+      - PlateRecord
+  /plate-record:batch-create:
+    post:
+      description: Batch create PlateRecord synchronously in one transaction. Maximum 25 items per request.
+      operationId: PlateRecord.BatchCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreatePlateRecordInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/PlateRecord'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create PlateRecord
+      tags:
+      - PlateRecord
+  /plate-record:batch-update:
+    patch:
+      description: Batch update PlateRecord synchronously in one transaction. Maximum 25 items per request.
+      operationId: PlateRecord.BatchUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdatePlateRecordInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/PlateRecord'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update PlateRecord
+      tags:
+      - PlateRecord
+  /plate-record:bulk-create:
+    post:
+      description: 'Bulk create PlateRecords asynchronously from an uploaded JSONL file.
+
+
+        Rows use the same field requirements as single create. Semantic/reference validation is row-isolated via connector validation, but two caveats apply:
+
+        - `vendorFile` / `plateReaderAsm` parse failures occur during create execution and can fail the whole chunk (up to batch size), not just one row.
+
+        - Malformed input rows fail at parse/deserialization time before connector row validation.'
+      operationId: PlateRecord.BulkCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create PlateRecord
+      tags:
+      - PlateRecord
+  /plate-record:bulk-put-in-inventory:
+    post:
+      description: 'Create a WellPlate object from each PlateRecord, populating wells from the plate record''s label and content layers and any column mappings. Each item targets a plate schema (explicit or inherited from the plate record), an inventory location, and an optional project. The new plates are added to inventory and the original plate records are left unchanged.
+
+
+        The scratch file must be a JSONL file where each line is a JSON object with the following structure:
+
+
+        {"request_id": "unique-id-per-row", "input_object": {}}
+
+
+        The input_object fields (all camelCase) are:
+
+        - plateRecordId (required): ID of the plate record to convert.
+
+        - plateSchemaId: ID of the plate schema for the new inventory plate. If omitted, resolved from the plate record''s own plateSchemaId; fails if neither is set.
+
+        - name: Name for the new inventory plate. Defaults to the plate record''s name.
+
+        - barcode: Barcode assignment. Either {"barcodeMode": "USE_NAME", "useNameAsBarcode": true} or {"barcodeMode": "SPECIFY_BARCODE", "barcode": "barcode-value"}.
+
+        - sourceId: API ID of the source entity to associate with the new plate.
+
+        - parentStorableId: API ID of the storage location to place the new plate into.
+
+        - columnMappings: List of {layerName, columnName, schemaFieldName} objects mapping plate record layer columns onto container-schema fields.
+
+        - studyIds: List of study IDs to associate with the new plate.'
+      operationId: PlateRecord.BulkPutInInventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Put PlateRecords in inventory
+      tags:
+      - PlateRecord
+  /plate-record:bulk-stamp-plate-record-onto-inventory:
+    post:
+      description: 'Stamp a plate record''s (or plate design''s) snapshot onto an existing inventory plate. Every layer the source plate carries is applied; a plate record or plate design only carries a subset of layers, and layer types it doesn''t have are left untouched on the target plate. Content and volumes from the plate''s content layer become the plate''s authoritative state for that dimension: they''re written onto the target plate''s wells, and any well the layer doesn''t cover is cleared to match. A plate with no content layer at all doesn''t capture that dimension, so the target plate''s existing contents and volumes are left as they are. A label layer sets the target plate''s well experimental roles, schema tags, and volumes. Column mappings map columns from any plate layer onto the target plate''s existing container-schema fields.
+
+
+        The scratch file must be a JSONL file where each line is a JSON object with the following structure:
+
+
+        {"request_id": "unique-id-per-row", "input_object": {}}
+
+
+        The input_object fields (all camelCase) are:
+
+        - plateRecordId (required): ID of the plate record whose snapshot should be stamped onto the target plate.
+
+        - inventoryPlateId or inventoryPlateBarcode (exactly one required): ID or barcode of the existing inventory plate to stamp. The plate must be writable, must be a well plate (not a matrix plate), and its dimensions must exactly match the source plate record; otherwise the row returns a 400. Each inventory plate can be stamped at most once per request.
+
+        - columnMappings: List of {layerName, columnName, schemaFieldName} objects mapping plate record layer columns onto the target plate''s container-schema fields.'
+      operationId: PlateRecord.BulkStampPlateRecordOntoInventory
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Stamp PlateRecord onto inventory plate
+      tags:
+      - PlateRecord
+  /plate-record:bulk-update:
+    patch:
+      description: Bulk update PlateRecord.
+      operationId: PlateRecord.BulkUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update PlateRecord
+      tags:
+      - PlateRecord
+  /plate-record:transfer:
+    post:
+      description: Create destination plate record(s) by transferring content out of existing source plates. Each move is recorded as a destination_transfer on the child and a source_transfer on the source. The source plates are historical records and are never rewritten; instead the result also carries a copy of each source holding what remained after the transfer, which is empty when any drawn-from well could not say how much it had left.
+      operationId: PlateRecord.Transfer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlateRecordTransferRequestInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferPlateRecordsResult'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Transfer PlateRecord content
+      tags:
+      - PlateRecord
+  /plate-record:transfer-async:
+    post:
+      description: Asynchronously create destination plate record(s) by transferring content out of existing source plates, alongside a copy of each source holding what remained.
+      operationId: PlateRecord.TransferAsync
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlateRecordTransferRequestInput'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Transfer PlateRecords asynchronously
+      tags:
+      - PlateRecord
+  /tasks/plate-record/transfer-async/{task_id}:
+    get:
+      description: Poll status for Asynchronously create destination plate record(s) by transferring content out of existing source plates, alongside a copy of each source holding what remained..
+      operationId: PlateRecord.TransferAsync.Get
+      parameters:
+      - description: ID of the asynchronous task to poll.
+        in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                  result:
+                    oneOf:
+                    - $ref: '#/components/schemas/TransferPlateRecordsResult'
+                    - type: 'null'
+                  status:
+                    enum:
+                    - NOT_STARTED
+                    - IN_PROGRESS
+                    - COMPLETED
+                    - FAILED
+                    type: string
+                required:
+                - status
+                - message
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Poll async task status
+      tags:
+      - PlateRecord
+components:
+  parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+  schemas:
+    WellTransferInput:
+      additionalProperties: false
+      properties:
+        destinationPlateIndex:
+          type: integer
+        destinationWellPosition:
+          type: string
+        diluentEntityId:
+          type: string
+        diluentQuantity:
+          $ref: '#/components/schemas/QuantityInput'
+        finalVolume:
+          $ref: '#/components/schemas/QuantityInput'
+        sourceDestinationPlateIndex:
+          type: integer
+        sourcePlateId:
+          type: string
+        sourceWellPosition:
+          type: string
+        transferQuantity:
+          $ref: '#/components/schemas/QuantityInput'
+      required:
+      - sourceWellPosition
+      - destinationPlateIndex
+      - destinationWellPosition
+      type: object
+    MetadataColumnInput:
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+        plateValue:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - type: boolean
+          - type: 'null'
+        systemName:
+          type: string
+        type:
+          enum:
+          - text
+          - integer
+          - float
+          - boolean
+          - date
+          - datetime
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/MetadataWellInput'
+          type: array
+      required:
+      - name
+      - type
+      type: object
+    CreatePlateRecordInput:
+      additionalProperties: false
+      properties:
+        barcode:
+          description: Barcode to record as a plate field in the metadata layer.
+          type: string
+        concentrationLayers:
+          items:
+            $ref: '#/components/schemas/ConcentrationLayerInput'
+          type: array
+        contents:
+          items:
+            $ref: '#/components/schemas/ContentItemInput'
+          type: array
+        height:
+          type: integer
+        measurements:
+          items:
+            $ref: '#/components/schemas/PlateRecordMeasurementInput'
+          type: array
+        metadataLayers:
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          type: string
+        originDesignId:
+          type: string
+        parameterLayers:
+          items:
+            $ref: '#/components/schemas/ParameterLayerInput'
+          type: array
+        plateDesignTemplateId:
+          type: string
+        plateReaderAsm:
+          $ref: '#/components/schemas/PlateRecordPlateReaderAsmInput'
+        plateSchemaId:
+          type: string
+        storageId:
+          description: Inventory storage ID to record as a plate field in the metadata layer.
+          type: string
+        vendorFile:
+          $ref: '#/components/schemas/PlateRecordVendorFileInput'
+        wells:
+          items:
+            $ref: '#/components/schemas/PlateRecordWellInput'
+          type: array
+        width:
+          type: integer
+      required:
+      - name
+      type: object
+    ContentItemInput:
+      additionalProperties: false
+      properties:
+        columnIndex:
+          type: integer
+        concentrationAmount:
+          type: number
+        concentrationUnitId:
+          type: string
+        concentrationUnitVersionNumber:
+          type: integer
+        containerBarcode:
+          type: string
+        containerContentsApiIds:
+          items:
+            type: string
+          type: array
+        containerId:
+          type: string
+        contentLayerName:
+          type: string
+        entityId:
+          type: string
+        materialInputParameterVersionIdByEntityId:
+          additionalProperties:
+            type: string
+          description: The procedure material input each placed entity fulfills, as a map from entity ID to procedure parameter version ID. Only valid when the plate record's auth parent is a procedure step document, and only for the entities this item places (the entity itself, or an entity the container holds); each entity may fulfill at most one material input.
+          type: object
+        rowIndex:
+          type: integer
+        testOrderIds:
+          items:
+            type: string
+          type: array
+        transferQuantityAmount:
+          type: number
+        transferQuantityUnitId:
+          type: string
+        transferQuantityUnitVersionNumber:
+          type: integer
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - rowIndex
+      - columnIndex
+      type: object
+    ConcentrationWellInput:
+      additionalProperties: false
+      properties:
+        concentrationAmount:
+          type:
+          - 'null'
+          - number
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - concentrationAmount
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    PlateRecordPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/PlateRecord'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    DataFrameRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ConcentrationLayerInput:
+      additionalProperties: false
+      properties:
+        concentrationUnitId:
+          type: string
+        concentrationUnitVersionNumber:
+          type: integer
+        name:
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/ConcentrationWellInput'
+          type: array
+      required:
+      - name
+      - concentrationUnitId
+      - concentrationUnitVersionNumber
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UnitInputWithPathParams:
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        versionNumber:
+          type: integer
+      required:
+      - id
+      type: object
+    ParameterLayerInput:
+      additionalProperties: false
+      properties:
+        fieldType:
+          enum:
+          - TEXT
+          - FLOAT
+          - DATETIME
+          type: string
+        name:
+          type: string
+        parameterVersionId:
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/ParameterWellInput'
+          type: array
+      required:
+      - parameterVersionId
+      - name
+      - fieldType
+      type: object
+    ParameterWellInput:
+      additionalProperties: false
+      properties:
+        value:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - type: 'null'
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - value
+      type: object
+    UpdatePlateRecordInputWithPathParams:
+      additionalProperties: false
+      properties:
+        barcode:
+          description: Barcode to record as a plate field in the metadata layer.
+          type: string
+        concentrationLayers:
+          items:
+            $ref: '#/components/schemas/ConcentrationLayerInput'
+          type: array
+        height:
+          type: integer
+        id:
+          type: string
+        isHidden:
+          description: Whether the plate record is hidden from the plate's sidebar list.
+          type: boolean
+        metadataLayers:
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          type: string
+        parameterLayers:
+          items:
+            $ref: '#/components/schemas/ParameterLayerInput'
+          type: array
+        plateSchemaId:
+          type:
+          - 'null'
+          - string
+        storageId:
+          description: Inventory storage ID to record as a plate field in the metadata layer.
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/PlateRecordWellInput'
+          type: array
+        width:
+          type: integer
+      required:
+      - id
+      type: object
+    PlateRecordWellInput:
+      additionalProperties: false
+      properties:
+        columnIndex:
+          type: integer
+        roles:
+          items:
+            $ref: '#/components/schemas/WellRoleInput'
+          type: array
+        rowIndex:
+          type: integer
+        sampleSchemaId:
+          type: string
+        schemaTags:
+          additionalProperties:
+            $ref: '#/components/schemas/AnyType'
+          type: object
+        wellVolumeAmount:
+          type: number
+        wellVolumeUnitId:
+          type: string
+        wellVolumeUnitVersionNumber:
+          type: integer
+      required:
+      - rowIndex
+      - columnIndex
+      type: object
+    PlateRecordTransferInput:
+      additionalProperties: false
+      properties:
+        direction:
+          description: Well traversal order for layout-based transfers. Defaults to ACROSS_ROWS.
+          enum:
+          - ACROSS_ROWS
+          - DOWN_COLUMNS
+          type: string
+        layout:
+          description: 'Layout algorithm used with sourcePlateIds. Determines the fan ratio of sources to destinations: STAMP (1:1), STAMP_TO_QUADRANTS/INTERLEAVE (4:1), COLUMN_INTERLEAVE (2:1), and their REVERSE_ variants (1:4, 1:2).'
+          enum:
+          - COLUMN_INTERLEAVE
+          - INTERLEAVE
+          - REVERSE_COLUMN_INTERLEAVE
+          - REVERSE_INTERLEAVE
+          - REVERSE_STAMP_TO_QUADRANTS
+          - STAMP
+          - STAMP_TO_QUADRANTS
+          type: string
+        operations:
+          description: Explicit well-to-well moves. Use this mode for fan-in, many-to-many, or serial dilution transfers. Mutually exclusive with sourcePlateIds + layout.
+          items:
+            $ref: '#/components/schemas/WellTransferInput'
+          type: array
+        skipEmpty:
+          description: If true (default), empty source wells are skipped rather than producing empty destination wells in layout-based transfers.
+          type: boolean
+        sourcePlateIds:
+          description: Ordered source plates for layout-based transfers. Consumed group by group according to the fan ratio of the chosen layout. Mutually exclusive with operations.
+          items:
+            type: string
+          type: array
+        transferQuantity:
+          $ref: '#/components/schemas/QuantityInput'
+          description: Volume to transfer per well in layout-based transfers. If omitted, the entire source well content is recorded as transferred.
+      type: object
+    WellRoleInput:
+      additionalProperties: false
+      properties:
+        group:
+          type: string
+        role:
+          type: string
+        subrole:
+          type: string
+      required:
+      - role
+      type: object
+    PlateRecordTransferRequestInput:
+      additionalProperties: false
+      properties:
+        destinationBarcodes:
+          description: Optional barcode to stamp on each destination plate record, one entry per destination plate in destination-index order. Length must equal the number of destination plates.
+          items:
+            type: string
+          type: array
+        height:
+          description: Number of rows in each destination plate record.
+          type: integer
+        metadataLayers:
+          description: Metadata layers to apply to each created destination plate record.
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          description: Base name for destination plate record(s). If multiple are created, numeric suffixes are appended.
+          type: string
+        plateSchemaId:
+          description: ID of the plate schema to apply to each destination plate record. If omitted, no plate schema is attached.
+          type: string
+        transfer:
+          $ref: '#/components/schemas/PlateRecordTransferInput'
+          description: Transfer specification describing explicit operations or a layout-derived transfer.
+        width:
+          description: Number of columns in each destination plate record.
+          type: integer
+      required:
+      - name
+      - height
+      - width
+      - transfer
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PlateRecordPlateReaderAsmInput:
+      additionalProperties: false
+      properties:
+        scratchFileId:
+          type: string
+      required:
+      - scratchFileId
+      type: object
+    TransferPlateRecordsResult:
+      description: The plate record(s) produced by a transfer.
+      properties:
+        createdPlateIds:
+          deprecated: true
+          description: Use createdPlates instead, and select the id subfield.
+          items:
+            type: string
+          type: array
+        createdPlates:
+          description: The destination plate records created by the transfer.
+          items:
+            $ref: '#/components/schemas/PlateRecordRef'
+          type: array
+        decrementedSourcePlates:
+          description: Copies of the source plates the transfer drew from, holding what remained after it. The source plates themselves are historical records and are never rewritten. Empty when any drawn-from source well could not say how much it had left, since a partial list would read as the full set of what remains.
+          items:
+            $ref: '#/components/schemas/PlateRecordRef'
+          type: array
+      type: object
+    PlateRecordVendorFileInput:
+      additionalProperties: false
+      properties:
+        scratchFileId:
+          type: string
+        vendor:
+          type: string
+      required:
+      - scratchFileId
+      - vendor
+      type: object
+    PlateRecord:
+      description: 'A plate design or record used for designing, tracking, and analyzing experimental plates
+
+        outside of the inventory.
+
+
+        Plate records are the working surface for plate-based workflows: you build up
+
+        a plate''s layout (well roles, contents, concentrations, metadata, measurements)
+
+        through one or more creates and updates, then optionally convert it to a
+
+        persistent inventory plate via the `bulk-put-in-inventory` endpoint.
+
+
+        Each layer of data (label, content, concentration, metadata, measurements, etc.)
+
+        is accessible via its `dataFrame`.
+
+
+        These endpoints are not generally available and may fail depending on your tenant configuration.'
+      properties:
+        __typename:
+          type: string
+        barcode:
+          description: The plate's barcode, when one has been recorded.
+          type:
+          - 'null'
+          - string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        height:
+          type: integer
+        id:
+          type: string
+        isHidden:
+          description: Whether the plate record is hidden from the plate's sidebar list.
+          type: boolean
+        layers:
+          items:
+            $ref: '#/components/schemas/PlateRecordLayer'
+          type: array
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        plateSchema:
+          description: The plate schema associated with this plate record. Used as the default schema when converting to an inventory plate via `bulk-put-in-inventory`; can be overridden per-item in that call.
+          oneOf:
+          - $ref: '#/components/schemas/PlateSchemaInterfaceRef'
+          - type: 'null'
+        storageId:
+          description: The plate's storage location identifier, when one has been recorded.
+          type:
+          - 'null'
+          - string
+        width:
+          type: integer
+      type: object
+    PlateRecordMeasurementInput:
+      additionalProperties: false
+      properties:
+        analyticalMethod:
+          type: string
+        columnIndex:
+          type: integer
+        detectionType:
+          type: string
+        measurementConcept:
+          type: string
+        measurementIdentifier:
+          type: string
+        measurementName:
+          type: string
+        measurementUnit:
+          type: string
+        measurementValue:
+          type: number
+        rowIndex:
+          type: integer
+      required:
+      - rowIndex
+      - columnIndex
+      type: object
+    UpdatePlateRecordInput:
+      additionalProperties: false
+      properties:
+        barcode:
+          description: Barcode to record as a plate field in the metadata layer.
+          type: string
+        concentrationLayers:
+          items:
+            $ref: '#/components/schemas/ConcentrationLayerInput'
+          type: array
+        height:
+          type: integer
+        isHidden:
+          description: Whether the plate record is hidden from the plate's sidebar list.
+          type: boolean
+        metadataLayers:
+          items:
+            $ref: '#/components/schemas/MetadataColumnInput'
+          type: array
+        name:
+          type: string
+        parameterLayers:
+          items:
+            $ref: '#/components/schemas/ParameterLayerInput'
+          type: array
+        plateSchemaId:
+          type:
+          - 'null'
+          - string
+        storageId:
+          description: Inventory storage ID to record as a plate field in the metadata layer.
+          type: string
+        wells:
+          items:
+            $ref: '#/components/schemas/PlateRecordWellInput'
+          type: array
+        width:
+          type: integer
+      type: object
+    AnyType: {}
+    QuantityInput:
+      additionalProperties: false
+      properties:
+        amount:
+          type: number
+        unit:
+          $ref: '#/components/schemas/UnitInputWithPathParams'
+      required:
+      - amount
+      type: object
+    MetadataWellInput:
+      additionalProperties: false
+      properties:
+        value:
+          anyOf:
+          - type: string
+          - type: integer
+          - type: number
+          - type: boolean
+          - type: 'null'
+        wellPosition:
+          type: string
+      required:
+      - wellPosition
+      - value
+      type: object
+    PlateRecordLayer:
+      description: A named layer within a `PlateRecord`, each backed by its own `DataFrame`.
+      properties:
+        __typename:
+          type: string
+        dataFrame:
+          $ref: '#/components/schemas/DataFrameRef'
+          description: The DataFrame holding this layer's per-well data.
+        name:
+          type: string
+      type: object
+    PlateRecordRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PlateSchemaInterfaceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+  securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

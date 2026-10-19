@@ -39,6 +39,7 @@ tags:
     "Review Lifecycle" in the backend.'
   name: ReviewProcess
   x-bnch-organization: Benchling
+  x-displayName: Review Process
 paths:
   /review-process/items:
     get:
@@ -59,6 +60,7 @@ paths:
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/omit'
       - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/projectId.eq'
       - $ref: '#/components/parameters/returning'
       - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
         in: query
@@ -70,12 +72,6 @@ paths:
           - createdAt:desc
           - modifiedAt:asc
           - modifiedAt:desc
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
           type: string
       responses:
         '200':
@@ -98,7 +94,6 @@ paths:
       summary: List ReviewProcess items
       tags:
       - ReviewProcess
-      x-bnch-rate-limit-tier: 4
   /review-process/{review_process_id}:
     get:
       description: Get a single ReviewProcess by ID.
@@ -112,12 +107,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -139,12 +128,20 @@ paths:
       summary: Get ReviewProcess by ID
       tags:
       - ReviewProcess
-      x-bnch-rate-limit-tier: 5
   /review-process/{review_process_id}/projects/items:
     get:
       description: List Project items.
       operationId: ReviewProcess.projects.List
       parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/pageSize'
       - description: ID of the ReviewProcess.
@@ -152,6 +149,15 @@ paths:
         name: review_process_id
         required: true
         schema:
+          type: string
+      - description: 'Method by which to order results. Valid sorts are: modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - modifiedAt:asc
+          - modifiedAt:desc
           type: string
       - description: Set to true to access beta operations via /api/v3.
         in: header
@@ -180,55 +186,12 @@ paths:
       summary: List Project items
       tags:
       - ReviewProcess
-      x-bnch-rate-limit-tier: 4
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: modifiedAt.lt
       schema:
         format: datetime
         type: string
@@ -242,10 +205,16 @@ components:
           type: boolean
         maxItems: 2
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: createdAt.lt
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
       schema:
         format: datetime
         type: string
@@ -256,17 +225,78 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: modifiedAt.lt
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.gt
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -277,67 +307,173 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
+    projectId.eq:
+      description: ID of a Project. Restricts results to ReviewProcesses associated with the Project.
+      in: query
+      name: projectId.eq
+      schema:
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
-    ReviewProcessVersion:
-      description: 'A specific version of a ReviewProcess configuration. Review processes are versioned
-
-        to allow changes to review requirements while preserving the rules that apply to
-
-        in-progress reviews. Each version defines the process type (self-review, parallel,
-
-        or sequential), the terminal state when complete, and the ordered list of
-
-        `ReviewProcessStage`s that must be completed.'
+    InternalServerError:
       properties:
-        __typename:
-          type: string
-        processType:
-          description: Type of this review process
-          enum:
-          - SELF_REVIEW
-          - PARALLEL
-          - SEQUENTIAL
-          - null
+        detail:
           type:
           - 'null'
           - string
-        reviewStages:
-          description: List of all stages the review must go through
-          items:
-            $ref: '#/components/schemas/ReviewProcessStageRef'
-          type: array
-        terminalState:
-          description: Stage of the reviewable at the end of the review process
-          enum:
-          - APPROVED
-          - COMPLETED
-          - ACCEPTED
-          - REVIEWED
-          - WITNESSED
-          - SELF_REVIEWED
+          - object
+        errorId:
           type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    OwnerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ReviewProcessPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewProcess'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
       type: object
     ReviewProcess:
       description: 'Defines a review process configuration that specifies how entries and other
@@ -356,6 +492,14 @@ components:
       properties:
         __typename:
           type: string
+        archiveReason:
+          description: Reason the review process was archived
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether the review process is archived
+          type: boolean
         createdAt:
           description: Timestamp when this review process was created
           format: datetime
@@ -385,82 +529,6 @@ components:
         projects:
           description: All projects that point to this review process
           format: uri
-          type: string
-      type: object
-    ReviewProcessStageRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    OwnerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ReviewProcessPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewProcess'
-          type: array
-        nextToken:
           type: string
       type: object
     Project:
@@ -539,9 +607,50 @@ components:
             $ref: '#/components/schemas/Project'
           type: array
         nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    ReviewProcessVersion:
+      description: 'A specific version of a ReviewProcess configuration. Review processes are versioned
+
+        to allow changes to review requirements while preserving the rules that apply to
+
+        in-progress reviews. Each version defines the process type (self-review, parallel,
+
+        or sequential), the terminal state when complete, and the ordered list of
+
+        `ReviewProcessStage`s that must be completed.'
+      properties:
+        __typename:
+          type: string
+        processType:
+          description: Type of this review process
+          enum:
+          - SELF_REVIEW
+          - PARALLEL
+          - SEQUENTIAL
+          - null
+          type:
+          - 'null'
+          - string
+        reviewStages:
+          description: List of all stages the review must go through
+          items:
+            $ref: '#/components/schemas/ReviewProcessStageRef'
+          type: array
+        terminalState:
+          description: Stage of the reviewable at the end of the review process
+          enum:
+          - APPROVED
+          - COMPLETED
+          - ACCEPTED
+          - REVIEWED
+          - WITNESSED
+          - SELF_REVIEWED
           type: string
       type: object
-    OrganizationRef:
+    ReviewProcessStageRef:
       properties:
         __typename:
           type: string
@@ -549,38 +658,12 @@ components:
           format: api_id
           type: string
       type: object
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

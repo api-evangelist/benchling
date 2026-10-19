@@ -7,7 +7,17 @@ info:
   version: 2.0.0
   description: 'Defines the structure and constraints for a category of Boxes in Benchling''s inventory
 
-    system.'
+    system. A BoxSchema specifies the grid dimensions (height and width) determining how
+
+    many container positions the box has, and optionally links to a ContainerSchema that
+
+    constrains what type of containers can be stored in boxes of this type. BoxSchemas
+
+    support custom field definitions for capturing additional metadata about boxes. Each
+
+    BoxSchema can be associated with a Registry and given a prefix for generating display
+
+    IDs. Examples include "96-Well Freezer Box" or "81-Position Cryo Box".'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +26,20 @@ security:
 tags:
 - description: 'Defines the structure and constraints for a category of Boxes in Benchling''s inventory
 
-    system.'
+    system. A BoxSchema specifies the grid dimensions (height and width) determining how
+
+    many container positions the box has, and optionally links to a ContainerSchema that
+
+    constrains what type of containers can be stored in boxes of this type. BoxSchemas
+
+    support custom field definitions for capturing additional metadata about boxes. Each
+
+    BoxSchema can be associated with a Registry and given a prefix for generating display
+
+    IDs. Examples include "96-Well Freezer Box" or "81-Position Cryo Box".'
   name: BoxSchema
   x-bnch-organization: Benchling
+  x-displayName: Box Schema
 paths:
   /box-schema:
     post:
@@ -49,6 +70,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -56,7 +79,6 @@ paths:
       summary: Create BoxSchema
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 4
   /box-schema/items:
     get:
       description: List BoxSchema items.
@@ -111,7 +133,6 @@ paths:
       summary: List BoxSchema items
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 4
   /box-schema/{box_schema_id}:
     get:
       description: Get a single BoxSchema by ID.
@@ -146,7 +167,6 @@ paths:
       summary: Get BoxSchema by ID
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 5
     patch:
       description: Update BoxSchema.
       operationId: BoxSchema.Update
@@ -181,6 +201,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -188,7 +210,6 @@ paths:
       summary: Update BoxSchema
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 4
   /box-schema/{box_schema_id}/field-definitions/items:
     get:
       description: List SchemaFieldDefinition items.
@@ -200,6 +221,7 @@ paths:
         required: true
         schema:
           type: string
+      - $ref: '#/components/parameters/archived.anyOf'
       - description: Set to true to access beta operations via /api/v3.
         in: header
         name: EARLY-ACCESS
@@ -227,7 +249,6 @@ paths:
       summary: List SchemaFieldDefinition items
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 4
   /box-schema:batch-create:
     post:
       description: Batch create BoxSchema synchronously in one transaction. Maximum 25 items per request.
@@ -275,6 +296,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -282,7 +305,6 @@ paths:
       summary: Batch create BoxSchema
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 3
   /box-schema:batch-update:
     patch:
       description: Batch update BoxSchema synchronously in one transaction. Maximum 25 items per request.
@@ -330,6 +352,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -337,7 +361,6 @@ paths:
       summary: Batch update BoxSchema
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 3
   /box-schema:bulk-create:
     post:
       description: Bulk create BoxSchema.
@@ -367,6 +390,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -374,7 +399,6 @@ paths:
       summary: Bulk create BoxSchema
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 2
   /box-schema:bulk-update:
     patch:
       description: Bulk update BoxSchema.
@@ -404,6 +428,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -411,19 +437,24 @@ paths:
       summary: Bulk update BoxSchema
       tags:
       - BoxSchema
-      x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    IntegerFieldDefinition:
-      description: An integer field definition for whole number values. Supports numeric constraints (min/max) and units.
+    DateFieldDefinition:
+      description: 'A field definition for date-only values, without a time component. Each field has a user-facing
+
+        `name` and a `systemName` for warehouse and API access. For values that also capture a time and
+
+        timezone, see `DateTimeFieldDefinition`.'
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -431,18 +462,23 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
         id:
           type: string
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         modifiedAt:
           format: datetime
@@ -450,55 +486,120 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
-        numericMax:
-          type:
-          - 'null'
-          - number
-        numericMin:
-          type:
-          - 'null'
-          - number
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
-        unit:
-          oneOf:
-          - $ref: '#/components/schemas/UnitRef'
-          - type: 'null'
       type: object
-    CreateAaSequenceLinkFieldDefinitionInput:
-      additionalProperties: false
+    AnyEntityLinkFieldDefinition:
+      description: A schema field definition for linking to any entity type without schema or type constraints.
       properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
         description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
           type: string
         isMulti:
           type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent AA sequence. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
-        linkDefinitionId:
+        modifiedAt:
+          format: datetime
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
-        type:
+      type: object
+    TranscriptionLinkFieldDefinition:
+      description: A schema field definition for linking to transcriptions (RNA sequences created from DNA).
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
-          - AA_SEQUENCE_LINK
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
           type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - linkDefinitionId
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent RNA sequence. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/RnaSequenceSchemaRef'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
       type: object
     RnaSequenceSchemaRef:
       properties:
@@ -508,16 +609,131 @@ components:
           format: api_id
           type: string
       type: object
-    DnaPartLinkFieldDefinition:
-      description: A schema field definition for linking to DNA parts.
+    CreateMoleculeLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isParent:
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - MOLECULE_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - linkDefinitionId
+      type: object
+    CreateDropdownLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        dropdownId:
+          description: The API ID of the Dropdown that defines the available options.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - DROPDOWN
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - dropdownId
+      type: object
+    UnitRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    DnaOligoSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RnaPartLinkFieldDefinition:
+      description: A schema field definition for linking to RNA parts.
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -525,12 +741,16 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -539,28 +759,208 @@ components:
         isMulti:
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent DNA sequence. Important for the registry''s lot-numbering
+          description: 'Means the link is from a child to a parent RNA sequence. Important for the registry''s lot-numbering
 
             functionality.'
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/ObjectRef'
+          description: Union of RnaSequenceSchema, SystemCategory
         modifiedAt:
           format: datetime
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    FieldsetRef:
+    MixtureLinkFieldDefinition:
+      description: A schema field definition for linking to mixtures.
       properties:
         __typename:
           type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
         id:
-          format: api_id
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent mixture. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/MixtureSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    CreateMixtureLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isParent:
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - MIXTURE_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - linkDefinitionId
+      type: object
+    CreateLongTextFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - LONG_TEXT
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      type: object
+    RnaSequenceLinkFieldDefinition:
+      description: A schema field definition for linking to RNA sequences.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent RNA sequence. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/RnaSequenceSchemaRef'
+          description: The linked item must be of this schema. This is required because we do not allow linking to a generic RNA Sequence.
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
     BoxSchemaPaginatedList:
@@ -571,7 +971,347 @@ components:
             $ref: '#/components/schemas/BoxSchema'
           type: array
         nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    DnaSequenceSchemaRef:
+      properties:
+        __typename:
           type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RunLinkFieldDefinition:
+      description: A schema field definition for linking to assay runs.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/RunSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    CreateAttachmentLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - ATTACHMENT_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      type: object
+    CreateDecimalFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        displayPrecision:
+          description: The number of decimal places to display (0 to 10).
+          type: integer
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        numericMax:
+          description: The maximum allowed value, inclusive.
+          type: number
+        numericMin:
+          description: The minimum allowed value, inclusive.
+          type: number
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - DECIMAL
+          type: string
+        unitId:
+          description: The API ID of the unit to associate with this field.
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      type: object
+    OligoDuplexSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BaseFieldDefinition:
+      description: 'A basic schema field definition for primitive data types. Used for fields with types like TEXT,
+
+        INTEGER, FLOAT, BOOLEAN, DATE, DATETIME, JSON, and LONG_TEXT. Each field has a user-facing
+
+        `name` and a `systemName` for warehouse/API access. Fields can be archived when no longer needed. For fields
+
+        that link to other objects, use `SchemaLinkFieldDefinition`; for dropdown selections, use
+
+        `DropdownLinkFieldDefinition`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          description: Determines whether multiple values are allowed
+          type: boolean
+        isRequired:
+          description: Determines whether values must be provided
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+        type:
+          enum:
+          - AA_PART_LINK
+          - AA_SEQUENCE_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BATCH_LINK
+          - BLOB_LINK
+          - BOOLEAN
+          - CUSTOM_ENTITY_LINK
+          - DATE
+          - DATETIME
+          - DNA_SEQUENCE_LINK
+          - ENTITY_LINK
+          - ENTRY_LINK
+          - FLOAT
+          - INTEGER
+          - JSON
+          - LONG_TEXT
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - BASE_MOLECULE_LINK
+          - PART_LINK
+          - RNA_PART_LINK
+          - RNA_SEQUENCE_LINK
+          - SAMPLE_LINK
+          - DROPDOWN
+          - STORAGE_LINK
+          - TEXT
+          - TRANSCRIPTION_LINK
+          - TRANSLATION_LINK
+          type: string
+      type: object
+    CreateBooleanFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - BOOLEAN
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      type: object
+    ResultLinkFieldDefinition:
+      description: A schema field definition for linking to assay results.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/ResultSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    CreateProteinLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isParent:
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - PROTEIN_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - linkDefinitionId
       type: object
     UpdateBoxSchemaInput:
       additionalProperties: false
@@ -608,31 +1348,33 @@ components:
           description: The number of columns in the grid layout.
           type: integer
       type: object
-    CreateCustomEntityLinkFieldDefinitionInput:
+    CreateRnaOligoLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent custom entity. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         linkDefinitionId:
-          type:
-          - 'null'
-          - string
+          description: The API ID of the schema/interface that linked items must belong to.
+          type: string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - CUSTOM_ENTITY_LINK
+          - RNA_OLIGO_LINK
           type: string
       required:
       - name
@@ -642,557 +1384,7 @@ components:
       - isMulti
       - linkDefinitionId
       type: object
-    CreateLongTextFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - LONG_TEXT
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    SchemaFieldDefinitionUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/SchemaFieldDefinition'
-          type: array
-      type: object
-    ResultSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    BaseFieldDefinition:
-      description: 'A basic schema field definition for primitive data types. Used for fields with types like TEXT,
-
-        INTEGER, FLOAT, BOOLEAN, DATE, DATETIME, JSON, and LONG_TEXT. Each field has a user-facing
-
-        `name` and a `systemName` for warehouse/API access. Fields can be archived when no longer needed. For fields
-
-        that link to other objects, use `SchemaLinkFieldDefinition`; for dropdown selections, use
-
-        `DropdownLinkFieldDefinition`.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          description: Determines whether multiple values are allowed
-          type: boolean
-        isRequired:
-          description: Determines whether values must be provided
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - AA_PART_LINK
-          - AA_SEQUENCE_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BATCH_LINK
-          - BLOB_LINK
-          - BOOLEAN
-          - CUSTOM_ENTITY_LINK
-          - DATE
-          - DATETIME
-          - DNA_SEQUENCE_LINK
-          - ENTITY_LINK
-          - ENTRY_LINK
-          - FLOAT
-          - INTEGER
-          - JSON
-          - LONG_TEXT
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - BASE_MOLECULE_LINK
-          - PART_LINK
-          - SAMPLE_LINK
-          - DROPDOWN
-          - STORAGE_LINK
-          - TEXT
-          - TRANSCRIPTION_LINK
-          - TRANSLATION_LINK
-          type: string
-      type: object
-    DateFieldDefinition:
-      description: A date field definition for date-only values (without time).
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateBooleanFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - BOOLEAN
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      type: object
-    SchemaLinkFieldDefinition:
-      description: 'A schema field definition for link types that reference other Benchling objects. Extends
-
-        basic field properties with link-specific constraints.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          description: determines whether multiple values are allowed
-          type: boolean
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        schemaId:
-          description: limits links to entities of a specific schema
-          type:
-          - 'null'
-          - string
-        systemName:
-          type: string
-        type:
-          description: indicates the kind of object being linked
-          enum:
-          - AA_PART_LINK
-          - AA_SEQUENCE_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BATCH_LINK
-          - BLOB_LINK
-          - BOOLEAN
-          - CUSTOM_ENTITY_LINK
-          - DATE
-          - DATETIME
-          - DNA_SEQUENCE_LINK
-          - ENTITY_LINK
-          - ENTRY_LINK
-          - FLOAT
-          - INTEGER
-          - JSON
-          - LONG_TEXT
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - BASE_MOLECULE_LINK
-          - PART_LINK
-          - SAMPLE_LINK
-          - DROPDOWN
-          - STORAGE_LINK
-          - TEXT
-          - TRANSCRIPTION_LINK
-          - TRANSLATION_LINK
-          type: string
-      type: object
-    DnaOligoLinkFieldDefinition:
-      description: A schema field definition for linking to DNA Oligos.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent DNA Oligo. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          $ref: '#/components/schemas/DnaOligoSchemaRef'
-          description: The linked item must be of this schema. This is required because we do not allow linking to a generic DNA Oligo.
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    SystemCategoryLinkFieldDefinition:
-      description: A schema field definition for linking to entities that implement a system category (static schema interface).
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    RnaSequenceLinkFieldDefinition:
-      description: A schema field definition for linking to RNA sequences.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent RNA sequence. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          $ref: '#/components/schemas/RnaSequenceSchemaRef'
-          description: The linked item must be of this schema. This is required because we do not allow linking to a generic RNA Sequence.
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    FloatFieldDefinition:
-      description: A float field definition for decimal number values. Supports numeric constraints (min/max), display precision, and units.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        displayPrecision:
-          type:
-          - 'null'
-          - integer
-        id:
-          type: string
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        numericMax:
-          type:
-          - 'null'
-          - number
-        numericMin:
-          type:
-          - 'null'
-          - number
-        systemName:
-          type: string
-        unit:
-          oneOf:
-          - $ref: '#/components/schemas/UnitRef'
-          - type: 'null'
-      type: object
-    CreateAntibodyLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent Antibody. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinitionId:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - ANTIBODY_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - linkDefinitionId
-      type: object
-    OligoConjugateLinkFieldDefinition:
-      description: A schema field definition for linking to Oligo Conjugates.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent Oligo Conjugate. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/OligoConjugateSchemaRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    UnitRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DropdownRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DnaSequenceSchemaRef:
+    CustomEntitySchemaRef:
       properties:
         __typename:
           type: string
@@ -1206,10 +1398,12 @@ components:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -1217,12 +1411,16 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -1236,6 +1434,7 @@ components:
             functionality.'
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         linkDefinition:
           $ref: '#/components/schemas/FieldsetRef'
@@ -1245,81 +1444,66 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    AssayResultLinkFieldDefinition:
-      description: A schema field definition for linking to assay results.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/ResultSchemaRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateMoleculeLinkFieldDefinitionInput:
+    CreateTextFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - TEXT
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      type: object
+    CreateDnaSequenceLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent molecule. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - MOLECULE_LINK
+          - DNA_SEQUENCE_LINK
           type: string
       required:
       - name
@@ -1329,71 +1513,300 @@ components:
       - isMulti
       - linkDefinitionId
       type: object
-    CreateBoxSchemaInput:
-      additionalProperties: false
+    ProteinLinkFieldDefinition:
+      description: A schema field definition for linking to Proteins.
       properties:
-        containerSchemaId:
-          description: The API ID of the container schema constraining what types of containers can be stored in boxes of this type.
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
           type: string
         description:
-          description: A human-readable description of the schema. At most 1000 characters.
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
           type: string
-        displayName:
-          deprecated: true
-          description: Deprecated. Use name instead.
-          type: string
-        fieldDefinitions:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CreateBooleanFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateDateFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateDateTimeFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateFloatFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateIntegerFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateLongTextFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateTextFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateAaSequenceLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateAntibodyLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateBlobLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateCustomEntityLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateDnaOligoLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateDnaSequenceLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateDropdownLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateAnyEntityLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateEntryLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateEquipmentLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateMixtureLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateMoleculeLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateOligoConjugateLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateOligoDuplexLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateRnaSequenceLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateRnaOligoLinkFieldDefinitionInput'
-            - $ref: '#/components/schemas/CreateStorableLinkFieldDefinitionInput'
-          type: array
-        height:
-          description: The number of rows in the grid layout.
-          type: integer
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent Protein. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
         name:
-          description: The user-facing name of the schema. Must be non-empty after stripping whitespace, at most 255 characters, and unique within the organization.
-          type: string
-        organizationId:
-          description: The API ID of the organization this schema belongs to. The organization must exist and be accessible to the caller.
-          type: string
-        prefix:
-          description: The prefix used for auto-generating barcodes for inventory items of this schema. Must be unique within the registry and cannot end in a digit.
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
-          description: The SQL identifier used as the warehouse table name. If not provided, one is auto-generated from the display name. Must match the pattern [a-z_][a-z0-9_$]*, cannot be a reserved table name, cannot start with 'bnch$', and must be unique within the organization.
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
-        width:
-          description: The number of columns in the grid layout.
-          type: integer
+      type: object
+    IntegerFieldDefinition:
+      description: 'A field definition for whole number values. Supports optional numeric constraints via `numericMin`
+
+        and `numericMax`, and an optional `unit` for associating a measurement unit. For decimal values with
+
+        display precision control, see `DecimalFieldDefinition`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        numericMax:
+          description: The maximum allowed value, inclusive. Null means no upper bound.
+          type:
+          - 'null'
+          - number
+        numericMin:
+          description: The minimum allowed value, inclusive. Null means no lower bound.
+          type:
+          - 'null'
+          - number
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+        unit:
+          description: The unit of measurement associated with this field's values. Null means the field is unitless.
+          oneOf:
+          - $ref: '#/components/schemas/UnitRef'
+          - type: 'null'
+      type: object
+    AaSequenceLinkFieldDefinition:
+      description: A schema field definition for linking to AA sequences.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent AA sequence. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/AaSequenceSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    EquipmentSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    CreateStorableLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - STORAGE_LINK
+          type: string
       required:
-      - organizationId
-      - description
-      - prefix
-      - height
-      - width
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - linkDefinitionId
+      type: object
+    EquipmentLinkFieldDefinition:
+      description: A schema field definition for linking to equipment.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent Equipment. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/EquipmentSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    OligoConjugateSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     UpdateBoxSchemaInputWithPathParams:
       additionalProperties: false
@@ -1435,31 +1848,27 @@ components:
       required:
       - id
       type: object
-    CreateMixtureLinkFieldDefinitionInput:
+    CreateEntryLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent mixture. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, multiple linked values are allowed.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
-        linkDefinitionId:
-          type:
-          - 'null'
-          - string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - MIXTURE_LINK
+          - ENTRY_LINK
           type: string
       required:
       - name
@@ -1467,18 +1876,19 @@ components:
       - isRequired
       - type
       - isMulti
-      - linkDefinitionId
       type: object
-    TranslationLinkFieldDefinition:
-      description: A schema field definition for linking to translations (AA sequences created from RNA).
+    SystemCategoryLinkFieldDefinition:
+      description: A schema field definition for linking to entities that implement a system category (static schema interface).
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -1486,12 +1896,209 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    DecimalFieldDefinition:
+      description: 'A field definition for decimal number values. Supports optional numeric constraints via `numericMin`
+
+        and `numericMax`, an optional `unit` for associating a measurement unit, and `displayPrecision` to
+
+        control the number of decimal places shown (0 to 10). For whole number values, see
+
+        `IntegerFieldDefinition`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        displayPrecision:
+          description: 'The number of decimal places to display. Null means no display rounding. Valid range: 0 to 10.'
+          type:
+          - 'null'
+          - integer
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        numericMax:
+          description: The maximum allowed value, inclusive. Null means no upper bound.
+          type:
+          - 'null'
+          - number
+        numericMin:
+          description: The minimum allowed value, inclusive. Null means no lower bound.
+          type:
+          - 'null'
+          - number
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+        unit:
+          description: The unit of measurement associated with this field's values. Null means the field is unitless.
+          oneOf:
+          - $ref: '#/components/schemas/UnitRef'
+          - type: 'null'
+      type: object
+    AaPartLinkFieldDefinition:
+      description: A schema field definition for linking to AA parts.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent AA part. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/ObjectRef'
+          description: Union of AaSequenceSchema, SystemCategory
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    MixtureSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TranslationLinkFieldDefinition:
+      description: A schema field definition for linking to translations (AA sequences created from RNA).
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -1505,84 +2112,52 @@ components:
             functionality.'
           type: boolean
         isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    MixtureLinkFieldDefinition:
-      description: A schema field definition for linking to mixtures.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent mixture. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/MixtureSchemaRef'
-          - type: 'null'
+          $ref: '#/components/schemas/ObjectRef'
+          description: Union of AaSequenceSchema, SystemCategory
         modifiedAt:
           format: datetime
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    CreateAnyEntityLinkFieldDefinitionInput:
+    CreateOligoConjugateLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isParent:
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - ENTITY_LINK
+          - OLIGO_CONJUGATE_LINK
           type: string
       required:
       - name
@@ -1590,321 +2165,33 @@ components:
       - isRequired
       - type
       - isMulti
-      type: object
-    CreateDropdownLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        dropdownId:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - DROPDOWN
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - dropdownId
-      type: object
-    RnaOligoLinkFieldDefinition:
-      description: A schema field definition for linking to RNA Oligos.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent RNA Oligo. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          $ref: '#/components/schemas/RnaOligoSchemaRef'
-          description: The linked item must be of this schema. This is required because we do not allow linking to a generic RNA Oligo.
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    AaSequenceSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    CreateFloatFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        displayPrecision:
-          type: integer
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        numericMax:
-          type: number
-        numericMin:
-          type: number
-        systemName:
-          type: string
-        type:
-          enum:
-          - FLOAT
-          type: string
-        unitId:
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      type: object
-    RnaOligoSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CustomEntitySchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ContainerSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    JsonFieldDefinition:
-      description: A JSON field definition for storing structured JSON data.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    BlobLinkFieldDefinition:
-      description: A schema field definition for linking to blobs (file attachments).
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    AntibodyLinkFieldDefinition:
-      description: A schema field definition for linking to Antibodies.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent Antibody. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
+      - linkDefinitionId
       type: object
     CreateOligoDuplexLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent Oligo Duplex. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
@@ -1918,24 +2205,79 @@ components:
       - isMulti
       - linkDefinitionId
       type: object
-    EquipmentSchemaRef:
+    CreateRnaSequenceLinkFieldDefinitionInput:
+      additionalProperties: false
       properties:
-        __typename:
+        description:
+          description: An optional user-provided description of this field definition.
           type: string
-        id:
-          format: api_id
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isParent:
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema/interface that linked items must belong to.
           type: string
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - RNA_SEQUENCE_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - linkDefinitionId
       type: object
-    OligoDuplexLinkFieldDefinition:
-      description: A schema field definition for linking to Oligo Duplexes.
+    CreateDateTimeFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - DATE_TIME
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      type: object
+    DropdownLinkFieldDefinition:
+      description: A schema field definition that links to a dropdown for value selection.
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -1943,12 +2285,69 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/DropdownRef'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    OligoDuplexLinkFieldDefinition:
+      description: A schema field definition for linking to oligo duplexes.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -1962,6 +2361,7 @@ components:
             functionality.'
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         linkDefinition:
           oneOf:
@@ -1973,122 +2373,13 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    AnyEntityLinkFieldDefinition:
-      description: A schema field definition for linking to any entity type.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateStorableLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinitionId:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - STORAGE_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - linkDefinitionId
-      type: object
-    DateTimeFieldDefinition:
-      description: A datetime field definition for date and time values with timezone support.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    MixtureSchemaRef:
+    DropdownRef:
       properties:
         __typename:
           type: string
@@ -2096,48 +2387,26 @@ components:
           format: api_id
           type: string
       type: object
-    CreateRnaOligoLinkFieldDefinitionInput:
-      additionalProperties: false
+    AsyncTaskLink:
       properties:
-        description:
+        pollingUri:
+          format: uri
           type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent RNA Oligo. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinitionId:
+        taskId:
           type: string
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - RNA_OLIGO_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - linkDefinitionId
       type: object
-    TranscriptionLinkFieldDefinition:
-      description: A schema field definition for linking to transcriptions (RNA sequences created from DNA).
+    DnaPartLinkFieldDefinition:
+      description: A schema field definition for linking to DNA parts.
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -2145,12 +2414,16 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -2159,126 +2432,29 @@ components:
         isMulti:
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent RNA sequence. Important for the registry''s lot-numbering
+          description: 'Means the link is from a child to a parent DNA sequence. Important for the registry''s lot-numbering
 
             functionality.'
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         linkDefinition:
-          $ref: '#/components/schemas/RnaSequenceSchemaRef'
+          $ref: '#/components/schemas/ObjectRef'
+          description: Union of DnaSequenceSchema, SystemCategory
         modifiedAt:
           format: datetime
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    DnaOligoSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    LongTextFieldDefinition:
-      description: A long text field definition for multi-line text values with no length restrictions.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateDateFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - DATE
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      type: object
-    MoleculeSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CreateBlobLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - BLOB_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      type: object
-    GeneralError:
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -2286,6 +2462,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -2302,16 +2480,199 @@ components:
       - status
       - instance
       type: object
-    AssayRequestLinkFieldDefinition:
+    BooleanFieldDefinition:
+      description: 'A field definition for true/false values. Each field has a user-facing `name` and a `systemName` for
+
+        warehouse and API access. Stores a single boolean value with no additional type-specific properties.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    ContainerSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AaSequenceSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    LongTextFieldDefinition:
+      description: 'A field definition for multi-line text values with no length restrictions. Each field has a
+
+        user-facing `name` and a `systemName` for warehouse and API access. For short, single-line text,
+
+        see `TextFieldDefinition`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    JsonFieldDefinition:
+      description: 'A field definition for storing structured JSON data. Each field has a user-facing `name` and a
+
+        `systemName` for warehouse and API access. Stores an arbitrary JSON value rather than a single
+
+        scalar; for plain text, see `TextFieldDefinition` or `LongTextFieldDefinition`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    ResultSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RequestLinkFieldDefinition:
       description: A schema field definition for linking to assay requests.
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -2319,12 +2680,16 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -2333,6 +2698,7 @@ components:
         isMulti:
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         modifiedAt:
           format: datetime
@@ -2340,20 +2706,38 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    DnaSequenceLinkFieldDefinition:
-      description: A schema field definition for linking to DNA sequences.
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    DateTimeFieldDefinition:
+      description: 'A field definition for date and time values with timezone support. Each field has a user-facing
+
+        `name` and a `systemName` for warehouse and API access. For date-only values without a time
+
+        component, see `DateFieldDefinition`.'
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -2361,12 +2745,65 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    StorableLinkFieldDefinition:
+      description: A schema field definition for linking to storable inventory items.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -2374,52 +2811,50 @@ components:
           type: string
         isMulti:
           type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent DNA sequence. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/DnaSequenceSchemaRef'
-          - type: 'null'
         modifiedAt:
           format: datetime
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    CreateOligoConjugateLinkFieldDefinitionInput:
+    CreateAaSequenceLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent Oligo Conjugate. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
           type:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - OLIGO_CONJUGATE_LINK
+          - AA_SEQUENCE_LINK
           type: string
       required:
       - name
@@ -2435,10 +2870,12 @@ components:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -2446,12 +2883,16 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -2460,6 +2901,7 @@ components:
         isMulti:
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         modifiedAt:
           format: datetime
@@ -2467,24 +2909,330 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    CreateDateTimeFieldDefinitionInput:
+    CreateAnyEntityLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - DATE_TIME
+          - ENTITY_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      type: object
+    CustomEntityLinkFieldDefinition:
+      description: A schema field definition for linking to custom entities.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent custom entity. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/CustomEntitySchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    RnaOligoLinkFieldDefinition:
+      description: A schema field definition for linking to RNA oligos.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent RNA Oligo. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/RnaOligoSchemaRef'
+          description: The linked item must be of this schema. This is required because we do not allow linking to a generic RNA Oligo.
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    DnaOligoLinkFieldDefinition:
+      description: A schema field definition for linking to DNA oligos.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent DNA Oligo. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          $ref: '#/components/schemas/DnaOligoSchemaRef'
+          description: The linked item must be of this schema. This is required because we do not allow linking to a generic DNA Oligo.
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    OligoConjugateLinkFieldDefinition:
+      description: A schema field definition for linking to oligo conjugates.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent Oligo Conjugate. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/OligoConjugateSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    RnaOligoSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    FieldsetRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    CreateIntegerFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        numericMax:
+          description: The maximum allowed value, inclusive.
+          type: number
+        numericMin:
+          description: The minimum allowed value, inclusive.
+          type: number
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - INTEGER
+          type: string
+        unitId:
+          description: The API ID of the unit to associate with this field.
           type: string
       required:
       - name
@@ -2492,78 +3240,203 @@ components:
       - isRequired
       - type
       type: object
-    AaPartLinkFieldDefinition:
-      description: A schema field definition for linking to AA parts.
+    GeneralError:
       properties:
-        __typename:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
           type: string
-        archiveReason:
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
           type:
           - 'null'
           - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateBoxSchemaInput:
+      additionalProperties: false
+      properties:
+        containerSchemaId:
+          description: The API ID of the container schema constraining what types of containers can be stored in boxes of this type.
           type: string
         description:
-          type:
-          - 'null'
-          - string
-        id:
+          description: A human-readable description of the schema. At most 1000 characters.
           type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent AA part. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
+        displayName:
+          deprecated: true
+          description: Deprecated. Use name instead.
+          type: string
+        fieldDefinitions:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CreateBooleanFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateDateFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateDateTimeFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateDecimalFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateIntegerFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateLongTextFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateTextFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateAaSequenceLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateAttachmentLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateCustomEntityLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateDnaOligoLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateDnaSequenceLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateDropdownLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateAnyEntityLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateEntryLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateEquipmentLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateMixtureLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateMoleculeLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateOligoConjugateLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateOligoDuplexLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateProteinLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateRnaSequenceLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateRnaOligoLinkFieldDefinitionInput'
+            - $ref: '#/components/schemas/CreateStorableLinkFieldDefinitionInput'
+          type: array
+        height:
+          description: The number of rows in the grid layout.
+          type: integer
         name:
+          description: The user-facing name of the schema. Must be non-empty after stripping whitespace, at most 255 characters, and unique within the organization.
+          type: string
+        organizationId:
+          description: The API ID of the organization this schema belongs to. The organization must exist and be accessible to the caller.
+          type: string
+        prefix:
+          description: The prefix used for auto-generating barcodes for inventory items of this schema. Must be unique within the registry and cannot end in a digit.
           type: string
         systemName:
+          description: The SQL identifier used as the warehouse table name. If not provided, one is auto-generated from the display name. Must match the pattern [a-z_][a-z0-9_$]*, cannot be a reserved table name, cannot start with 'bnch$', and must be unique within the organization.
           type: string
+        width:
+          description: The number of columns in the grid layout.
+          type: integer
+      required:
+      - organizationId
+      - description
+      - prefix
+      - height
+      - width
       type: object
-    CreateDnaSequenceLinkFieldDefinitionInput:
+    SchemaFieldDefinition:
+      anyOf:
+      - $ref: '#/components/schemas/AaPartLinkFieldDefinition'
+      - $ref: '#/components/schemas/AaSequenceLinkFieldDefinition'
+      - $ref: '#/components/schemas/AnyEntityLinkFieldDefinition'
+      - $ref: '#/components/schemas/AttachmentLinkFieldDefinition'
+      - $ref: '#/components/schemas/BaseFieldDefinition'
+      - $ref: '#/components/schemas/BooleanFieldDefinition'
+      - $ref: '#/components/schemas/CustomEntityLinkFieldDefinition'
+      - $ref: '#/components/schemas/DateFieldDefinition'
+      - $ref: '#/components/schemas/DateTimeFieldDefinition'
+      - $ref: '#/components/schemas/DecimalFieldDefinition'
+      - $ref: '#/components/schemas/DnaOligoLinkFieldDefinition'
+      - $ref: '#/components/schemas/DnaPartLinkFieldDefinition'
+      - $ref: '#/components/schemas/DnaSequenceLinkFieldDefinition'
+      - $ref: '#/components/schemas/DropdownLinkFieldDefinition'
+      - $ref: '#/components/schemas/EntryLinkFieldDefinition'
+      - $ref: '#/components/schemas/EquipmentLinkFieldDefinition'
+      - $ref: '#/components/schemas/FieldsetLinkFieldDefinition'
+      - $ref: '#/components/schemas/IntegerFieldDefinition'
+      - $ref: '#/components/schemas/JsonFieldDefinition'
+      - $ref: '#/components/schemas/LongTextFieldDefinition'
+      - $ref: '#/components/schemas/MixtureLinkFieldDefinition'
+      - $ref: '#/components/schemas/MoleculeLinkFieldDefinition'
+      - $ref: '#/components/schemas/OligoConjugateLinkFieldDefinition'
+      - $ref: '#/components/schemas/OligoDuplexLinkFieldDefinition'
+      - $ref: '#/components/schemas/ProteinLinkFieldDefinition'
+      - $ref: '#/components/schemas/RequestLinkFieldDefinition'
+      - $ref: '#/components/schemas/ResultLinkFieldDefinition'
+      - $ref: '#/components/schemas/RnaOligoLinkFieldDefinition'
+      - $ref: '#/components/schemas/RnaPartLinkFieldDefinition'
+      - $ref: '#/components/schemas/RnaSequenceLinkFieldDefinition'
+      - $ref: '#/components/schemas/RunLinkFieldDefinition'
+      - $ref: '#/components/schemas/StorableLinkFieldDefinition'
+      - $ref: '#/components/schemas/SystemCategoryLinkFieldDefinition'
+      - $ref: '#/components/schemas/TextFieldDefinition'
+      - $ref: '#/components/schemas/TranscriptionLinkFieldDefinition'
+      - $ref: '#/components/schemas/TranslationLinkFieldDefinition'
+      discriminator:
+        mapping:
+          AaPartLinkFieldDefinition: '#/components/schemas/AaPartLinkFieldDefinition'
+          AaSequenceLinkFieldDefinition: '#/components/schemas/AaSequenceLinkFieldDefinition'
+          AnyEntityLinkFieldDefinition: '#/components/schemas/AnyEntityLinkFieldDefinition'
+          AttachmentLinkFieldDefinition: '#/components/schemas/AttachmentLinkFieldDefinition'
+          BaseFieldDefinition: '#/components/schemas/BaseFieldDefinition'
+          BooleanFieldDefinition: '#/components/schemas/BooleanFieldDefinition'
+          CustomEntityLinkFieldDefinition: '#/components/schemas/CustomEntityLinkFieldDefinition'
+          DateFieldDefinition: '#/components/schemas/DateFieldDefinition'
+          DateTimeFieldDefinition: '#/components/schemas/DateTimeFieldDefinition'
+          DecimalFieldDefinition: '#/components/schemas/DecimalFieldDefinition'
+          DnaOligoLinkFieldDefinition: '#/components/schemas/DnaOligoLinkFieldDefinition'
+          DnaPartLinkFieldDefinition: '#/components/schemas/DnaPartLinkFieldDefinition'
+          DnaSequenceLinkFieldDefinition: '#/components/schemas/DnaSequenceLinkFieldDefinition'
+          DropdownLinkFieldDefinition: '#/components/schemas/DropdownLinkFieldDefinition'
+          EntryLinkFieldDefinition: '#/components/schemas/EntryLinkFieldDefinition'
+          EquipmentLinkFieldDefinition: '#/components/schemas/EquipmentLinkFieldDefinition'
+          FieldsetLinkFieldDefinition: '#/components/schemas/FieldsetLinkFieldDefinition'
+          IntegerFieldDefinition: '#/components/schemas/IntegerFieldDefinition'
+          JsonFieldDefinition: '#/components/schemas/JsonFieldDefinition'
+          LongTextFieldDefinition: '#/components/schemas/LongTextFieldDefinition'
+          MixtureLinkFieldDefinition: '#/components/schemas/MixtureLinkFieldDefinition'
+          MoleculeLinkFieldDefinition: '#/components/schemas/MoleculeLinkFieldDefinition'
+          OligoConjugateLinkFieldDefinition: '#/components/schemas/OligoConjugateLinkFieldDefinition'
+          OligoDuplexLinkFieldDefinition: '#/components/schemas/OligoDuplexLinkFieldDefinition'
+          ProteinLinkFieldDefinition: '#/components/schemas/ProteinLinkFieldDefinition'
+          RequestLinkFieldDefinition: '#/components/schemas/RequestLinkFieldDefinition'
+          ResultLinkFieldDefinition: '#/components/schemas/ResultLinkFieldDefinition'
+          RnaOligoLinkFieldDefinition: '#/components/schemas/RnaOligoLinkFieldDefinition'
+          RnaPartLinkFieldDefinition: '#/components/schemas/RnaPartLinkFieldDefinition'
+          RnaSequenceLinkFieldDefinition: '#/components/schemas/RnaSequenceLinkFieldDefinition'
+          RunLinkFieldDefinition: '#/components/schemas/RunLinkFieldDefinition'
+          StorableLinkFieldDefinition: '#/components/schemas/StorableLinkFieldDefinition'
+          SystemCategoryLinkFieldDefinition: '#/components/schemas/SystemCategoryLinkFieldDefinition'
+          TextFieldDefinition: '#/components/schemas/TextFieldDefinition'
+          TranscriptionLinkFieldDefinition: '#/components/schemas/TranscriptionLinkFieldDefinition'
+          TranslationLinkFieldDefinition: '#/components/schemas/TranslationLinkFieldDefinition'
+        propertyName: __typename
+      type: object
+    CreateDnaOligoLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent DNA sequence. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         linkDefinitionId:
-          type:
-          - 'null'
-          - string
+          description: The API ID of the schema/interface that linked items must belong to.
+          type: string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - DNA_SEQUENCE_LINK
+          - DNA_OLIGO_LINK
           type: string
       required:
       - name
@@ -2573,16 +3446,34 @@ components:
       - isMulti
       - linkDefinitionId
       type: object
-    BooleanFieldDefinition:
-      description: A boolean field definition for true/false values.
+    SchemaFieldDefinitionUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/SchemaFieldDefinition'
+          type: array
+      type: object
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DnaSequenceLinkFieldDefinition:
+      description: A schema field definition for linking to DNA sequences.
       properties:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -2590,18 +3481,156 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
         id:
           type: string
+        isMulti:
+          type: boolean
+        isParent:
+          description: 'Means the link is from a child to a parent DNA sequence. Important for the registry''s lot-numbering
+
+            functionality.'
+          type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        linkDefinition:
+          oneOf:
+          - $ref: '#/components/schemas/DnaSequenceSchemaRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    CreateCustomEntityLinkFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isMulti:
+          description: When true, multiple linked values are allowed.
+          type: boolean
+        isParent:
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        linkDefinitionId:
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - CUSTOM_ENTITY_LINK
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      - isMulti
+      - linkDefinitionId
+      type: object
+    CreateDateFieldDefinitionInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: An optional user-provided description of this field definition.
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field.
+          type: boolean
+        name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
+          type: string
+        type:
+          enum:
+          - DATE
+          type: string
+      required:
+      - name
+      - systemName
+      - isRequired
+      - type
+      type: object
+    RunSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AttachmentLinkFieldDefinition:
+      description: A schema field definition for linking to file attachments.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isMulti:
+          type: boolean
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         modifiedAt:
           format: datetime
@@ -2609,8 +3638,63 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
+          type: string
+      type: object
+    TextFieldDefinition:
+      description: 'A field definition for short, single-line text values. Each field has a user-facing `name` and a
+
+        `systemName` for warehouse and API access. For multi-line text with no length restrictions, see
+
+        `LongTextFieldDefinition`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          description: The reason this field definition was archived, if applicable.
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether this field definition has been archived.
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
+          enum:
+          - DIRECT
+          - COMPUTED
+          - SNAPSHOT
+          type: string
+        description:
+          description: An optional user-provided description of this field definition.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
+          type: boolean
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: The user-facing display name of this field definition.
+          type: string
+        systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
     MoleculeLinkFieldDefinition:
@@ -2619,10 +3703,12 @@ components:
         __typename:
           type: string
         archiveReason:
+          description: The reason this field definition was archived, if applicable.
           type:
           - 'null'
           - string
         archived:
+          description: Whether this field definition has been archived.
           type: boolean
         createdAt:
           format: datetime
@@ -2630,12 +3716,16 @@ components:
           - 'null'
           - string
         derivationType:
+          description: 'How this field''s value is determined: DIRECT (user-entered), COMPUTED (auto-calculated), or
+
+            SNAPSHOT (frozen at creation).'
           enum:
           - DIRECT
           - COMPUTED
           - SNAPSHOT
           type: string
         description:
+          description: An optional user-provided description of this field definition.
           type:
           - 'null'
           - string
@@ -2649,6 +3739,7 @@ components:
             functionality.'
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field when creating or updating an entity.
           type: boolean
         linkDefinition:
           oneOf:
@@ -2660,79 +3751,41 @@ components:
           - 'null'
           - string
         name:
+          description: The user-facing display name of this field definition.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name and for API access.
           type: string
       type: object
-    AssayRunLinkFieldDefinition:
-      description: A schema field definition for linking to assay runs.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/RunSchemaRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateRnaSequenceLinkFieldDefinitionInput:
+    CreateEquipmentLinkFieldDefinitionInput:
       additionalProperties: false
       properties:
         description:
+          description: An optional user-provided description of this field definition.
           type: string
         isMulti:
+          description: When true, multiple linked values are allowed.
           type: boolean
         isParent:
-          description: 'Means the link is from a child to a parent RNA sequence. Important for the registry''s lot-numbering
-
-            functionality.'
+          description: When true, indicates a parent-child relationship used in the registry's lot-numbering functionality.
           type: boolean
         isRequired:
+          description: When true, a value must be provided for this field.
           type: boolean
         linkDefinitionId:
-          type: string
+          description: The API ID of the schema to constrain links to, or null to allow links to any item of the linked type.
+          type:
+          - 'null'
+          - string
         name:
+          description: The user-facing display name of this field definition. Must be unique within the schema.
           type: string
         systemName:
+          description: The machine-readable identifier used as the warehouse column name. Must be unique within the schema.
           type: string
         type:
           enum:
-          - RNA_SEQUENCE_LINK
+          - EQUIPMENT_LINK
           type: string
       required:
       - name
@@ -2741,115 +3794,6 @@ components:
       - type
       - isMulti
       - linkDefinitionId
-      type: object
-    TextFieldDefinition:
-      description: A text field definition for short, single-line text values.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    EquipmentLinkFieldDefinition:
-      description: A schema field definition for linking to Equipment.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent Equipment. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/EquipmentSchemaRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    OligoDuplexSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
       type: object
     BoxSchema:
       description: 'Defines the structure and constraints for a category of Boxes in Benchling''s inventory
@@ -2922,413 +3866,22 @@ components:
           - 'null'
           - integer
       type: object
-    CustomEntityLinkFieldDefinition:
-      description: A schema field definition for linking to custom entities.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent custom entity. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/CustomEntitySchemaRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateIntegerFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        numericMax:
-          type: number
-        numericMin:
-          type: number
-        systemName:
-          type: string
-        type:
-          enum:
-          - INTEGER
-          type: string
-        unitId:
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      type: object
-    RegistryRef:
+    MoleculeSchemaRef:
       properties:
         __typename:
           type: string
         id:
           format: api_id
           type: string
-      type: object
-    AaSequenceLinkFieldDefinition:
-      description: A schema field definition for linking to AA sequences.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent AA sequence. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          oneOf:
-          - $ref: '#/components/schemas/AaSequenceSchemaRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateTextFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - TEXT
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      type: object
-    CreateDnaOligoLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent DNA Oligo. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinitionId:
-          type: string
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - DNA_OLIGO_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - linkDefinitionId
-      type: object
-    RunSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    StorableLinkFieldDefinition:
-      description: A schema field definition for linking to storable inventory items.
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    SchemaFieldDefinition:
-      anyOf:
-      - $ref: '#/components/schemas/AaPartLinkFieldDefinition'
-      - $ref: '#/components/schemas/AaSequenceLinkFieldDefinition'
-      - $ref: '#/components/schemas/AntibodyLinkFieldDefinition'
-      - $ref: '#/components/schemas/AnyEntityLinkFieldDefinition'
-      - $ref: '#/components/schemas/AssayRequestLinkFieldDefinition'
-      - $ref: '#/components/schemas/AssayResultLinkFieldDefinition'
-      - $ref: '#/components/schemas/AssayRunLinkFieldDefinition'
-      - $ref: '#/components/schemas/BaseFieldDefinition'
-      - $ref: '#/components/schemas/BlobLinkFieldDefinition'
-      - $ref: '#/components/schemas/BooleanFieldDefinition'
-      - $ref: '#/components/schemas/CustomEntityLinkFieldDefinition'
-      - $ref: '#/components/schemas/DateFieldDefinition'
-      - $ref: '#/components/schemas/DateTimeFieldDefinition'
-      - $ref: '#/components/schemas/DnaOligoLinkFieldDefinition'
-      - $ref: '#/components/schemas/DnaPartLinkFieldDefinition'
-      - $ref: '#/components/schemas/DnaSequenceLinkFieldDefinition'
-      - $ref: '#/components/schemas/DropdownLinkFieldDefinition'
-      - $ref: '#/components/schemas/EntryLinkFieldDefinition'
-      - $ref: '#/components/schemas/EquipmentLinkFieldDefinition'
-      - $ref: '#/components/schemas/FieldsetLinkFieldDefinition'
-      - $ref: '#/components/schemas/FloatFieldDefinition'
-      - $ref: '#/components/schemas/IntegerFieldDefinition'
-      - $ref: '#/components/schemas/JsonFieldDefinition'
-      - $ref: '#/components/schemas/LongTextFieldDefinition'
-      - $ref: '#/components/schemas/MixtureLinkFieldDefinition'
-      - $ref: '#/components/schemas/MoleculeLinkFieldDefinition'
-      - $ref: '#/components/schemas/OligoConjugateLinkFieldDefinition'
-      - $ref: '#/components/schemas/OligoDuplexLinkFieldDefinition'
-      - $ref: '#/components/schemas/RnaOligoLinkFieldDefinition'
-      - $ref: '#/components/schemas/RnaSequenceLinkFieldDefinition'
-      - $ref: '#/components/schemas/SchemaLinkFieldDefinition'
-      - $ref: '#/components/schemas/StorableLinkFieldDefinition'
-      - $ref: '#/components/schemas/SystemCategoryLinkFieldDefinition'
-      - $ref: '#/components/schemas/TextFieldDefinition'
-      - $ref: '#/components/schemas/TranscriptionLinkFieldDefinition'
-      - $ref: '#/components/schemas/TranslationLinkFieldDefinition'
-      discriminator:
-        propertyName: __typename
-      type: object
-    OligoConjugateSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CreateEquipmentLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isMulti:
-          type: boolean
-        isParent:
-          description: 'Means the link is from a child to a parent Equipment. Important for the registry''s lot-numbering
-
-            functionality.'
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinitionId:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - EQUIPMENT_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
-      - linkDefinitionId
-      type: object
-    DropdownLinkFieldDefinition:
-      description: 'A schema field definition that links to a dropdown for value selection. The `linkDefinition` field
-
-        references the `Dropdown` configuration that defines the available options. When `isMulti`
-
-        is true, users can select multiple dropdown options for a single field value. The dropdown
-
-        provides controlled vocabulary for consistent data entry across the organization.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        derivationType:
-          enum:
-          - DIRECT
-          - COMPUTED
-          - SNAPSHOT
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        linkDefinition:
-          $ref: '#/components/schemas/DropdownRef'
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        systemName:
-          type: string
-      type: object
-    CreateEntryLinkFieldDefinitionInput:
-      additionalProperties: false
-      properties:
-        description:
-          type: string
-        isMulti:
-          type: boolean
-        isRequired:
-          type: boolean
-        name:
-          type: string
-        systemName:
-          type: string
-        type:
-          enum:
-          - ENTRY_LINK
-          type: string
-      required:
-      - name
-      - systemName
-      - isRequired
-      - type
-      - isMulti
       type: object
   parameters:
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: omit
+      name: modifiedAt.lt
       schema:
-        items:
-          type: string
-        type: array
+        format: datetime
+        type: string
     archiveReason.anyOf:
       description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
       explode: false
@@ -3339,38 +3892,42 @@ components:
           type: string
         maxItems: 10
         type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: modifiedAt.gte
+      name: nextToken
       schema:
-        format: datetime
         type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: modifiedAt.lt
+      name: omit
       schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+        items:
+          type: string
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
       in: query
-      name: modifiedAt.lte
+      name: name.anyOf
       schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
+        items:
+          type: string
+        maxItems: 100
+        type: array
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
       name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
@@ -3381,26 +3938,20 @@ components:
       schema:
         format: datetime
         type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf.caseSensitive
+      name: archived.anyOf
       schema:
         items:
-          type: string
-        maxItems: 100
+          type: boolean
+        maxItems: 2
         type: array
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.gt
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -3413,23 +3964,6 @@ components:
         items:
           type: string
         type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
     id.anyOf:
       description: Restricts results to those matching any of the specified IDs. Comma-separated list.
       explode: false
@@ -3440,54 +3974,93 @@ components:
           type: string
         maxItems: 100
         type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archived.anyOf
+      name: modifiedAt.lte
       schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
+        format: datetime
+        type: string
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
       name: pageSize
       schema:
         type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
   responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
-    BadRequest:
+    Conflict:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
+      description: Conflict
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

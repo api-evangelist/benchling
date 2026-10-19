@@ -7,7 +7,33 @@ info:
   version: 2.0.0
   description: 'A ProcedureRunCondition represents a configuration of the methods of a Procedure that is being
 
-    executed within a ProcedureRun.'
+    executed within a ProcedureRun.
+
+
+    The values associated with the ProcedureRunCondition are not exposed on the ProcedureRunCondition itself,
+
+    but instead can be found by traversing:
+
+
+    ProcedureRunCondition
+
+    -> ProcedureRunConditionReplicate (pick any, since every replicate uses the same set of values)
+
+    -> ProcedureMethodExecutionInstance (join all, since each method has its own set of values)
+
+    -> ProcedureMethodDefinitionVersion
+
+    -> ProcedureParameterValueSet
+
+
+    ## Product mapping
+
+
+    - In Benchling experiment setup, this maps to a **condition** (for example, "Condition 1").
+
+    - A condition captures one configuration of the run, while repeated executions of that condition
+
+    are represented by `ProcedureRunConditionReplicate`.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +42,36 @@ security:
 tags:
 - description: 'A ProcedureRunCondition represents a configuration of the methods of a Procedure that is being
 
-    executed within a ProcedureRun.'
+    executed within a ProcedureRun.
+
+
+    The values associated with the ProcedureRunCondition are not exposed on the ProcedureRunCondition itself,
+
+    but instead can be found by traversing:
+
+
+    ProcedureRunCondition
+
+    -> ProcedureRunConditionReplicate (pick any, since every replicate uses the same set of values)
+
+    -> ProcedureMethodExecutionInstance (join all, since each method has its own set of values)
+
+    -> ProcedureMethodDefinitionVersion
+
+    -> ProcedureParameterValueSet
+
+
+    ## Product mapping
+
+
+    - In Benchling experiment setup, this maps to a **condition** (for example, "Condition 1").
+
+    - A condition captures one configuration of the run, while repeated executions of that condition
+
+    are represented by `ProcedureRunConditionReplicate`.'
   name: ProcedureRunCondition
   x-bnch-organization: Benchling
+  x-displayName: Procedure Run Condition
 paths:
   /procedure-run-condition/items:
     get:
@@ -77,7 +130,6 @@ paths:
       summary: List ProcedureRunCondition items
       tags:
       - ProcedureRunCondition
-      x-bnch-rate-limit-tier: 4
   /procedure-run-condition/{procedure_run_condition_id}:
     get:
       description: Get a single ProcedureRunCondition by ID.
@@ -118,7 +170,6 @@ paths:
       summary: Get ProcedureRunCondition by ID
       tags:
       - ProcedureRunCondition
-      x-bnch-rate-limit-tier: 5
   /procedure-run-condition/{procedure_run_condition_id}/procedure-run-condition-replicates/items:
     get:
       description: List ProcedureRunConditionReplicate items.
@@ -130,6 +181,7 @@ paths:
         required: true
         schema:
           type: string
+      - $ref: '#/components/parameters/archived.anyOf'
       - description: Set to true to access beta operations via /api/v3.
         in: header
         name: EARLY-ACCESS
@@ -157,55 +209,8 @@ paths:
       summary: List ProcedureRunConditionReplicate items
       tags:
       - ProcedureRunCondition
-      x-bnch-rate-limit-tier: 4
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
     modifiedAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
@@ -213,6 +218,22 @@ components:
       schema:
         format: datetime
         type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
     modifiedAt.gt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
@@ -226,10 +247,30 @@ components:
       name: procedureRun.eq
       schema:
         type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: createdAt.gt
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -242,12 +283,25 @@ components:
         items:
           type: string
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: pageSize
+      name: omit
       schema:
-        type: integer
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -255,22 +309,59 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
-    ProcedureRunRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -297,7 +388,15 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    ProcedureRunConditionReplicateUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureRunConditionReplicate'
+          type: array
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -305,6 +404,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -321,44 +422,47 @@ components:
       - status
       - instance
       type: object
-    ProcedureRunConditionReplicate:
-      description: 'A replicate of a `ProcedureRunCondition`, representing one execution of a condition''s configuration.
-
-        Scientists often run the same experimental condition multiple times to obtain statistically
-
-        significant results—each repetition is a replicate. The `replicateNumber` provides a one-indexed
-
-        identifier within the parent condition (e.g., replicate 1, 2, 3). Each replicate contains its own
-
-        set of `ProcedureMethodExecutionInstance` objects that track actual execution data. Links to a
-
-        `WorkflowTask` that serves as the root task for workflow orchestration. The archivable fields
-
-        support marking replicates as archived when no longer needed, with lineage tracking through
-
-        `archivableParent` and `archivableChildren`.'
+    ProcedureRunRef:
       properties:
         __typename:
           type: string
-        archiveReason:
+        id:
+          format: api_id
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
           type:
           - 'null'
           - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ProcedureRunConditionRef:
+      properties:
+        __typename:
           type: string
         id:
+          format: api_id
           type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        procedureRunCondition:
-          $ref: '#/components/schemas/ProcedureRunConditionRef'
-        replicateNumber:
-          description: A one-indexed number that uniquely identifies this replicate within its parent ProcedureRunCondition.
-          type: integer
       type: object
     ProcedureRunConditionPaginatedList:
       additionalProperties: false
@@ -368,10 +472,12 @@ components:
             $ref: '#/components/schemas/ProcedureRunCondition'
           type: array
         nextToken:
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
     ProcedureRunCondition:
-      description: "A ProcedureRunCondition represents a configuration of the methods of a Procedure that is being\nexecuted within a ProcedureRun.\n\nThe values associated with the ProcedureRunCondition are not exposed on the ProcedureRunCondition itself,\nbut instead can be found by traversing:\n\n    ProcedureRunCondition\n    -> ProcedureRunConditionReplicate   (pick any, since every replicate uses the same set of values)\n    -> ProcedureMethodExecutionInstance (join all, since each method has its own set of values)\n    -> ProcedureMethodDefinitionVersion\n    -> ProcedureParameterValueSet"
+      description: "A ProcedureRunCondition represents a configuration of the methods of a Procedure that is being\nexecuted within a ProcedureRun.\n\nThe values associated with the ProcedureRunCondition are not exposed on the ProcedureRunCondition itself,\nbut instead can be found by traversing:\n\n    ProcedureRunCondition\n    -> ProcedureRunConditionReplicate   (pick any, since every replicate uses the same set of values)\n    -> ProcedureMethodExecutionInstance (join all, since each method has its own set of values)\n    -> ProcedureMethodDefinitionVersion\n    -> ProcedureParameterValueSet\n\n## Product mapping\n\n- In Benchling experiment setup, this maps to a **condition** (for example, \"Condition 1\").\n- A condition captures one configuration of the run, while repeated executions of that condition\n  are represented by `ProcedureRunConditionReplicate`."
       properties:
         __typename:
           type: string
@@ -401,54 +507,37 @@ components:
           format: uri
           type: string
       type: object
-    ProcedureRunConditionReplicateUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureRunConditionReplicate'
-          type: array
-      type: object
-    ProcedureRunConditionRef:
+    ProcedureRunConditionReplicate:
+      description: "A replicate of a `ProcedureRunCondition`, representing one execution of a condition's configuration.\nScientists often run the same experimental condition multiple times to obtain statistically\nsignificant results—each repetition is a replicate. The `replicateNumber` provides a one-indexed\nidentifier within the parent condition (e.g., replicate 1, 2, 3). Each replicate contains its own\nset of `ProcedureMethodExecutionInstance` objects that track actual execution data. Links to a\n`WorkflowTask` that serves as the root task for workflow orchestration. The archivable fields\nsupport marking replicates as archived when no longer needed, with lineage tracking through\n`archivableParent` and `archivableChildren`.\n\n## Product mapping\n\n- In Benchling experiment setup, this maps to a specific **replicate row/instance** within a\n  condition.\n- `replicateNumber` corresponds to the user-visible replicate index for that condition."
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
           type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        procedureRunCondition:
+          $ref: '#/components/schemas/ProcedureRunConditionRef'
+        replicateNumber:
+          description: A one-indexed number that uniquely identifies this replicate within its parent ProcedureRunCondition.
+          type: integer
       type: object
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

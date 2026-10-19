@@ -558,32 +558,22 @@ paths:
       - Custom Entities
 components:
   schemas:
-    CustomEntityUpsertRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
-    CustomEntityBaseRequestForCreate:
-      allOf:
-      - $ref: '#/components/schemas/CustomEntityBaseRequest'
-      - required:
-        - name
-        - schemaId
-    FieldValueWithResolution:
-      oneOf:
-      - type: string
-      - type: boolean
-      - type: number
-      - items:
-          type: string
-        type: array
-      - additionalProperties: false
-        description: Look up an entity by its entity registry ID
-        properties:
-          entityRegistryId:
+    CustomEntitiesArchive:
+      additionalProperties: false
+      description: 'The request body for archiving custom entities.
+
+        '
+      properties:
+        customEntityIds:
+          items:
             type: string
-        required:
-        - entityRegistryId
-        type: object
+          type: array
+        reason:
+          $ref: '#/components/schemas/EntityArchiveReason'
+      required:
+      - reason
+      - customEntityIds
+      type: object
     EntityUpsertBaseRequest:
       properties:
         archiveRecord:
@@ -601,43 +591,116 @@ components:
       - name
       - schemaId
       type: object
-    EntityBulkUpsertBaseRequest:
-      allOf:
-      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
-      - properties:
-          entityRegistryId:
-            description: Registry ID of the entity in Benchling.
-            type: string
-      - required:
-        - entityRegistryId
-    CustomEntityUpdate:
+    RegistrationOrigin:
+      properties:
+        originEntryId:
+          readOnly: true
+          type:
+          - string
+          - 'null'
+        registeredAt:
+          format: date-time
+          readOnly: true
+          type: string
+      type: object
+    FieldsWithResolution:
+      additionalProperties:
+        $ref: '#/components/schemas/FieldWithResolution'
+      example:
+        Linked Peptide:
+          value: prtn_ObbdtGhC
+        Linked Sequence:
+          value:
+            entityRegistryId: DNA001
+        Linked Strains:
+          value:
+          - entityRegistryId: STRAIN001
+          - entityRegistryId: STRAIN002
+      type: object
+    FieldType:
+      enum:
+      - dna_sequence_link
+      - aa_sequence_link
+      - custom_entity_link
+      - entity_link
+      - mixture_link
+      - molecule_link
+      - dropdown
+      - part_link
+      - translation_link
+      - aa_part_link
+      - base_molecule_link
+      - blob_link
+      - text
+      - long_text
+      - batch_link
+      - storage_link
+      - entry_link
+      - assay_request_link
+      - assay_result_link
+      - assay_run_link
+      - boolean
+      - float
+      - integer
+      - datetime
+      - date
+      - json
+      type: string
+    CustomEntitiesUnarchive:
       additionalProperties: false
+      description: 'The request body for unarchiving custom entities.
+
+        '
+      properties:
+        customEntityIds:
+          items:
+            type: string
+          type: array
+      required:
+      - customEntityIds
+      type: object
+    CustomFields:
+      additionalProperties:
+        $ref: '#/components/schemas/CustomField'
+      example:
+        Legacy ID:
+          value: STR100
+      type: object
+    CustomEntitiesBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkUpdate'
+          maxItems: 2500
+          type: array
+      required:
+      - customEntities
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
+    CustomField:
+      properties:
+        value:
+          type: string
+      type: object
+    ArchiveRecordSet:
+      additionalProperties: false
+      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
+      example: null
+      type:
+      - object
+      - 'null'
+    FieldWithResolution:
       allOf:
-      - $ref: '#/components/schemas/CustomEntityBaseRequest'
-      - $ref: '#/components/schemas/CustomEntityRequestRegistryFields'
-    SchemaSummary:
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    CustomEntitiesList:
-      properties:
-        customEntities:
-          items:
-            $ref: '#/components/schemas/CustomEntity'
-          type: array
-      type: object
-    CustomEntitiesPaginatedList:
-      properties:
-        customEntities:
-          items:
-            $ref: '#/components/schemas/CustomEntity'
-          type: array
-        nextToken:
-          type: string
-      type: object
+      - $ref: '#/components/schemas/Field'
+      - properties:
+          value:
+            allOf:
+            - $ref: '#/components/schemas/FieldValueWithResolution'
+        type: object
     CustomEntityBaseRequest:
       properties:
         aliases:
@@ -670,41 +733,21 @@ components:
         schemaId:
           type: string
       type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    CustomEntityBulkUpsertRequest:
+    EntityBulkUpsertBaseRequest:
       allOf:
-      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
-      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
-    CustomEntityCreate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
-      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
-    CustomField:
-      properties:
-        value:
-          type: string
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - properties:
+          entityRegistryId:
+            description: Registry ID of the entity in Benchling.
+            type: string
+      - required:
+        - entityRegistryId
+    SchemaFieldsQueryParam:
+      additionalProperties: true
+      example:
+        schemaField.Cell Count: '>= 10 AND <= 50'
+        schemaField.Experiment: MyExperiment
+        schemaField.Started On: <= 2023-05-23T00:00:00Z
       type: object
     CustomEntitiesArchivalChange:
       description: 'IDs of all items that were archived or unarchived, grouped by resource type. This includes the IDs of custom entities along with any IDs of batches that were archived (or unarchived).
@@ -720,101 +763,6 @@ components:
             type: string
           type: array
       type: object
-    CustomEntitiesBulkUpsertRequest:
-      additionalProperties: false
-      properties:
-        customEntities:
-          items:
-            $ref: '#/components/schemas/CustomEntityBulkUpsertRequest'
-          maxItems: 2500
-          type: array
-      required:
-      - customEntities
-      type: object
-    CustomEntitiesBulkUpdateRequest:
-      additionalProperties: false
-      properties:
-        customEntities:
-          items:
-            $ref: '#/components/schemas/CustomEntityBulkUpdate'
-          maxItems: 2500
-          type: array
-      required:
-      - customEntities
-    RegistrationOrigin:
-      properties:
-        originEntryId:
-          readOnly: true
-          type:
-          - string
-          - 'null'
-        registeredAt:
-          format: date-time
-          readOnly: true
-          type: string
-      type: object
-    PartySummary:
-      properties:
-        handle:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    ArchiveRecordSet:
-      additionalProperties: false
-      description: Currently, we only support setting a null value for archiveRecord, which unarchives the item
-      example: null
-      type:
-      - object
-      - 'null'
-    EntityArchiveReason:
-      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
-
-        '
-      enum:
-      - Made in error
-      - Retired
-      - Expended
-      - Shipped
-      - Contaminated
-      - Expired
-      - Missing
-      - Other
-      type: string
-    CustomEntityRequestRegistryFields:
-      properties:
-        entityRegistryId:
-          type: string
-      type: object
-    FieldWithResolution:
-      allOf:
-      - $ref: '#/components/schemas/Field'
-      - properties:
-          value:
-            allOf:
-            - $ref: '#/components/schemas/FieldValueWithResolution'
-        type: object
-    BaseError:
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
-      type: object
-    CustomEntitiesBulkCreateRequest:
-      additionalProperties: false
-      properties:
-        customEntities:
-          items:
-            $ref: '#/components/schemas/CustomEntityBulkCreate'
-          maxItems: 2500
-          type: array
-      required:
-      - customEntities
     CreateEntityIntoRegistry:
       properties:
         entityRegistryId:
@@ -836,6 +784,124 @@ components:
             Required in order for entities to be created directly in the registry.
 
             '
+          type: string
+      type: object
+    CustomEntitiesPaginatedList:
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntity'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    EntityArchiveReason:
+      description: 'The reason for archiving the provided entities. Accepted reasons may differ based on tenant configuration.
+
+        '
+      enum:
+      - Made in error
+      - Retired
+      - Expended
+      - Shipped
+      - Contaminated
+      - Expired
+      - Missing
+      - Other
+      type: string
+    CustomEntityBulkUpdate:
+      additionalProperties: true
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    NamingStrategy:
+      description: 'Specifies the behavior for automatically generated names when registering an entity.
+
+        - NEW_IDS: Generate new registry IDs
+
+        - IDS_FROM_NAMES: Generate registry IDs based on entity names
+
+        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
+
+        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
+
+        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
+
+        - KEEP_NAMES: Keep existing entity names as registry IDs
+
+        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
+
+        '
+      enum:
+      - NEW_IDS
+      - IDS_FROM_NAMES
+      - DELETE_NAMES
+      - SET_FROM_NAME_PARTS
+      - REPLACE_NAMES_FROM_PARTS
+      - KEEP_NAMES
+      - REPLACE_ID_AND_NAME_FROM_PARTS
+      type: string
+    CustomEntitiesBulkCreateRequest:
+      additionalProperties: false
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkCreate'
+          maxItems: 2500
+          type: array
+      required:
+      - customEntities
+    CustomEntitiesList:
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntity'
+          type: array
+      type: object
+    FieldValueWithResolution:
+      oneOf:
+      - type: string
+      - type: boolean
+      - type: number
+      - items:
+          type: string
+        type: array
+      - additionalProperties: false
+        description: Look up an entity by its entity registry ID
+        properties:
+          entityRegistryId:
+            type: string
+        required:
+        - entityRegistryId
+        type: object
+    CustomEntityBaseRequestForCreate:
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      - required:
+        - name
+        - schemaId
+    CustomEntityUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityUpsertBaseRequest'
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
           type: string
       type: object
     CustomEntity:
@@ -915,103 +981,43 @@ components:
           readOnly: true
           type: string
       type: object
-    NamingStrategy:
-      description: 'Specifies the behavior for automatically generated names when registering an entity.
-
-        - NEW_IDS: Generate new registry IDs
-
-        - IDS_FROM_NAMES: Generate registry IDs based on entity names
-
-        - DELETE_NAMES: Generate new registry IDs and replace name with registry ID
-
-        - SET_FROM_NAME_PARTS: Generate new registry IDs, rename according to name template, and keep old name as alias
-
-        - REPLACE_NAMES_FROM_PARTS: Generate new registry IDs, and replace name according to name template
-
-        - KEEP_NAMES: Keep existing entity names as registry IDs
-
-        - REPLACE_ID_AND_NAME_FROM_PARTS: Generate registry IDs and names according to name template
-
-        '
-      enum:
-      - NEW_IDS
-      - IDS_FROM_NAMES
-      - DELETE_NAMES
-      - SET_FROM_NAME_PARTS
-      - REPLACE_NAMES_FROM_PARTS
-      - KEEP_NAMES
-      - REPLACE_ID_AND_NAME_FROM_PARTS
-      type: string
-    CustomEntityBulkUpdate:
-      additionalProperties: true
+    CustomEntitiesBulkUpsertRequest:
+      additionalProperties: false
+      properties:
+        customEntities:
+          items:
+            $ref: '#/components/schemas/CustomEntityBulkUpsertRequest'
+          maxItems: 2500
+          type: array
+      required:
+      - customEntities
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    CustomEntityUpdate:
+      additionalProperties: false
       allOf:
       - $ref: '#/components/schemas/CustomEntityBaseRequest'
+      - $ref: '#/components/schemas/CustomEntityRequestRegistryFields'
+    ArchiveRecord:
       properties:
-        id:
+        reason:
+          example: Made in error
           type: string
-      required:
-      - id
-    Fields:
-      additionalProperties:
-        $ref: '#/components/schemas/Field'
       type: object
-    SchemaFieldsQueryParam:
-      additionalProperties: true
-      example:
-        schemaField.Cell Count: '>= 10 AND <= 50'
-        schemaField.Experiment: MyExperiment
-        schemaField.Started On: <= 2023-05-23T00:00:00Z
-      type: object
-    FieldsWithResolution:
-      additionalProperties:
-        $ref: '#/components/schemas/FieldWithResolution'
-      example:
-        Linked Peptide:
-          value: prtn_ObbdtGhC
-        Linked Sequence:
-          value:
-            entityRegistryId: DNA001
-        Linked Strains:
-          value:
-          - entityRegistryId: STRAIN001
-          - entityRegistryId: STRAIN002
-      type: object
-    FieldType:
-      enum:
-      - dna_sequence_link
-      - aa_sequence_link
-      - custom_entity_link
-      - entity_link
-      - mixture_link
-      - molecule_link
-      - dropdown
-      - part_link
-      - translation_link
-      - aa_part_link
-      - base_molecule_link
-      - blob_link
-      - text
-      - long_text
-      - batch_link
-      - storage_link
-      - entry_link
-      - assay_request_link
-      - assay_result_link
-      - assay_run_link
-      - boolean
-      - float
-      - integer
-      - datetime
-      - date
-      - json
-      type: string
-    CustomFields:
-      additionalProperties:
-        $ref: '#/components/schemas/CustomField'
-      example:
-        Legacy ID:
-          value: STR100
-      type: object
+    CustomEntityBulkCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/CustomEntityCreate'
     Field:
       properties:
         displayValue:
@@ -1049,45 +1055,39 @@ components:
       required:
       - value
       type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    CustomEntitiesArchive:
-      additionalProperties: false
-      description: 'The request body for archiving custom entities.
-
-        '
+    BaseError:
       properties:
-        customEntityIds:
-          items:
-            type: string
-          type: array
-        reason:
-          $ref: '#/components/schemas/EntityArchiveReason'
-      required:
-      - reason
-      - customEntityIds
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
       type: object
-    CustomEntityBulkCreate:
+    Fields:
+      additionalProperties:
+        $ref: '#/components/schemas/Field'
+      type: object
+    CustomEntityCreate:
       additionalProperties: false
       allOf:
-      - $ref: '#/components/schemas/CustomEntityCreate'
-    CustomEntitiesUnarchive:
-      additionalProperties: false
-      description: 'The request body for unarchiving custom entities.
-
-        '
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
+      - $ref: '#/components/schemas/CreateEntityIntoRegistry'
+    SchemaSummary:
       properties:
-        customEntityIds:
-          items:
-            type: string
-          type: array
-      required:
-      - customEntityIds
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    CustomEntityBulkUpsertRequest:
+      allOf:
+      - $ref: '#/components/schemas/EntityBulkUpsertBaseRequest'
+      - $ref: '#/components/schemas/CustomEntityBaseRequestForCreate'
+    CustomEntityRequestRegistryFields:
+      properties:
+        entityRegistryId:
+          type: string
       type: object
   securitySchemes:
     basicApiKeyAuth:

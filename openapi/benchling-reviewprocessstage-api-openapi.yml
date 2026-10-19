@@ -7,7 +7,22 @@ info:
   version: 2.0.0
   description: 'A single stage within a ReviewProcess that defines a required step in the review
 
-    workflow.'
+    workflow. Each stage specifies what action reviewers must take (see
+
+    `ReviewProcessActionType`), who is eligible to be a reviewer (see `ReviewerType`),
+
+    and optionally a specific Team. For sequential review processes, stages have a
+
+    position index determining their order. Stages can be configured to allow or
+
+    disallow authors and senders as reviewers, and can permit team member reassignment.
+
+
+    The list endpoint returns stages from the current version of each accessible review
+
+    process. To retrieve stages scoped to a specific review process, use
+
+    `GET /benchling/review-process/{review_process_id}` and inspect `currentVersion.reviewStages`.'
 servers:
 - url: /api/v3
 security:
@@ -16,25 +31,38 @@ security:
 tags:
 - description: 'A single stage within a ReviewProcess that defines a required step in the review
 
-    workflow.'
+    workflow. Each stage specifies what action reviewers must take (see
+
+    `ReviewProcessActionType`), who is eligible to be a reviewer (see `ReviewerType`),
+
+    and optionally a specific Team. For sequential review processes, stages have a
+
+    position index determining their order. Stages can be configured to allow or
+
+    disallow authors and senders as reviewers, and can permit team member reassignment.
+
+
+    The list endpoint returns stages from the current version of each accessible review
+
+    process. To retrieve stages scoped to a specific review process, use
+
+    `GET /benchling/review-process/{review_process_id}` and inspect `currentVersion.reviewStages`.'
   name: ReviewProcessStage
   x-bnch-organization: Benchling
+  x-displayName: Review Process Stage
 paths:
   /review-process-stage/items:
     get:
-      description: List ReviewProcessStage items.
+      description: 'List ReviewProcessStage items from the current version of each accessible review process.
+
+
+        Stages of archived review processes are omitted but can still be retrieved by ID.'
       operationId: ReviewProcessStage.List
       parameters:
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/omit'
       - $ref: '#/components/parameters/pageSize'
       - $ref: '#/components/parameters/returning'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -56,7 +84,6 @@ paths:
       summary: List ReviewProcessStage items
       tags:
       - ReviewProcessStage
-      x-bnch-rate-limit-tier: 4
   /review-process-stage/{review_process_stage_id}:
     get:
       description: Get a single ReviewProcessStage by ID.
@@ -70,12 +97,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -97,28 +118,9 @@ paths:
       summary: Get ReviewProcessStage by ID
       tags:
       - ReviewProcessStage
-      x-bnch-rate-limit-tier: 5
 components:
   schemas:
-    ReviewProcessStagePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewProcessStage'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    TeamRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -126,6 +128,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -226,6 +230,44 @@ components:
           - 'null'
           - integer
       type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewProcessStagePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewProcessStage'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -252,59 +294,27 @@ components:
       - status
       - instance
       type: object
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-  parameters:
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
+    TeamRef:
+      properties:
+        __typename:
           type: string
-        type: array
+        id:
+          format: api_id
+          type: string
+      type: object
+  parameters:
     nextToken:
       description: Token for pagination
       in: query
       name: nextToken
       schema:
         type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
     returning:
       description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
@@ -314,7 +324,59 @@ components:
         items:
           type: string
         type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

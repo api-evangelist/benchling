@@ -7,7 +7,17 @@ info:
   version: 2.0.0
   description: 'A `LabelTemplate` defines the format for printing physical labels for inventory items, such as containers,
 
-    plates, and boxes.'
+    plates, and boxes. Each template contains a template string, `zplTemplate`, that is populated with item data
+
+    and sent to a compatible label printer. Template strings typically use ZPL (Zebra Programming Language), but
+
+    for the most part, Benchling code treats them in a language agnostic way, and they can contain other printer
+
+    languages, such as JScript, to work with less common printers. `LabelTemplate`s are associated with a Registry
+
+    and enable consistent barcode labeling across an organization''s inventory. `LabelTemplate`s can include
+
+    dynamic fields for barcodes, names, dates, and custom metadata.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +26,20 @@ security:
 tags:
 - description: 'A `LabelTemplate` defines the format for printing physical labels for inventory items, such as containers,
 
-    plates, and boxes.'
+    plates, and boxes. Each template contains a template string, `zplTemplate`, that is populated with item data
+
+    and sent to a compatible label printer. Template strings typically use ZPL (Zebra Programming Language), but
+
+    for the most part, Benchling code treats them in a language agnostic way, and they can contain other printer
+
+    languages, such as JScript, to work with less common printers. `LabelTemplate`s are associated with a Registry
+
+    and enable consistent barcode labeling across an organization''s inventory. `LabelTemplate`s can include
+
+    dynamic fields for barcodes, names, dates, and custom metadata.'
   name: LabelTemplate
   x-bnch-organization: Benchling
+  x-displayName: Label Template
 paths:
   /label-template/items:
     get:
@@ -78,7 +99,6 @@ paths:
       summary: List LabelTemplate items
       tags:
       - LabelTemplate
-      x-bnch-rate-limit-tier: 4
   /label-template/{label_template_id}:
     get:
       description: Get a single LabelTemplate by ID.
@@ -119,9 +139,41 @@ paths:
       summary: Get LabelTemplate by ID
       tags:
       - LabelTemplate
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -129,6 +181,22 @@ components:
       schema:
         format: datetime
         type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -137,22 +205,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -174,31 +226,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -209,32 +240,20 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -243,14 +262,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -263,6 +283,12 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -270,6 +296,66 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     LabelTemplate:
       description: 'A `LabelTemplate` defines the format for printing physical labels for inventory items, such as containers,
 
@@ -312,16 +398,16 @@ components:
           description: The ZPL template that will be filled in and sent to a printer.
           type: string
       type: object
-    InternalServerError:
+    GeneralError:
       properties:
         detail:
           type:
           - 'null'
           - string
           - object
-        errorId:
-          type: string
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -346,41 +432,16 @@ components:
             $ref: '#/components/schemas/LabelTemplate'
           type: array
         nextToken:
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
           type:
-          - 'null'
           - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
           - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    RegistryRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
       type: object
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

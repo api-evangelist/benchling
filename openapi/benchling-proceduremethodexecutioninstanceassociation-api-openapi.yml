@@ -7,7 +7,23 @@ info:
   version: 2.0.0
   description: 'Links two method execution instances across procedure runs to represent an intended connection within a study.
 
-    This allows scientists to coordinate their analyses across runs, even when the flowchart structure may differ.'
+    This allows scientists to coordinate their analyses across runs, even when the flowchart structure may differ.
+
+
+    ## Product mapping
+
+
+    - In the Benchling UI, this represents an explicit **link/association between executed methods**
+
+    used for unit-operation linking **across runs**.
+
+    - For linking **within a single run** (for example, split pooling), use the
+
+    `ProcedureRunReplicateEdge` flowchart links.
+
+    - The association operates on runtime instances (`ProcedureMethodExecutionInstance`), not template
+
+    method definitions.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +32,26 @@ security:
 tags:
 - description: 'Links two method execution instances across procedure runs to represent an intended connection within a study.
 
-    This allows scientists to coordinate their analyses across runs, even when the flowchart structure may differ.'
+    This allows scientists to coordinate their analyses across runs, even when the flowchart structure may differ.
+
+
+    ## Product mapping
+
+
+    - In the Benchling UI, this represents an explicit **link/association between executed methods**
+
+    used for unit-operation linking **across runs**.
+
+    - For linking **within a single run** (for example, split pooling), use the
+
+    `ProcedureRunReplicateEdge` flowchart links.
+
+    - The association operates on runtime instances (`ProcedureMethodExecutionInstance`), not template
+
+    method definitions.'
   name: ProcedureMethodExecutionInstanceAssociation
   x-bnch-organization: Benchling
+  x-displayName: Procedure Method Execution Instance Association
 paths:
   /procedure-method-execution-instance-association:
     post:
@@ -49,6 +82,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -56,7 +91,6 @@ paths:
       summary: Create ProcedureMethodExecutionInstanceAssociation
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 4
   /procedure-method-execution-instance-association/items:
     get:
       description: List ProcedureMethodExecutionInstanceAssociation items.
@@ -115,7 +149,6 @@ paths:
       summary: List ProcedureMethodExecutionInstanceAssociation items
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 4
   /procedure-method-execution-instance-association/{procedure_method_execution_instance_association_id}:
     delete:
       description: Delete ProcedureMethodExecutionInstanceAssociation.
@@ -142,6 +175,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -149,7 +184,6 @@ paths:
       summary: Delete ProcedureMethodExecutionInstanceAssociation
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 4
     get:
       description: Get a single ProcedureMethodExecutionInstanceAssociation by ID.
       operationId: ProcedureMethodExecutionInstanceAssociation.Get
@@ -189,7 +223,6 @@ paths:
       summary: Get ProcedureMethodExecutionInstanceAssociation by ID
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 5
   /procedure-method-execution-instance-association:batch-create:
     post:
       description: Batch create ProcedureMethodExecutionInstanceAssociation synchronously in one transaction. Maximum 25 items per request.
@@ -237,6 +270,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -244,7 +279,6 @@ paths:
       summary: Batch create ProcedureMethodExecutionInstanceAssociation
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 3
   /procedure-method-execution-instance-association:batch-delete:
     post:
       description: Batch delete ProcedureMethodExecutionInstanceAssociation synchronously in one transaction. Maximum 25 items per request.
@@ -298,6 +332,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -305,7 +341,6 @@ paths:
       summary: Batch delete ProcedureMethodExecutionInstanceAssociation
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 3
   /procedure-method-execution-instance-association:bulk-create:
     post:
       description: Bulk create ProcedureMethodExecutionInstanceAssociation.
@@ -335,6 +370,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -342,13 +379,42 @@ paths:
       summary: Bulk create ProcedureMethodExecutionInstanceAssociation
       tags:
       - ProcedureMethodExecutionInstanceAssociation
-      x-bnch-rate-limit-tier: 2
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -358,6 +424,39 @@ components:
       name: nextToken
       schema:
         type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -377,51 +476,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -432,131 +490,21 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   schemas:
-    ProcedureMethodExecutionInstanceAssociation:
-      description: 'Links two method execution instances across procedure runs to represent an intended connection within a study.
-
-        This allows scientists to coordinate their analyses across runs, even when the flowchart structure may differ.'
+    DeleteProcedureMethodExecutionInstanceAssociationInputWithPathParams:
+      additionalProperties: false
       properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type: string
         id:
           type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        sourceProcedureMethodExecutionInstance:
-          $ref: '#/components/schemas/ProcedureMethodExecutionInstanceRef'
-        targetProcedureMethodExecutionInstance:
-          $ref: '#/components/schemas/ProcedureMethodExecutionInstanceRef'
-      type: object
-    ProcedureMethodExecutionInstanceAssociationUpsert:
-      additionalProperties: false
-      properties:
-        sourceProcedureMethodExecutionInstanceId:
-          type: string
-        targetProcedureMethodExecutionInstanceId:
-          type: string
       required:
-      - sourceProcedureMethodExecutionInstanceId
-      - targetProcedureMethodExecutionInstanceId
-      type: object
-    ProcedureMethodExecutionInstanceAssociationPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ProcedureMethodExecutionInstanceAssociation'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
+      - id
       type: object
     InternalServerError:
       properties:
@@ -584,7 +532,27 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    ProcedureMethodExecutionInstanceAssociationPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ProcedureMethodExecutionInstanceAssociation'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -592,6 +560,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -608,13 +578,31 @@ components:
       - status
       - instance
       type: object
-    DeleteProcedureMethodExecutionInstanceAssociationInputWithPathParams:
-      additionalProperties: false
+    GeneralError:
       properties:
-        id:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
           type: string
       required:
-      - id
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     ProcedureMethodExecutionInstanceRef:
       properties:
@@ -624,7 +612,101 @@ components:
           format: api_id
           type: string
       type: object
+    ProcedureMethodExecutionInstanceAssociation:
+      description: "Links two method execution instances across procedure runs to represent an intended connection within a study.\nThis allows scientists to coordinate their analyses across runs, even when the flowchart structure may differ.\n\n## Product mapping\n\n- In the Benchling UI, this represents an explicit **link/association between executed methods**\n  used for unit-operation linking **across runs**.\n- For linking **within a single run** (for example, split pooling), use the\n  `ProcedureRunReplicateEdge` flowchart links.\n- The association operates on runtime instances (`ProcedureMethodExecutionInstance`), not template\n  method definitions."
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        sourceProcedureMethodExecutionInstance:
+          $ref: '#/components/schemas/ProcedureMethodExecutionInstanceRef'
+        targetProcedureMethodExecutionInstance:
+          $ref: '#/components/schemas/ProcedureMethodExecutionInstanceRef'
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    ProcedureMethodExecutionInstanceAssociationUpsert:
+      additionalProperties: false
+      properties:
+        sourceProcedureMethodExecutionInstanceId:
+          type: string
+        targetProcedureMethodExecutionInstanceId:
+          type: string
+      required:
+      - sourceProcedureMethodExecutionInstanceId
+      - targetProcedureMethodExecutionInstanceId
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

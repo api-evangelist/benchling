@@ -27,6 +27,7 @@ tags:
     migrations between tenants.'
   name: ConfigImportHistoryEntry
   x-bnch-organization: Benchling
+  x-displayName: Config Import History Entry
 paths:
   /config-import-history-entry/items:
     get:
@@ -78,7 +79,6 @@ paths:
       summary: List ConfigImportHistoryEntry items
       tags:
       - ConfigImportHistoryEntry
-      x-bnch-rate-limit-tier: 4
   /config-import-history-entry/{config_import_history_entry_id}:
     get:
       description: Get a single ConfigImportHistoryEntry by ID.
@@ -119,9 +119,20 @@ paths:
       summary: Get ConfigImportHistoryEntry by ID
       tags:
       - ConfigImportHistoryEntry
-      x-bnch-rate-limit-tier: 5
 components:
   parameters:
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -129,49 +140,10 @@ components:
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
     createdAt.gte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
       name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -184,25 +156,53 @@ components:
         items:
           type: string
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: pageSize
+      name: omit
       schema:
-        type: integer
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   responses:
     TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -215,6 +215,12 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -222,14 +228,6 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   schemas:
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -256,7 +254,7 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -264,6 +262,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -280,6 +280,40 @@ components:
       - status
       - instance
       type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     ConfigImportHistoryEntryPaginatedList:
       additionalProperties: false
       properties:
@@ -288,7 +322,9 @@ components:
             $ref: '#/components/schemas/ConfigImportHistoryEntry'
           type: array
         nextToken:
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
     ConfigImportHistoryEntry:
       description: 'Records a configuration import operation from one Benchling tenant to another. Each entry
@@ -331,7 +367,7 @@ components:
         targetOrganization:
           $ref: '#/components/schemas/OrganizationRef'
       type: object
-    OrganizationRef:
+    PrincipalRef:
       properties:
         __typename:
           type: string
@@ -340,6 +376,11 @@ components:
           type: string
       type: object
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

@@ -7,7 +7,21 @@ info:
   version: 2.0.0
   description: 'A File represents an uploaded document or data file that is surfaced in Benchling''s
 
-    Data Catalog for discovery and organization.'
+    Data Catalog for discovery and organization. Files are primarily created through
+
+    Benchling Connect (for external file integrations) and the Analysis Tool (for
+
+    pipeline outputs). Each File is backed by a ScratchFile containing the actual
+
+    binary content and upload state. Files are folder-based items that can be
+
+    starred for quick access, linked to Studies, and support custom fields.
+
+    Files differ from EntryExternalFile (attachments within notebook entries)
+
+    and Blob (raw binary storage) in that they are first-class data catalog
+
+    items with full metadata and discovery capabilities.'
 servers:
 - url: /api/v3
 security:
@@ -16,21 +30,29 @@ security:
 tags:
 - description: 'A File represents an uploaded document or data file that is surfaced in Benchling''s
 
-    Data Catalog for discovery and organization.'
+    Data Catalog for discovery and organization. Files are primarily created through
+
+    Benchling Connect (for external file integrations) and the Analysis Tool (for
+
+    pipeline outputs). Each File is backed by a ScratchFile containing the actual
+
+    binary content and upload state. Files are folder-based items that can be
+
+    starred for quick access, linked to Studies, and support custom fields.
+
+    Files differ from EntryExternalFile (attachments within notebook entries)
+
+    and Blob (raw binary storage) in that they are first-class data catalog
+
+    items with full metadata and discovery capabilities.'
   name: File
   x-bnch-organization: Benchling
+  x-displayName: File
 paths:
   /file:
     post:
       description: Create File.
       operationId: File.Create
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -49,6 +71,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -56,7 +80,6 @@ paths:
       summary: Create File
       tags:
       - File
-      x-bnch-rate-limit-tier: 4
   /file/items:
     get:
       description: List File items.
@@ -68,7 +91,10 @@ paths:
       - $ref: '#/components/parameters/createdAt.gte'
       - $ref: '#/components/parameters/createdAt.lt'
       - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/folder.eq'
       - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/mentionedIn.anyOf'
       - $ref: '#/components/parameters/modifiedAt.gt'
       - $ref: '#/components/parameters/modifiedAt.gte'
       - $ref: '#/components/parameters/modifiedAt.lt'
@@ -89,12 +115,6 @@ paths:
           - createdAt:desc
           - modifiedAt:asc
           - modifiedAt:desc
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
           type: string
       responses:
         '200':
@@ -117,7 +137,6 @@ paths:
       summary: List File items
       tags:
       - File
-      x-bnch-rate-limit-tier: 4
   /file/{file_id}:
     get:
       description: Get a single File by ID.
@@ -131,12 +150,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -158,7 +171,6 @@ paths:
       summary: Get File by ID
       tags:
       - File
-      x-bnch-rate-limit-tier: 5
     patch:
       description: Update File.
       operationId: File.Update
@@ -167,12 +179,6 @@ paths:
         in: path
         name: file_id
         required: true
-        schema:
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
         schema:
           type: string
       requestBody:
@@ -193,6 +199,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -200,18 +208,122 @@ paths:
       summary: Update File
       tags:
       - File
-      x-bnch-rate-limit-tier: 4
+  /file/{file_id}/versions/items:
+    get:
+      description: List the published versions of a File, newest version first.
+      operationId: File.versions.List
+      parameters:
+      - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: ID of the File.
+        in: path
+        name: file_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileVersionPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List FileVersion items
+      tags:
+      - File
+  /file/{file_id}/versions/{file_version_id}:
+    get:
+      description: Get a single FileVersion by ID.
+      operationId: File.versions.Get
+      parameters:
+      - description: ID of the File.
+        in: path
+        name: file_id
+        required: true
+        schema:
+          type: string
+      - description: ID of the FileVersion.
+        in: path
+        name: file_version_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileVersion'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get FileVersion by ID
+      tags:
+      - File
+  /file/{file_id}:revert:
+    post:
+      description: Publish a new version of a File whose content copies an earlier version. The earlier version stays in the File's history and the new version becomes current. `expectedVersionId` must be the File's current version; the revert is rejected if another version has been published since. Reverting to the current version is rejected.
+      operationId: File.Revert
+      parameters:
+      - description: ID of the File.
+        in: path
+        name: file_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevertFileInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Revert File to version
+      tags:
+      - File
   /file:batch-create:
     post:
       description: Batch create File synchronously in one transaction. Maximum 25 items per request.
       operationId: File.BatchCreate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -248,6 +360,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -255,18 +369,10 @@ paths:
       summary: Batch create File
       tags:
       - File
-      x-bnch-rate-limit-tier: 3
   /file:batch-update:
     patch:
       description: Batch update File synchronously in one transaction. Maximum 25 items per request.
       operationId: File.BatchUpdate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -303,6 +409,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -310,18 +418,10 @@ paths:
       summary: Batch update File
       tags:
       - File
-      x-bnch-rate-limit-tier: 3
   /file:bulk-create:
     post:
       description: Bulk create File.
       operationId: File.BulkCreate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -340,6 +440,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -347,18 +449,10 @@ paths:
       summary: Bulk create File
       tags:
       - File
-      x-bnch-rate-limit-tier: 2
   /file:bulk-update:
     patch:
       description: Bulk update File.
       operationId: File.BulkUpdate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -377,6 +471,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -384,13 +480,42 @@ paths:
       summary: Bulk update File
       tags:
       - File
-      x-bnch-rate-limit-tier: 2
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -400,6 +525,39 @@ components:
       name: nextToken
       schema:
         type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -408,16 +566,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -439,51 +587,26 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+    mentionedIn.anyOf:
+      description: Restricts results to items mentioned in entries matching any of the specified entry IDs. Comma-separated list.
       explode: false
       in: query
-      name: archiveReason.anyOf
+      name: mentionedIn.anyOf
       schema:
         items:
           type: string
-        maxItems: 10
+        maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    folder.eq:
+      description: ID of a folder. Restricts results to its direct children.
       in: query
-      name: createdAt.lt
+      name: folder.eq
       schema:
-        format: datetime
         type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -494,55 +617,73 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: creator.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
       in: query
-      name: pageSize
+      name: name.anyOf
       schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
   schemas:
-    UpdateFileInput:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        folderId:
-          type: string
-        name:
-          type: string
-      type: object
-    ScratchFileRef:
+    FileVersion:
+      description: 'A FileVersion is an immutable published version in a File''s history. Each update that
+
+        changes a File''s content publishes a new FileVersion with the next versionNumber, and the
+
+        File''s currentVersionId points at the latest one. The version''s content is the ScratchFile it
+
+        references, which is never modified after publishing. FileVersions are listed and read through
+
+        their File.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        createdAt:
+          format: datetime
           type: string
+        creator:
+          description: User who published the version.
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        file:
+          $ref: '#/components/schemas/FileRef'
+          description: The File this version belongs to.
+        id:
+          type: string
+        parentVersionId:
+          description: ID of the version that was current when this version was published, or null for a File's first version.
+          type:
+          - 'null'
+          - string
+        scratchFile:
+          description: The content of the version, or null when the version has no uploaded content.
+          oneOf:
+          - $ref: '#/components/schemas/ScratchFileRef'
+          - type: 'null'
+        versionNumber:
+          description: Position of the version in the File's history, starting at 1.
+          type: integer
       type: object
     FilePaginatedList:
       additionalProperties: false
@@ -552,63 +693,9 @@ components:
             $ref: '#/components/schemas/File'
           type: array
         nextToken:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    CreateFileInput:
-      additionalProperties: false
-      properties:
-        folderId:
-          type: string
-        name:
-          type: string
-        scratchFileId:
-          type: string
-      required:
-      - name
-      - folderId
-      - scratchFileId
-      type: object
-    UpdateFileInputWithPathParams:
-      additionalProperties: false
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        folderId:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-      required:
-      - id
+          type:
+          - string
+          - 'null'
       type: object
     InternalServerError:
       properties:
@@ -636,7 +723,49 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    FileVersionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/FileVersion'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -644,6 +773,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -660,6 +791,131 @@ components:
       - status
       - instance
       type: object
+    ScratchFileRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    UpdateFileInputWithPathParams:
+      additionalProperties: false
+      properties:
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the object but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        customFields:
+          type: object
+        expectedVersionId:
+          description: The File's current version as last read by the caller. The update is rejected if another version has been published since.
+          type: string
+        filename:
+          description: The name of the underlying file. Names the content of `scratchFileId` if given, otherwise renames the current version in place. Must not be blank, and its extension must not be blocked by the tenant's file upload settings.
+          type: string
+        folderId:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        scratchFileId:
+          type: string
+      required:
+      - id
+      type: object
+    FileRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    UpdateFileInput:
+      additionalProperties: false
+      properties:
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the object but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        customFields:
+          type: object
+        expectedVersionId:
+          description: The File's current version as last read by the caller. The update is rejected if another version has been published since.
+          type: string
+        filename:
+          description: The name of the underlying file. Names the content of `scratchFileId` if given, otherwise renames the current version in place. Must not be blank, and its extension must not be blocked by the tenant's file upload settings.
+          type: string
+        folderId:
+          type: string
+        name:
+          type: string
+        scratchFileId:
+          type: string
+      type: object
+    RevertFileInput:
+      additionalProperties: false
+      properties:
+        expectedVersionId:
+          type: string
+        fileVersionId:
+          type: string
+      required:
+      - fileVersionId
+      - expectedVersionId
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     FolderRef:
       properties:
         __typename:
@@ -667,6 +923,25 @@ components:
         id:
           format: api_id
           type: string
+      type: object
+    CreateFileInput:
+      additionalProperties: false
+      properties:
+        customFields:
+          type: object
+        filename:
+          description: The name of the underlying file. Defaults to the ScratchFile's filename. Must not be blank, and its extension must not be blocked by the tenant's file upload settings.
+          type: string
+        folderId:
+          type: string
+        name:
+          type: string
+        scratchFileId:
+          type: string
+      required:
+      - name
+      - folderId
+      - scratchFileId
       type: object
     File:
       description: 'A File represents an uploaded document or data file that is surfaced in Benchling''s
@@ -689,19 +964,10 @@ components:
       properties:
         __typename:
           type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
         archiveReason:
           type:
           - 'null'
           - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
         archived:
           type: boolean
         createdAt:
@@ -709,7 +975,29 @@ components:
           type: string
         creator:
           $ref: '#/components/schemas/PrincipalRef'
+        currentVersionId:
+          type:
+          - 'null'
+          - string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
         displayId:
+          type:
+          - 'null'
+          - string
+        externalFileId:
+          deprecated: true
+          description: Use scratchFile to access externalFileId.
+          type:
+          - 'null'
+          - string
+        filename:
+          deprecated: true
+          description: Use scratchFile to access filename.
           type:
           - 'null'
           - string
@@ -717,6 +1005,12 @@ components:
           $ref: '#/components/schemas/FolderRef'
         id:
           type: string
+        mimeType:
+          deprecated: true
+          description: Use scratchFile to access mimeType.
+          type:
+          - 'null'
+          - string
         modifiedAt:
           format: datetime
           type: string
@@ -726,20 +1020,25 @@ components:
           - string
         scratchFile:
           $ref: '#/components/schemas/ScratchFileRef'
+        versions:
+          description: Published versions of the File, newest first.
+          format: uri
+          type: string
       type: object
   responses:
     TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -752,6 +1051,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -759,6 +1070,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

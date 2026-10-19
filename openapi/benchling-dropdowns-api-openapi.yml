@@ -293,24 +293,26 @@ paths:
       - Dropdowns
 components:
   schemas:
-    DropdownOptionsArchivalChange:
-      description: 'IDs of all items that were archived or unarchived.
-
-        '
+    DropdownOption:
       properties:
-        dropdownOptionIds:
-          items:
-            type: string
-          type: array
+        archiveRecord:
+          allOf:
+          - $ref: '#/components/schemas/ArchiveRecord'
+        id:
+          type: string
+        name:
+          type: string
       type: object
-    DropdownOptionsUnarchive:
-      additionalProperties: false
+    BadRequestError:
       properties:
-        dropdownOptionIds:
-          description: Array of dropdown option IDs
-          items:
-            type: string
-          type: array
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
     Dropdown:
       allOf:
@@ -326,6 +328,44 @@ components:
             type: array
         type: object
       description: Dropdowns are registry-wide enums. Use dropdowns to standardize on spelling and naming conventions, especially for important metadata like resistance markers.
+    DropdownOptionsArchivalChange:
+      description: 'IDs of all items that were archived or unarchived.
+
+        '
+      properties:
+        dropdownOptionIds:
+          items:
+            type: string
+          type: array
+      type: object
+    DropdownSummariesPaginatedList:
+      properties:
+        dropdowns:
+          items:
+            $ref: '#/components/schemas/DropdownSummary'
+          type: array
+        nextToken:
+          type: string
+      type: object
+    ArchiveRecord:
+      properties:
+        reason:
+          example: Made in error
+          type: string
+      type: object
+    DropdownOptionUpdate:
+      properties:
+        id:
+          description: ID of the dropdown option to update, omitted if creating a new option.
+          example: sfs_9cGQIqS3
+          pattern: ^sfs_\w+
+          type: string
+        name:
+          description: Name of the dropdown option.
+          type: string
+      required:
+      - name
+      type: object
     BaseError:
       properties:
         message:
@@ -334,6 +374,83 @@ components:
           type: string
         userMessage:
           type: string
+      type: object
+    DropdownSummary:
+      properties:
+        id:
+          description: ID of the dropdown
+          type: string
+        name:
+          description: Name of the dropdown
+          type: string
+      type: object
+    DropdownCreate:
+      additionalProperties: false
+      properties:
+        name:
+          description: Name of the dropdown
+          type: string
+        options:
+          description: Options to set for the dropdown
+          items:
+            $ref: '#/components/schemas/DropdownOptionCreate'
+          type: array
+        registryId:
+          description: ID of registry in which to create the dropdown. Required if multiple registries exist.
+          pattern: ^src_\w+
+          type:
+          - string
+          - 'null'
+      required:
+      - name
+      - options
+      type: object
+    NotFoundError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    ForbiddenError:
+      properties:
+        error:
+          properties:
+            invalidId:
+              type: string
+            message:
+              type: string
+            type:
+              type: string
+            userMessage:
+              type: string
+          type: object
+      type: object
+    DropdownUpdate:
+      additionalProperties: false
+      properties:
+        options:
+          description: Options to set for the dropdown
+          items:
+            $ref: '#/components/schemas/DropdownOptionUpdate'
+          type: array
+      required:
+      - options
+      type: object
+    DropdownOptionsUnarchive:
+      additionalProperties: false
+      properties:
+        dropdownOptionIds:
+          description: Array of dropdown option IDs
+          items:
+            type: string
+          type: array
       type: object
     DropdownOptionCreate:
       properties:
@@ -359,123 +476,6 @@ components:
           - Retired
           - Other
           type: string
-      type: object
-    ForbiddenError:
-      properties:
-        error:
-          properties:
-            invalidId:
-              type: string
-            message:
-              type: string
-            type:
-              type: string
-            userMessage:
-              type: string
-          type: object
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    DropdownSummariesPaginatedList:
-      properties:
-        dropdowns:
-          items:
-            $ref: '#/components/schemas/DropdownSummary'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    DropdownCreate:
-      additionalProperties: false
-      properties:
-        name:
-          description: Name of the dropdown
-          type: string
-        options:
-          description: Options to set for the dropdown
-          items:
-            $ref: '#/components/schemas/DropdownOptionCreate'
-          type: array
-        registryId:
-          description: ID of registry in which to create the dropdown. Required if multiple registries exist.
-          pattern: ^src_\w+
-          type:
-          - string
-          - 'null'
-      required:
-      - name
-      - options
-      type: object
-    DropdownUpdate:
-      additionalProperties: false
-      properties:
-        options:
-          description: Options to set for the dropdown
-          items:
-            $ref: '#/components/schemas/DropdownOptionUpdate'
-          type: array
-      required:
-      - options
-      type: object
-    DropdownSummary:
-      properties:
-        id:
-          description: ID of the dropdown
-          type: string
-        name:
-          description: Name of the dropdown
-          type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    ArchiveRecord:
-      properties:
-        reason:
-          example: Made in error
-          type: string
-      type: object
-    DropdownOption:
-      properties:
-        archiveRecord:
-          allOf:
-          - $ref: '#/components/schemas/ArchiveRecord'
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    DropdownOptionUpdate:
-      properties:
-        id:
-          description: ID of the dropdown option to update, omitted if creating a new option.
-          example: sfs_9cGQIqS3
-          pattern: ^sfs_\w+
-          type: string
-        name:
-          description: Name of the dropdown option.
-          type: string
-      required:
-      - name
       type: object
   securitySchemes:
     basicApiKeyAuth:

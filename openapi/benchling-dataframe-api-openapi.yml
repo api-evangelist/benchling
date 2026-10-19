@@ -9,7 +9,7 @@ info:
 
     Data frames are not searchable and lack their own permissions; rather, they are child objects of pipelines
 
-    (via `PipelineStepData`), datasets (see `Dataset`), and app canvases. Row data is stored in S3. Data frames
+    (via `AutomationStepData`), datasets (see `Dataset`), and app canvases. Row data is stored in S3. Data frames
 
     are immutable; if data is updated, a new `DataFrame` is created.'
 servers:
@@ -22,72 +22,44 @@ tags:
 
     Data frames are not searchable and lack their own permissions; rather, they are child objects of pipelines
 
-    (via `PipelineStepData`), datasets (see `Dataset`), and app canvases. Row data is stored in S3. Data frames
+    (via `AutomationStepData`), datasets (see `Dataset`), and app canvases. Row data is stored in S3. Data frames
 
     are immutable; if data is updated, a new `DataFrame` is created.'
   name: DataFrame
   x-bnch-organization: Benchling
+  x-displayName: Data Frame
 paths:
-  /data-frame/items:
-    get:
-      description: List DataFrame items.
-      operationId: DataFrame.List
-      parameters:
-      - $ref: '#/components/parameters/createdAt.gt'
-      - $ref: '#/components/parameters/createdAt.gte'
-      - $ref: '#/components/parameters/createdAt.lt'
-      - $ref: '#/components/parameters/createdAt.lte'
-      - $ref: '#/components/parameters/creator.anyOf'
-      - $ref: '#/components/parameters/id.anyOf'
-      - $ref: '#/components/parameters/modifiedAt.gt'
-      - $ref: '#/components/parameters/modifiedAt.gte'
-      - $ref: '#/components/parameters/modifiedAt.lt'
-      - $ref: '#/components/parameters/modifiedAt.lte'
-      - $ref: '#/components/parameters/name.anyOf'
-      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
-      - $ref: '#/components/parameters/nextToken'
-      - $ref: '#/components/parameters/omit'
-      - $ref: '#/components/parameters/pageSize'
-      - $ref: '#/components/parameters/returning'
-      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
-        in: query
-        name: sort
-        schema:
-          default: modifiedAt:desc
-          enum:
-          - createdAt:asc
-          - createdAt:desc
-          - modifiedAt:asc
-          - modifiedAt:desc
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
+  /data-frame:
+    post:
+      description: Create DataFrame.
+      operationId: DataFrame.Create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDataFrameInput'
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DataFramePaginatedList'
-          description: OK
-          headers: {}
+                $ref: '#/components/schemas/DataFrame'
+          description: Created
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-      summary: List DataFrame items
+      summary: Create DataFrame
       tags:
       - DataFrame
-      x-bnch-rate-limit-tier: 4
   /data-frame/{data_frame_id}:
     get:
       description: Get a single DataFrame by ID.
@@ -101,12 +73,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -128,175 +94,226 @@ paths:
       summary: Get DataFrame by ID
       tags:
       - DataFrame
-      x-bnch-rate-limit-tier: 5
+  /data-frame:batch-create:
+    post:
+      description: Batch create DataFrame synchronously in one transaction. Maximum 20 items per request.
+      operationId: DataFrame.BatchCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateDataFrameInput'
+                  maxItems: 20
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/DataFrame'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create DataFrame
+      tags:
+      - DataFrame
+  /data-frame:bulk-create:
+    post:
+      description: Bulk create DataFrame.
+      operationId: DataFrame.BulkCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create DataFrame
+      tags:
+      - DataFrame
 components:
-  parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   schemas:
-    DataFramePaginatedList:
+    DataFrameColumn:
+      description: 'Defines a column within a DataFrame, including its internal system name, user-facing
+
+        display name, and data type specification.'
+      properties:
+        __typename:
+          type: string
+        displayName:
+          type: string
+        systemName:
+          type: string
+        type:
+          type: object
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateDataFrameInput:
       additionalProperties: false
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/DataFrame'
-          type: array
-        nextToken:
+        delimiter:
+          description: Single-character delimiter used when parsing the file. Defaults to a tab for .tsv files and ',' otherwise.
+          maxLength: 1
+          minLength: 1
+          type: string
+        locale:
+          description: Locale used for number parsing, such as decimal and thousands separators (e.g. 'en-US'). Defaults to 'en-US' if not specified.
+          type: string
+        name:
+          type: string
+        scratchFileId:
+          description: ID of ScratchFile containing the raw file from which to create the DataFrame. Only files with a .csv or .tsv extension are supported.
+          type:
+          - 'null'
+          - string
+      required:
+      - name
+      - scratchFileId
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
           type: string
       type: object
     DataFrame:
@@ -304,7 +321,7 @@ components:
 
         Data frames are not searchable and lack their own permissions; rather, they are child objects of pipelines
 
-        (via `PipelineStepData`), datasets (see `Dataset`), and app canvases. Row data is stored in S3. Data frames
+        (via `AutomationStepData`), datasets (see `Dataset`), and app canvases. Row data is stored in S3. Data frames
 
         are immutable; if data is updated, a new `DataFrame` is created.'
       properties:
@@ -348,22 +365,6 @@ components:
           - NOT_UPLOADED
           type: string
       type: object
-    DatasetRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     DataFrameManifestItem:
       description: 'Represents one part of a DataFrame''s downloadable row data. Currently, the manifest
 
@@ -378,71 +379,83 @@ components:
         url:
           type: string
       type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    DataFrameColumn:
-      description: 'Defines a column within a DataFrame, including its internal system name, user-facing
-
-        display name, and data type specification.'
+    DatasetRef:
       properties:
         __typename:
           type: string
-        displayName:
+        id:
+          format: api_id
           type: string
-        systemName:
-          type: string
-        type:
-          type: object
       type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+  parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

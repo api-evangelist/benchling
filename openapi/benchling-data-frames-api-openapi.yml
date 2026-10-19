@@ -294,6 +294,25 @@ paths:
       - Data Frames
 components:
   schemas:
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    DataFrameColumnMetadata:
+      properties:
+        displayName:
+          type: string
+        type:
+          allOf:
+          - $ref: '#/components/schemas/DataFrameColumnTypeMetadata'
+      type: object
     DataFrame:
       allOf:
       - $ref: '#/components/schemas/FileStatus'
@@ -320,29 +339,51 @@ components:
             example: 09-14-2022 01:16:20 PM well plate
             type: string
         type: object
-    DataFrameCreate:
-      allOf:
-      - $ref: '#/components/schemas/DataFrameCreateManifest'
-      - properties:
-          name:
-            example: 09-14-2022 01:16:20 PM well plate
-            type: string
-        required:
-        - manifest
-        - name
-        type: object
-    DataFrameCreateManifest:
+    DataFrameColumnTypeNameEnum:
       properties:
-        manifest:
-          example:
-          - fileName: 09-14-2022_011620_PM_well_plate-part-00000.csv
-          items:
-            description: List of files that will be uploaded to a data frame and their names.
-            properties:
-              fileName:
-                type: string
-            type: object
-          type: array
+        name:
+          enum:
+          - String
+          - Int
+          - Float
+          - JSON
+          - DateTime
+          - Date
+          - Boolean
+          - ObjectLink
+          type: string
+      type: object
+    FileStatus:
+      properties:
+        errorMessage:
+          example: null
+          type:
+          - string
+          - 'null'
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          - SUCCEEDED
+          - FAILED_VALIDATION
+          - NOT_UPLOADED
+          example: SUCCEEDED
+          type: string
+      type: object
+    DataFrameUpdate:
+      properties:
+        uploadStatus:
+          enum:
+          - IN_PROGRESS
+          type: string
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
       type: object
     DataFrameColumnTypeMetadata:
       allOf:
@@ -368,13 +409,22 @@ components:
         - isNullable
         - isList
         type: object
-    BaseError:
+    NotFoundError:
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              invalidId:
+                type: string
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    AsyncTaskLink:
+      properties:
+        taskId:
           type: string
       type: object
     ForbiddenError:
@@ -391,80 +441,17 @@ components:
               type: string
           type: object
       type: object
-    FileStatus:
-      properties:
-        errorMessage:
-          example: null
-          type:
-          - string
-          - 'null'
-        uploadStatus:
-          enum:
-          - IN_PROGRESS
-          - SUCCEEDED
-          - FAILED_VALIDATION
-          - NOT_UPLOADED
-          example: SUCCEEDED
-          type: string
-      type: object
-    DataFrameColumnMetadata:
-      properties:
-        displayName:
-          type: string
-        type:
-          allOf:
-          - $ref: '#/components/schemas/DataFrameColumnTypeMetadata'
-      type: object
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    DataFrameUpdate:
-      properties:
-        uploadStatus:
-          enum:
-          - IN_PROGRESS
-          type: string
-      type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    DataFrameColumnTypeNameEnum:
-      properties:
-        name:
-          enum:
-          - String
-          - Int
-          - Float
-          - JSON
-          - DateTime
-          - Date
-          - Boolean
-          - ObjectLink
-          type: string
-      type: object
+    DataFrameCreate:
+      allOf:
+      - $ref: '#/components/schemas/DataFrameCreateManifest'
+      - properties:
+          name:
+            example: 09-14-2022 01:16:20 PM well plate
+            type: string
+        required:
+        - manifest
+        - name
+        type: object
     DataFrameManifest:
       properties:
         manifest:
@@ -480,6 +467,19 @@ components:
                 type:
                 - string
                 - 'null'
+            type: object
+          type: array
+      type: object
+    DataFrameCreateManifest:
+      properties:
+        manifest:
+          example:
+          - fileName: 09-14-2022_011620_PM_well_plate-part-00000.csv
+          items:
+            description: List of files that will be uploaded to a data frame and their names.
+            properties:
+              fileName:
+                type: string
             type: object
           type: array
       type: object

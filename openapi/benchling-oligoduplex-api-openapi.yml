@@ -9,7 +9,24 @@ info:
 
     oligonucleotide strands (forward and reverse) with optional conjugate molecules
 
-    attached to either strand.'
+    attached to either strand. The classic example is siRNA (small interfering RNA),
+
+    which uses double-stranded RNA for gene silencing. The forwardStrand and reverseStrand
+
+    reference the underlying oligo entities, with hydrogen bonds automatically computed
+
+    for base pairing. Structure is defined using HELM notation and can be edited via
+
+    the visual structure editor. Supports versioning (see OligoDuplexVersion) to track
+
+    changes over time.
+
+
+    Permissions: When a linked component entity is not readable, `entity` in `forwardStrand`, `reverseStrand`,
+
+    `conjugates`, and `structure.simplePolymers` includes only the `id` field. `structure`, `canonicalHelm`, and polymer
+
+    fields such as `residues` and `smiles` still reflect the structure of this oligo duplex as returned by the API.'
 servers:
 - url: /api/v3
 security:
@@ -20,22 +37,33 @@ tags:
 
     oligonucleotide strands (forward and reverse) with optional conjugate molecules
 
-    attached to either strand.'
+    attached to either strand. The classic example is siRNA (small interfering RNA),
+
+    which uses double-stranded RNA for gene silencing. The forwardStrand and reverseStrand
+
+    reference the underlying oligo entities, with hydrogen bonds automatically computed
+
+    for base pairing. Structure is defined using HELM notation and can be edited via
+
+    the visual structure editor. Supports versioning (see OligoDuplexVersion) to track
+
+    changes over time.
+
+
+    Permissions: When a linked component entity is not readable, `entity` in `forwardStrand`, `reverseStrand`,
+
+    `conjugates`, and `structure.simplePolymers` includes only the `id` field. `structure`, `canonicalHelm`, and polymer
+
+    fields such as `residues` and `smiles` still reflect the structure of this oligo duplex as returned by the API.'
   name: OligoDuplex
   x-bnch-core-type: OligoDuplex
   x-bnch-organization: Benchling
+  x-displayName: Oligo Duplex
 paths:
   /oligo-duplex:
     post:
-      description: Create OligoDuplex.
+      description: Create an oligo duplex. Provide `componentMapping`, `connections`, and `forwardOffset` together.
       operationId: OligoDuplex.Create
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -54,6 +82,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -61,7 +91,6 @@ paths:
       summary: Create OligoDuplex
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 4
   /oligo-duplex/items:
     get:
       description: List OligoDuplex items.
@@ -69,12 +98,16 @@ paths:
       parameters:
       - $ref: '#/components/parameters/archiveReason.anyOf'
       - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/authors.anyOf'
       - $ref: '#/components/parameters/createdAt.gt'
       - $ref: '#/components/parameters/createdAt.gte'
       - $ref: '#/components/parameters/createdAt.lt'
       - $ref: '#/components/parameters/createdAt.lte'
       - $ref: '#/components/parameters/creator.anyOf'
+      - $ref: '#/components/parameters/entityRegistryIds.anyOf'
+      - $ref: '#/components/parameters/fieldset.anyOf'
       - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/mentionedIn.anyOf'
       - $ref: '#/components/parameters/modifiedAt.gt'
       - $ref: '#/components/parameters/modifiedAt.gte'
       - $ref: '#/components/parameters/modifiedAt.lt'
@@ -85,7 +118,11 @@ paths:
       - $ref: '#/components/parameters/omit'
       - $ref: '#/components/parameters/pageSize'
       - $ref: '#/components/parameters/project.eq'
+      - $ref: '#/components/parameters/registry.eq'
       - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/schema.anyOf'
+      - $ref: '#/components/parameters/schema.eq'
+      - $ref: '#/components/parameters/systemCategory.anyOf'
       - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
         in: query
         name: sort
@@ -124,7 +161,6 @@ paths:
       summary: List OligoDuplex items
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 4
   /oligo-duplex/{oligo_duplex_id}:
     get:
       description: Get a single OligoDuplex by ID.
@@ -138,12 +174,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -165,24 +195,17 @@ paths:
       summary: Get OligoDuplex by ID
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 5
     patch:
       description: 'Update an oligo duplex.
 
 
-        To update the duplex structure, provide `componentMapping`, `connections`, and `forwardOffset` together. To update only non-structural properties, omit all three fields.'
+        To update the duplex structure, provide `componentMapping`, `connections`, and `forwardOffset` together. To update only non-structural properties, omit all three fields. When archiving, `archived` must be `true` and `archiveReason` is required. When unarchiving, `archived` must be `false` and `archiveReason` must be omitted.'
       operationId: OligoDuplex.Update
       parameters:
       - description: ID of the OligoDuplex.
         in: path
         name: oligo_duplex_id
         required: true
-        schema:
-          type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
         schema:
           type: string
       requestBody:
@@ -203,6 +226,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -210,7 +235,6 @@ paths:
       summary: Update OligoDuplex
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 4
   /oligo-duplex/{oligo_duplex_id}/authors/items:
     get:
       description: List Principal items.
@@ -249,18 +273,10 @@ paths:
       summary: List Principal items
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 4
   /oligo-duplex:batch-create:
     post:
       description: Batch create OligoDuplex synchronously in one transaction. Maximum 25 items per request.
       operationId: OligoDuplex.BatchCreate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -297,6 +313,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -304,18 +322,10 @@ paths:
       summary: Batch create OligoDuplex
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 3
   /oligo-duplex:batch-update:
     patch:
       description: Batch update OligoDuplex synchronously in one transaction. Maximum 25 items per request.
       operationId: OligoDuplex.BatchUpdate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -352,6 +362,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -359,18 +371,13 @@ paths:
       summary: Batch update OligoDuplex
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 3
   /oligo-duplex:bulk-create:
     post:
-      description: Bulk create OligoDuplex.
+      description: 'Bulk create oligo duplexes asynchronously.
+
+
+        For each input row, provide `componentMapping`, `connections`, and `forwardOffset` together.'
       operationId: OligoDuplex.BulkCreate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -389,6 +396,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -396,21 +405,13 @@ paths:
       summary: Bulk create OligoDuplex
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 2
   /oligo-duplex:bulk-update:
     patch:
       description: 'Bulk update oligo duplexes asynchronously.
 
 
-        For each input row, provide `componentMapping`, `connections`, and `forwardOffset` together to update the duplex structure. To update only non-structural properties, omit all three fields.'
+        For each input row, provide `componentMapping`, `connections`, and `forwardOffset` together to update the duplex structure. To update only non-structural properties, omit all three fields. When archiving, `archived` must be `true` and `archiveReason` is required. When unarchiving, `archived` must be `false` and `archiveReason` must be omitted.'
       operationId: OligoDuplex.BulkUpdate
-      parameters:
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       requestBody:
         content:
           application/json:
@@ -429,6 +430,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -436,38 +439,133 @@ paths:
       summary: Bulk update OligoDuplex
       tags:
       - OligoDuplex
-      x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    PrincipalUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Principal'
-          type: array
-      type: object
-    AssayRunFeatureValue:
-      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+    LegacyAppInstallation:
+      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
 
-        tenant. The featureId identifies the feature from the app definition, and resourceId
+        are configured directly with webhook URLs and configuration specs rather than through
 
-        references the tenant-specific resource it''s bound to.'
+        app definition versions. This type is maintained for backward compatibility with older
+
+        app integrations. For new apps, see `AppInstallation`.'
       properties:
         __typename:
           type: string
-        featureId:
-          description: Developer-specified feature ID as defined in the app manifest / app definition version
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationSpecs:
+          items:
+            $ref: '#/components/schemas/AppConfigOption'
+          type: array
+        configurationValues:
+          format: uri
           type: string
-        resourceId:
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        description:
+          type:
+          - 'null'
+          - string
+        featureSpecs:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CanvasFeatureSpec'
+            - $ref: '#/components/schemas/AssayRunFeatureSpec'
+            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
+            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
+            discriminator:
+              mapping:
+                AppHomepageFeatureSpec: '#/components/schemas/AppHomepageFeatureSpec'
+                AssayRunFeatureSpec: '#/components/schemas/AssayRunFeatureSpec'
+                CanvasFeatureSpec: '#/components/schemas/CanvasFeatureSpec'
+              propertyName: __typename
+          type: array
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        messageSubscriptions:
+          items:
+            $ref: '#/components/schemas/AppMessageSubscription'
+          type: array
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        publicKey:
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          type:
+          - 'null'
+          - string
+        webhookUrl:
           type:
           - 'null'
           - string
       type: object
-    SecureTextAppConfigSpec:
-      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
+    FieldValueInput:
+      additionalProperties: false
+      properties:
+        value:
+          $ref: '#/components/schemas/AnyType'
+      required:
+      - value
+      type: object
+    ChemSimplePolymer:
+      description: 'Represents a small molecule within a complex polymer structure. Contains SMILES and molfile representations of
 
-        Used for sensitive data like API keys or credentials.'
+        the chemical structure, along with connections to other polymers. The entity field links to a corresponding
+
+        `Molecule`. Commonly used as conjugate payloads attached to oligonucleotide backbones, such as lipid
+
+        nanoparticles, fluorescent labels, or therapeutic molecules.'
+      properties:
+        __typename:
+          type: string
+        connections:
+          description: This polymer's connections to other polymers in the complex polymer.
+          items:
+            $ref: '#/components/schemas/MolecularConnection'
+          type: array
+        entity:
+          $ref: '#/components/schemas/MoleculeRef'
+          description: The Benchling entity information for this simple polymer.
+        helmReference:
+          description: 'The HELM reference of this polymer (e.g. CHEM1). Uniquely identifies this simple polymer in the context
+
+            of a single complex polymer.'
+          type: string
+        molfile:
+          description: The molfile representation of this small molecule's chemical structure.
+          type: string
+        polymerType:
+          description: The HELM polymer type for this small molecule. This is always `CHEM` for chem simple polymers.
+          type: string
+        smiles:
+          description: The chemical structure of this small molecule in SMILES format.
+          type: string
+      type: object
+    JsonAppConfigSpec:
+      description: Specifies that an app configuration field should accept a JSON value.
       properties:
         __typename:
           type: string
@@ -476,7 +574,191 @@ components:
           - 'null'
           - boolean
       type: object
-    NucleotideSequenceRef:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    AppConfigFieldDefinition:
+      description: 'Defines a field within an app configuration that references schema fields. Specifies the
+
+        field name, type, whether it accepts multiple values, and whether it is required.'
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        isMulti:
+          description: Whether the field must be multi-valued — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        isRequired:
+          description: Whether the field must be required — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          description: Type constraint for the field — null means any type is acceptable.
+          enum:
+          - DNA_SEQUENCE_LINK
+          - AA_SEQUENCE_LINK
+          - CUSTOM_ENTITY_LINK
+          - ENTITY_LINK
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - DROPDOWN
+          - PART_LINK
+          - AA_PART_LINK
+          - TRANSLATION_LINK
+          - BLOB_LINK
+          - TEXT
+          - LONG_TEXT
+          - BATCH_LINK
+          - STORAGE_LINK
+          - ENTRY_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BOOLEAN
+          - FLOAT
+          - INTEGER
+          - DATETIME
+          - DATE
+          - JSON
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    OligoDuplex:
+      allOf:
+      - $ref: '#/components/schemas/IOligoDuplex'
+      - description: 'An oligo duplex is a therapeutic modality consisting of two complementary
+
+          oligonucleotide strands (forward and reverse) with optional conjugate molecules
+
+          attached to either strand. The classic example is siRNA (small interfering RNA),
+
+          which uses double-stranded RNA for gene silencing. The forwardStrand and reverseStrand
+
+          reference the underlying oligo entities, with hydrogen bonds automatically computed
+
+          for base pairing. Structure is defined using HELM notation and can be edited via
+
+          the visual structure editor. Supports versioning (see OligoDuplexVersion) to track
+
+          changes over time.
+
+
+          Permissions: When a linked component entity is not readable, `entity` in `forwardStrand`, `reverseStrand`,
+
+          `conjugates`, and `structure.simplePolymers` includes only the `id` field. `structure`, `canonicalHelm`, and polymer
+
+          fields such as `residues` and `smiles` still reflect the structure of this oligo duplex as returned by the API.'
+        properties:
+          __typename:
+            type: string
+          authors:
+            oneOf:
+            - format: uri
+              type: string
+            - type: 'null'
+          creator:
+            $ref: '#/components/schemas/PrincipalRef'
+          schemaFields:
+            oneOf:
+            - items:
+                $ref: '#/components/schemas/SchemaFieldValue'
+              type: array
+            - type: 'null'
+        type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              mapping:
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
+              propertyName: __typename
+          type: array
+      type: object
+    DocumentLikeRef:
       properties:
         __typename:
           type: string
@@ -484,50 +766,48 @@ components:
           format: api_id
           type: string
       type: object
-    FloatAppConfigSpec:
-      description: Specifies that an app configuration field should accept a floating-point number.
+    OligoDuplexStructure:
+      description: 'Contains the complete structural definition of an oligo duplex, including its forward and
+
+        reverse strands, any conjugated molecules and peptides, and the connections between them.
+
+
+        For each simple polymer, restricted read access on the linked entity affects `entity` only; structural fields
+
+        on that polymer are still populated for the containing duplex.'
       properties:
         __typename:
           type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these floats.
-          oneOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ArrayAppConfigSpec:
-      description: Specifies that an app configuration field should accept an array of values.
-      properties:
-        __typename:
-          type: string
-        elementDefinition:
-          description: Defines the named config options allowed within this array and their type constraints.
+        connections:
+          description: A list of all the connections between simple polymers in this oligo duplex.
           items:
-            $ref: '#/components/schemas/ArrayAppConfigOption'
+            $ref: '#/components/schemas/MolecularConnection'
           type: array
-        maxElements:
-          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
-          type:
-          - 'null'
-          - integer
-        minElements:
-          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
-          type:
-          - 'null'
-          - integer
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
+        resolvedAttachments:
+          description: A list of attachment information, providing a more detailed chemical structure for a set of connections.
+          items:
+            $ref: '#/components/schemas/MolecularConjugate'
+          type: array
+        simplePolymers:
+          description: A list of all the simple polymers in this oligo duplex.
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/NucleotideSimplePolymer'
+            - $ref: '#/components/schemas/ChemSimplePolymer'
+            - $ref: '#/components/schemas/PeptideSimplePolymer'
+            - $ref: '#/components/schemas/ProteinSimplePolymer'
+            description: Union of NucleotideSimplePolymer, ChemSimplePolymer, PeptideSimplePolymer, ProteinSimplePolymer
+            discriminator:
+              mapping:
+                ChemSimplePolymer: '#/components/schemas/ChemSimplePolymer'
+                NucleotideSimplePolymer: '#/components/schemas/NucleotideSimplePolymer'
+                PeptideSimplePolymer: '#/components/schemas/PeptideSimplePolymer'
+                ProteinSimplePolymer: '#/components/schemas/ProteinSimplePolymer'
+              propertyName: __typename
+          type: array
       type: object
-    BooleanAppConfigSpec:
-      description: Specifies that an app configuration field should accept a boolean value.
+    DateAppConfigSpec:
+      description: Specifies that an app configuration field should accept a date value.
       properties:
         __typename:
           type: string
@@ -536,7 +816,136 @@ components:
           - 'null'
           - boolean
       type: object
-    AaSequenceRef:
+    OligoDuplexUpdateWithPathParams:
+      additionalProperties: false
+      properties:
+        aliases:
+          items:
+            type: string
+          type: array
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the entity but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        authorIds:
+          items:
+            type: string
+          type: array
+        componentMapping:
+          additionalProperties:
+            type: string
+          description: Mapping from schema component names to entity names. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
+          type: object
+        connections:
+          description: Connection definitions for the duplex structure. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
+          type: string
+        customFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        entityRegistryId:
+          description: Registry ID to assign to the entity. When registering, specifying this value sets the registry ID of the entity. When already registered, specifying this value updates the entity's registry ID. If set, naming_strategy must be unspecified.
+          type: string
+        folderId:
+          type: string
+        forwardOffset:
+          description: Offset of the forward strand relative to the reverse strand, in residues. For example, -2 means the forward strand begins 2 positions before the reverse strand. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
+          type: integer
+        id:
+          type: string
+        name:
+          description: Name of the item.
+          type: string
+        namingStrategy:
+          description: Strategy to use for labeling the item in the registry if registering. If one is specified, the entity_registry_id must be unspecified.
+          enum:
+          - NEW_IDS
+          - IDS_FROM_NAMES
+          - DELETE_NAMES
+          - SET_FROM_NAME_PARTS
+          - REPLACE_NAMES_FROM_PARTS
+          - KEEP_NAMES
+          - REPLACE_ID_AND_NAME_FROM_PARTS
+          type: string
+        registryId:
+          description: A not null value means the entity should be registered. A null value means it should be unregistered. If not null, the value must match the registry of the item's schema.
+          type:
+          - 'null'
+          - string
+        schemaFields:
+          additionalProperties:
+            $ref: '#/components/schemas/FieldValueInput'
+          type: object
+        schemaId:
+          type: string
+      required:
+      - id
+      type: object
+    ResourceAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a Benchling object instance.
+
+        The type field identifies the kind of object required, matching the BenchlingAppType
+
+        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
+
+        reference types with no additional spec constraints beyond requiredConfig. For schema
+
+        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          enum:
+          - BOX_SCHEMA
+          - CONTAINER_SCHEMA
+          - ENTRY_SCHEMA
+          - LEGACY_REQUEST_SCHEMA
+          - LOCATION_SCHEMA
+          - PLATE_SCHEMA
+          - RESULT_SCHEMA
+          - RUN_SCHEMA
+          - WORKFLOW_TASK_SCHEMA
+          - AA_SEQUENCE
+          - ASSAY_RESULT
+          - ASSAY_RUN
+          - AUTOMATION_INPUT_GENERATOR
+          - AUTOMATION_OUTPUT_PROCESSOR
+          - BLOB
+          - BOX
+          - CONTAINER
+          - CUSTOM_ENTITY
+          - DNA_ALIGNMENT
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - DROPDOWN
+          - DROPDOWN_OPTION
+          - ENTRY
+          - FIELD
+          - FOLDER
+          - LEGACY_REQUEST
+          - LOCATION
+          - MIXTURE
+          - MOLECULE
+          - PLATE
+          - PROJECT
+          - REGISTRY
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - WORKFLOW_TASK_STATUS
+          - WORKLIST
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    OligoDuplexSchemaRef:
       properties:
         __typename:
           type: string
@@ -552,102 +961,83 @@ components:
           format: api_id
           type: string
       type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    JsonAppConfigSpec:
-      description: Specifies that an app configuration field should accept a JSON value.
+    MolecularConjugate:
+      description: 'Detailed information about a molecular conjugate formed by a group of contiguous connections in a complex polymer.
+
+
+        The entire chemical structure of the molecular conjugate, and any components inside it, is represented by a molfile.
+
+        This allows for the representation of any bond chemistry, beyond the simple leaving group style supported by HELM.
+
+
+        For example, suppose we have two involved connections, one between a backbone oligo and a linker molecule,
+
+        and another between the linker molecule and a payload molecule.
+
+        Then the molfile would represent the entire complex of:
+
+        - the monomer on the backbone where the linker attaches
+
+        - the connection between monomer and linker
+
+        - the linker molecule
+
+        - the connection between linker and payload
+
+        - the payload molecule
+
+
+        Currently, this structure will only represent user-drawn attachments. However, in the future,
+
+        this object may also contain leaving group style connections as well.'
       properties:
         __typename:
           type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
+        connectionsInvolved:
+          description: 'The molecular connections that comprise this conjugate. Together these connections define the bonded
+
+            region represented by the molfile.'
+          items:
+            $ref: '#/components/schemas/MolecularConnection'
+          type: array
+        molfile:
+          description: 'The molfile representation of the molecular conjugate''s chemical structure, including all bonded
+
+            components represented by this conjugate.'
+          type: string
       type: object
-    DateValue:
-      description: A type that represents date values.
+    PrincipalUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Principal'
+          type: array
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
       properties:
         __typename:
           type: string
         value:
-          description: The date value.
-          format: date
-          type: string
+          description: The integer value.
+          type: integer
       type: object
-    ChemSimplePolymer:
-      description: 'Represents a small molecule within a complex polymer structure. Contains SMILES and molfile representations of
-
-        the chemical structure, along with connections to other polymers. The entity field links to a corresponding
-
-        `Molecule`. Commonly used as conjugate payloads attached to oligonucleotide backbones, such as lipid
-
-        nanoparticles, fluorescent labels, or therapeutic molecules.'
+    DropdownAppConfigSpec:
+      description: Specifies that an app configuration field should be a dropdown with predefined options.
       properties:
         __typename:
           type: string
-        connections:
-          items:
-            $ref: '#/components/schemas/ComplexPolymerConnection'
-          type: array
-        entity:
-          $ref: '#/components/schemas/MoleculeRef'
-        helmReference:
-          type: string
-        molfile:
-          type: string
-        polymerType:
-          type: string
-        smiles:
-          type: string
-      type: object
-    EntitySchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ComplexPolymerStructure:
-      description: 'Contains the complete structural definition of a complex polymer, including all
-
-        component polymers and their interconnections. This is the core data structure that
-
-        defines how oligonucleotides, molecules, and peptides are assembled into bioconjugates.
-
-        The simplePolymers list contains all components, connections defines the bonds between
-
-        them, and resolvedAttachments provides detailed chemistry for drawn attachments.'
-      properties:
-        __typename:
-          type: string
-        connections:
-          description: A list of all the connections between simple polymers in this complex polymer.
-          items:
-            $ref: '#/components/schemas/ComplexPolymerConnection'
-          type: array
-        resolvedAttachments:
-          description: A list of attachment information, providing a more detailed chemical structure for a set of connections.
-          items:
-            $ref: '#/components/schemas/ComplexPolymerResolvedAttachment'
-          type: array
-        simplePolymers:
-          description: A list of all the simple polymers in this complex polymer.
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/NucleotideSimplePolymer'
-            - $ref: '#/components/schemas/ChemSimplePolymer'
-            - $ref: '#/components/schemas/PeptideSimplePolymer'
-            description: Union of NucleotideSimplePolymer, ChemSimplePolymer, PeptideSimplePolymer
-            discriminator:
-              propertyName: __typename
-          type: array
+        options:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigDropdownOption'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
       type: object
     SchemaAppConfigSpec:
       description: 'Specifies that an app configuration field should reference one of the schema types
@@ -716,6 +1106,131 @@ components:
           - 'null'
           - string
       type: object
+    EntitySchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference an entity schema.
+
+        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        subtype:
+          description: 'Optional subtype constraint — if present, the referenced schema must be of this
+
+            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
+          enum:
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    NucleotideSimplePolymer:
+      description: 'Represents a nucleic acid strand (DNA or RNA) within a complex polymer structure. Contains the sequence
+
+        residues and connections to other polymers. The entity field links to a corresponding DnaSequence, RnaSequence,
+
+        DnaOligo, or RnaOligo. Used as the backbone component in OligoConjugate and as forward/reverse strands in
+
+        OligoDuplex.'
+      properties:
+        __typename:
+          type: string
+        connections:
+          description: This polymer's connections to other polymers in the complex polymer.
+          items:
+            $ref: '#/components/schemas/MolecularConnection'
+          type: array
+        entity:
+          $ref: '#/components/schemas/NucleotideSequenceRef'
+          description: The Benchling entity information for this simple polymer.
+        helmReference:
+          description: 'The HELM reference of this polymer (e.g. RNA1). Uniquely identifies this simple polymer in the context
+
+            of a single complex polymer.'
+          type: string
+        nucleotideType:
+          description: Whether this strand is DNA or RNA.
+          enum:
+          - DNA
+          - RNA
+          type: string
+        polymerType:
+          description: 'The HELM polymer type for this strand. This is always `RNA` for nucleotide simple polymers,
+
+            including DNA sequences. Use `nucleotideType` to distinguish DNA from RNA.'
+          type: string
+        residues:
+          description: The nucleotide base sequence of this strand.
+          type: string
+      type: object
+    SchemaFieldDefinitionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProteinRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    RegistrationOrigin:
+      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
+
+        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
+
+        providing traceability back to the original experimental context. The `registeredAt` timestamp
+
+        records when the registration occurred. This information helps scientists understand where
+
+        registered entities came from and when they were added to the registry.'
+      properties:
+        __typename:
+          type: string
+        originEntry:
+          oneOf:
+          - $ref: '#/components/schemas/DocumentLikeRef'
+          - type: 'null'
+        registeredAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Attachment, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, OligoConjugate, OligoDuplex, WellPlate, MatrixPlate, Protein, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
     ServicePrincipal:
       description: 'Represents a non-human identity used for system integrations and automated processes
 
@@ -747,23 +1262,80 @@ components:
           - 'null'
           - string
       type: object
-    IntegerValue:
-      description: A type that represents integer values.
+    AppHomepageFeatureSpec:
+      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
+
+        the Benchling application for the app''s functionality.'
       properties:
         __typename:
           type: string
-        value:
-          description: The integer value.
-          type: integer
+        featureId:
+          type: string
+        name:
+          type: string
       type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+    OligoDuplexPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/OligoDuplex'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    ArrayAppConfigSpec:
+      description: Specifies that an app configuration field should accept an array of values.
       properties:
         __typename:
           type: string
-        value:
+        elementDefinition:
+          description: Defines the named config options allowed within this array and their type constraints.
           items:
-            anyOf:
+            $ref: '#/components/schemas/ArrayAppConfigOption'
+          type: array
+        maxElements:
+          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
+          type:
+          - 'null'
+          - integer
+        minElements:
+          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
+          type:
+          - 'null'
+          - integer
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    SchemaFieldValue:
+      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
+
+        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
+
+        date, or link to another object). The value may be null if no value has been set. Used within
+
+        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
+
+        custom field values defined by the object''s schema.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinition:
+          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
+        id:
+          type: string
+        linkedEntityId:
+          type:
+          - 'null'
+          - string
+        value:
+          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
+          oneOf:
+          - anyOf:
             - $ref: '#/components/schemas/BooleanValue'
             - $ref: '#/components/schemas/DateTimeValue'
             - $ref: '#/components/schemas/DateValue'
@@ -774,18 +1346,37 @@ components:
             - $ref: '#/components/schemas/ObjectLinkListValue'
             - $ref: '#/components/schemas/TextAndUrlValue'
             - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            - $ref: '#/components/schemas/ArrayValue'
             discriminator:
+              mapping:
+                ArrayValue: '#/components/schemas/ArrayValue'
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
               propertyName: __typename
-          type: array
+          - type: 'null'
       type: object
-    OligoDuplexUpdateWithPathParams:
+    OligoDuplexUpdate:
       additionalProperties: false
       properties:
         aliases:
           items:
             type: string
           type: array
+        allowCustomFieldDeletion:
+          description: When true, custom fields present on the entity but omitted from the update payload will be deleted. When false or omitted, omitting existing custom fields is an error. Defaults to false.
+          type: boolean
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
         authorIds:
           items:
             type: string
@@ -803,17 +1394,18 @@ components:
             $ref: '#/components/schemas/FieldValueInput'
           type: object
         entityRegistryId:
+          description: Registry ID to assign to the entity. When registering, specifying this value sets the registry ID of the entity. When already registered, specifying this value updates the entity's registry ID. If set, naming_strategy must be unspecified.
           type: string
         folderId:
           type: string
         forwardOffset:
           description: Offset of the forward strand relative to the reverse strand, in residues. For example, -2 means the forward strand begins 2 positions before the reverse strand. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
           type: integer
-        id:
-          type: string
         name:
+          description: Name of the item.
           type: string
         namingStrategy:
+          description: Strategy to use for labeling the item in the registry if registering. If one is specified, the entity_registry_id must be unspecified.
           enum:
           - NEW_IDS
           - IDS_FROM_NAMES
@@ -824,6 +1416,7 @@ components:
           - REPLACE_ID_AND_NAME_FROM_PARTS
           type: string
         registryId:
+          description: A not null value means the entity should be registered. A null value means it should be unregistered. If not null, the value must match the registry of the item's schema.
           type:
           - 'null'
           - string
@@ -833,54 +1426,6 @@ components:
           type: object
         schemaId:
           type: string
-      required:
-      - id
-      type: object
-    ComplexPolymerConnection:
-      description: 'Represents a chemical bond between two polymers within a complex polymer structure.
-
-        Connections can be covalent bonds (including disulfide bonds) or hydrogen bonds
-
-        (for base pairing in duplexes). Each connection has source and target ConnectionSide
-
-        endpoints defining which polymers and residues are bonded. The attachmentStyle
-
-        indicates whether the connection was drawn graphically or specified via leaving groups.'
-      properties:
-        __typename:
-          type: string
-        attachmentStyle:
-          description: 'The format in which the user has defined the connection (i.e. drawn vs leaving group style).
-
-            Only applicable to covalent bond type connections.'
-          enum:
-          - LEAVING_GROUP
-          - DRAWN
-          - null
-          type:
-          - 'null'
-          - string
-        connectionType:
-          description: The kind of chemical bond this connection represents.
-          enum:
-          - COVALENT_BOND
-          - HYDROGEN_BOND
-          type: string
-        covalentBondType:
-          description: 'The type of covalent bond represented by the connection (i.e. disulfide bond or not).
-
-            Only applicable to covalent bond type connections.'
-          enum:
-          - DISULFIDE_BOND
-          - null
-          type:
-          - 'null'
-          - string
-        source:
-          $ref: '#/components/schemas/ConnectionSide'
-          description: '''source'' and ''target'' are interchangeable - connections are bidirectional.'
-        target:
-          $ref: '#/components/schemas/ConnectionSide'
       type: object
     AppMessageSubscription:
       description: 'Represents an app''s subscription to a specific event type, specifying the event type and
@@ -943,6 +1488,64 @@ components:
           - V3_RUN_CREATED
           type: string
       type: object
+    AppConfigDropdownOption:
+      description: Defines an option within a dropdown-type app configuration field.
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    FolderRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    FloatAppConfigSpec:
+      description: Specifies that an app configuration field should accept a floating-point number.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these floats.
+          oneOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
     WorkflowTaskSchemaAppConfigSpec:
       description: 'Specifies that an app configuration field should reference a workflow task schema.
 
@@ -966,757 +1569,49 @@ components:
           - 'null'
           - boolean
       type: object
-    TextAndUrlValue:
-      description: A type that represents text (string) values with an associated URL.
+    JsonValue:
+      description: A type that represents JSON values.
       properties:
         __typename:
           type: string
-        url:
-          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
           type: string
         value:
           description: The text value. It may or may not be an empty string.
           type: string
-      type: object
-    AssayRunFeatureSpec:
-      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
-
-        lab automation run data.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ObjectLinkValue:
-      description: A type that represents links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          $ref: '#/components/schemas/ObjectRef'
-          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
-      type: object
-    DateAppConfigSpec:
-      description: Specifies that an app configuration field should accept a date value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    EntityAssociation:
-      description: 'Every entity association maps a Benchling entity to one or more HELM references in the complex polymer.
-
-        These HELM polymers each have the same chemical structure as the Benchling entity.
-
-
-        For example, if a molecule entity maps to two CHEM polymers, it means that the molecule appears twice in the complex polymer.'
-      properties:
-        __typename:
-          type: string
-        entity:
-          $ref: '#/components/schemas/ObjectRef'
-          description: Union of RnaOligo, DnaOligo, RnaSequence, DnaSequence, Molecule, AaSequence
-        polymerRefs:
-          description: HELM polymer references identifying which polymers in the structure correspond to this entity.
-          items:
-            type: string
-          type: array
-      type: object
-    OligoDuplex:
-      allOf:
-      - $ref: '#/components/schemas/IOligoDuplex'
-      - description: 'An oligo duplex is a therapeutic modality consisting of two complementary
-
-          oligonucleotide strands (forward and reverse) with optional conjugate molecules
-
-          attached to either strand. The classic example is siRNA (small interfering RNA),
-
-          which uses double-stranded RNA for gene silencing. The forwardStrand and reverseStrand
-
-          reference the underlying oligo entities, with hydrogen bonds automatically computed
-
-          for base pairing. Structure is defined using HELM notation and can be edited via
-
-          the visual structure editor. Supports versioning (see OligoDuplexVersion) to track
-
-          changes over time.'
-        properties:
-          __typename:
-            type: string
-          authors:
-            oneOf:
-            - format: uri
-              type: string
-            - type: 'null'
-          creator:
-            $ref: '#/components/schemas/PrincipalRef'
-          schemaFields:
-            oneOf:
-            - items:
-                $ref: '#/components/schemas/SchemaFieldValue'
-              type: array
-            - type: 'null'
-        type: object
-    ModifiedNucleotide:
-      description: 'Represents a chemically modified nucleotide at a specific position in an oligonucleotide
-
-        sequence. Each modification specifies the sugar, base, and phosphate monomers (see NucleotideMonomer)
-
-        that replace or modify the natural nucleotide at that position. Common modifications include
-
-        2''-O-methyl sugars for stability, phosphorothioate backbones for nuclease resistance, or
-
-        modified bases for binding affinity. Used in NucleotideSimplePolymer to capture the
-
-        modification pattern of therapeutic oligonucleotides.'
-      properties:
-        __typename:
-          type: string
-        baseMonomer:
-          $ref: '#/components/schemas/NucleotideMonomerRef'
-          description: The base monomer for the modification.
-        createdAt:
-          description: DateTime the modification was created.
-          format: datetime
-          type: string
-        id:
-          description: The ID of the modified nucleotide.
-          type: string
-        nucleotideSequence:
-          $ref: '#/components/schemas/NucleotideSequenceRef'
-          description: The nucleotide sequence that this modification belongs to.
-        phosphateMonomer:
-          description: The phosphate monomer for the modification. If empty, it represents a null phosphate at the 5' end of the sequence.
-          oneOf:
-          - $ref: '#/components/schemas/NucleotideMonomerRef'
-          - type: 'null'
-        position:
-          description: 0-based index of the modification.
-          type: integer
-        sugarMonomer:
-          $ref: '#/components/schemas/NucleotideMonomerRef'
-          description: The sugar monomer for the modification.
-      type: object
-    SchemaFieldDefinitionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DocumentLikeRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    IntegerAppConfigSpec:
-      description: Specifies that an app configuration field should accept an integer value.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these integers.
-          oneOf:
-          - items:
-              type: integer
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    NucleotideMonomerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ArrayAppConfigOption:
-      description: 'A config option nested within an array-type app configuration field. Structurally
-
-        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
-
-        accepts the same config types as the top level except nested arrays (see
-
-        ArrayAppConfigElementSpec).'
-      properties:
-        __typename:
-          type: string
-        configSpec:
-          anyOf:
-          - $ref: '#/components/schemas/BooleanAppConfigSpec'
-          - $ref: '#/components/schemas/IntegerAppConfigSpec'
-          - $ref: '#/components/schemas/FloatAppConfigSpec'
-          - $ref: '#/components/schemas/TextAppConfigSpec'
-          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
-          - $ref: '#/components/schemas/DateAppConfigSpec'
-          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
-          - $ref: '#/components/schemas/JsonAppConfigSpec'
-          - $ref: '#/components/schemas/DropdownAppConfigSpec'
-          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
-          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
-          - $ref: '#/components/schemas/SchemaAppConfigSpec'
-          - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
-          discriminator:
-            propertyName: __typename
-        description:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-      type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
-          type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
-          type:
-          - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
-          type:
-          - 'null'
-          - string
-      type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
-          items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
-          type: array
-      type: object
-    ResourceAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a Benchling object instance.
-
-        The type field identifies the kind of object required, matching the BenchlingAppType
-
-        values used in app manifests (e.g. dna_sequence, folder, registry). Covers all instance
-
-        reference types with no additional spec constraints beyond requiredConfig. For schema
-
-        references use SchemaAppConfigSpec or EntitySchemaAppConfigSpec.'
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          enum:
-          - BOX_SCHEMA
-          - CONTAINER_SCHEMA
-          - ENTRY_SCHEMA
-          - LEGACY_REQUEST_SCHEMA
-          - LOCATION_SCHEMA
-          - PLATE_SCHEMA
-          - RESULT_SCHEMA
-          - RUN_SCHEMA
-          - WORKFLOW_TASK_SCHEMA
-          - AA_SEQUENCE
-          - ASSAY_RESULT
-          - ASSAY_RUN
-          - AUTOMATION_INPUT_GENERATOR
-          - AUTOMATION_OUTPUT_PROCESSOR
-          - BLOB
-          - BOX
-          - CONTAINER
-          - CUSTOM_ENTITY
-          - DNA_ALIGNMENT
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - DROPDOWN
-          - DROPDOWN_OPTION
-          - ENTRY
-          - FIELD
-          - FOLDER
-          - LEGACY_REQUEST
-          - LOCATION
-          - MIXTURE
-          - MOLECULE
-          - PLATE
-          - PROJECT
-          - REGISTRY
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - WORKFLOW_TASK_STATUS
-          - WORKLIST
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    PeptideSimplePolymer:
-      description: 'Represents a peptide or protein chain within a complex polymer structure. Contains the amino acid residue
-
-        sequence and connections to other polymers. The entity field links to a corresponding `AaSequence`. Used when
-
-        protein/aa-sequence components are part of larger bioconjugate structures.'
-      properties:
-        __typename:
-          type: string
-        connections:
-          items:
-            $ref: '#/components/schemas/ComplexPolymerConnection'
-          type: array
-        entity:
-          $ref: '#/components/schemas/AaSequenceRef'
-        helmReference:
-          type: string
-        polymerType:
-          type: string
-        residues:
-          type: string
-      type: object
-    DateTimeAppConfigSpec:
-      description: Specifies that an app configuration field should accept a datetime value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    EntitySchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference an entity schema.
-
-        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        subtype:
-          description: 'Optional subtype constraint — if present, the referenced schema must be of this
-
-            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
-          enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    OligoDuplexCreate:
-      additionalProperties: false
-      properties:
-        aliases:
-          items:
-            type: string
-          type: array
-        authorIds:
-          items:
-            type: string
-          type: array
-        componentMapping:
-          additionalProperties:
-            type: string
-          type: object
-        connections:
-          type: string
-        customFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        entityRegistryId:
-          type: string
-        folderId:
-          type: string
-        forwardOffset:
-          description: 'Offset of the forward strand relative to the reverse strand, in residues. For example, -2 means
-
-            the forward strand begins 2 positions before the reverse strand.'
-          type: integer
-        name:
-          type: string
-        namingStrategy:
-          enum:
-          - NEW_IDS
-          - IDS_FROM_NAMES
-          - DELETE_NAMES
-          - SET_FROM_NAME_PARTS
-          - REPLACE_NAMES_FROM_PARTS
-          - KEEP_NAMES
-          - REPLACE_ID_AND_NAME_FROM_PARTS
-          type: string
-        registryId:
-          type:
-          - 'null'
-          - string
-        schemaFields:
-          additionalProperties:
-            $ref: '#/components/schemas/FieldValueInput'
-          type: object
-        schemaId:
-          type: string
-      required:
-      - folderId
-      - name
-      - schemaId
-      - componentMapping
-      - connections
-      - forwardOffset
-      type: object
-    AnyType: {}
-    ProjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AppConfigFieldDefinition:
-      description: 'Defines a field within an app configuration that references schema fields. Specifies the
-
-        field name, type, whether it accepts multiple values, and whether it is required.'
-      properties:
-        __typename:
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        isMulti:
-          description: Whether the field must be multi-valued — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        isRequired:
-          description: Whether the field must be required — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        name:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        type:
-          description: Type constraint for the field — null means any type is acceptable.
-          enum:
-          - DNA_SEQUENCE_LINK
-          - AA_SEQUENCE_LINK
-          - CUSTOM_ENTITY_LINK
-          - ENTITY_LINK
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - DROPDOWN
-          - PART_LINK
-          - AA_PART_LINK
-          - TRANSLATION_LINK
-          - BLOB_LINK
-          - TEXT
-          - LONG_TEXT
-          - BATCH_LINK
-          - STORAGE_LINK
-          - ENTRY_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BOOLEAN
-          - FLOAT
-          - INTEGER
-          - DATETIME
-          - DATE
-          - JSON
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    CustomField:
-      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
-
-        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
-
-        datasets, and other Benchling objects without modifying their schemas. Objects that can
-
-        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
-
-        custom fields are not validated against a schema and can be freely added or modified.'
-      properties:
-        __typename:
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-        value:
-          type:
-          - 'null'
-          - string
-      type: object
-    SchemaFieldValue:
-      description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
-
-        field''s type and constraints) with its actual `value` (a `BenchlingValue` such as text, number,
-
-        date, or link to another object). The value may be null if no value has been set. Used within
-
-        the `schemaFields` collection on objects that implement `HasSchema` to provide access to all
-
-        custom field values defined by the object''s schema.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinition:
-          $ref: '#/components/schemas/SchemaFieldDefinitionRef'
-        id:
-          type: string
-        linkedEntityId:
-          type:
-          - 'null'
-          - string
-        value:
-          description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue, ArrayValue
-          oneOf:
-          - anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            - $ref: '#/components/schemas/ArrayValue'
-            discriminator:
-              propertyName: __typename
-          - type: 'null'
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    ComplexPolymerResolvedAttachment:
-      description: 'Detailed information about a group of contiguous connections in a complex polymer.
-
-
-        The entire chemical structure of the connection group, and any components inside it, is represented by a molfile.
-
-        This allows for the representation of any bond chemistry, beyond the simple leaving group style supported by HELM.
-
-
-        For example, suppose we have two involved connections, one between a backbone oligo and a linker molecule,
-
-        and another between the linker molecule and a payload molecule.
-
-        Then the molfile would represent the entire complex of:
-
-        - the monomer on the backbone where the linker attaches
-
-        - the connection between monomer and linker
-
-        - the linker molecule
-
-        - the connection between linker and payload
-
-        - the payload molecule
-
-
-        Currently, this structure will only represent attachments that the user draws. However, in the future,
-
-        this object may also contain leaving group style connections as well.'
-      properties:
-        __typename:
-          type: string
-        connectionsInvolved:
-          items:
-            $ref: '#/components/schemas/ComplexPolymerConnection'
-          type: array
-        molfile:
-          type: string
-      type: object
-    Principal:
-      anyOf:
-      - $ref: '#/components/schemas/AppInstallation'
-      - $ref: '#/components/schemas/LegacyAppInstallation'
-      - $ref: '#/components/schemas/ServicePrincipal'
-      - $ref: '#/components/schemas/User'
-      discriminator:
-        propertyName: __typename
-      type: object
-    AppConfigOption:
-      description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
-
-        optional description, and a configSpec defining the expected value type and validation.'
-      properties:
-        __typename:
-          type: string
-        configSpec:
-          anyOf:
-          - $ref: '#/components/schemas/BooleanAppConfigSpec'
-          - $ref: '#/components/schemas/IntegerAppConfigSpec'
-          - $ref: '#/components/schemas/FloatAppConfigSpec'
-          - $ref: '#/components/schemas/TextAppConfigSpec'
-          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
-          - $ref: '#/components/schemas/DateAppConfigSpec'
-          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
-          - $ref: '#/components/schemas/JsonAppConfigSpec'
-          - $ref: '#/components/schemas/ArrayAppConfigSpec'
-          - $ref: '#/components/schemas/DropdownAppConfigSpec'
-          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
-          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
-          - $ref: '#/components/schemas/SchemaAppConfigSpec'
-          - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
-          discriminator:
-            propertyName: __typename
-        description:
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-      type: object
-    AppHomepageFeatureSpec:
-      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
-
-        the Benchling application for the app''s functionality.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    TextAppConfigSpec:
-      description: Specifies that an app configuration field should accept a text string.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these strings.
-          oneOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AppConfigWorkflowTaskSchemaOutput:
-      description: Defines the output field structure for a workflow task schema configuration.
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
-          type: string
-      type: object
-    FieldValueInput:
-      additionalProperties: false
-      properties:
-        value:
-          $ref: '#/components/schemas/AnyType'
-      required:
-      - value
       type: object
     ConnectionSide:
       description: 'Represents one endpoint of a connection between polymers in a complex polymer structure.
@@ -1725,7 +1620,7 @@ components:
 
         (for sequences), modification type (for nucleotides), and R-group number (for specific
 
-        attachment sites on monomers). Each ComplexPolymerConnection has a source and target
+        attachment sites on monomers). Each MolecularConnection has a source and target
 
         ConnectionSide defining the two endpoints of the bond.'
       properties:
@@ -1767,14 +1662,96 @@ components:
           - 'null'
           - integer
       type: object
-    JsonValue:
-      description: A type that represents JSON values.
+    ProteinVersionRef:
       properties:
         __typename:
           type: string
-        value:
-          description: The JSON value.
-          type: object
+        id:
+          format: api_id
+          type: string
+      type: object
+    AppConfigOption:
+      description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
+
+        optional description, and a configSpec defining the expected value type and validation.'
+      properties:
+        __typename:
+          type: string
+        configSpec:
+          anyOf:
+          - $ref: '#/components/schemas/BooleanAppConfigSpec'
+          - $ref: '#/components/schemas/IntegerAppConfigSpec'
+          - $ref: '#/components/schemas/FloatAppConfigSpec'
+          - $ref: '#/components/schemas/TextAppConfigSpec'
+          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
+          - $ref: '#/components/schemas/DateAppConfigSpec'
+          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
+          - $ref: '#/components/schemas/JsonAppConfigSpec'
+          - $ref: '#/components/schemas/ArrayAppConfigSpec'
+          - $ref: '#/components/schemas/DropdownAppConfigSpec'
+          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
+          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+          - $ref: '#/components/schemas/SchemaAppConfigSpec'
+          - $ref: '#/components/schemas/ResourceAppConfigSpec'
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          discriminator:
+            mapping:
+              ArrayAppConfigSpec: '#/components/schemas/ArrayAppConfigSpec'
+              BooleanAppConfigSpec: '#/components/schemas/BooleanAppConfigSpec'
+              DateAppConfigSpec: '#/components/schemas/DateAppConfigSpec'
+              DateTimeAppConfigSpec: '#/components/schemas/DateTimeAppConfigSpec'
+              DropdownAppConfigSpec: '#/components/schemas/DropdownAppConfigSpec'
+              EntitySchemaAppConfigSpec: '#/components/schemas/EntitySchemaAppConfigSpec'
+              FloatAppConfigSpec: '#/components/schemas/FloatAppConfigSpec'
+              IntegerAppConfigSpec: '#/components/schemas/IntegerAppConfigSpec'
+              JsonAppConfigSpec: '#/components/schemas/JsonAppConfigSpec'
+              ResourceAppConfigSpec: '#/components/schemas/ResourceAppConfigSpec'
+              SchemaAppConfigSpec: '#/components/schemas/SchemaAppConfigSpec'
+              SecureTextAppConfigSpec: '#/components/schemas/SecureTextAppConfigSpec'
+              TextAppConfigSpec: '#/components/schemas/TextAppConfigSpec'
+              WorkflowTaskSchemaAppConfigSpec: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+            propertyName: __typename
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    DateTimeAppConfigSpec:
+      description: Specifies that an app configuration field should accept a datetime value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    IntegerAppConfigSpec:
+      description: Specifies that an app configuration field should accept an integer value.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these integers.
+          oneOf:
+          - items:
+              type: integer
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    MoleculeRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     BulkImport:
       example:
@@ -1786,154 +1763,50 @@ components:
       required:
       - fileId
       type: object
-    MoleculeRef:
+    PeptideSimplePolymer:
+      description: 'Represents a peptide or protein chain within a complex polymer structure. Contains the amino acid residue
+
+        sequence and connections to other polymers. The entity field links to a corresponding `AaSequence`. Used when
+
+        protein/aa-sequence components are part of larger bioconjugate structures.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        connections:
+          description: This polymer's connections to other polymers in the complex polymer.
+          items:
+            $ref: '#/components/schemas/MolecularConnection'
+          type: array
+        entity:
+          $ref: '#/components/schemas/AaSequenceRef'
+          description: The Benchling entity information for this simple polymer.
+        helmReference:
+          description: 'The HELM reference of this polymer (e.g. PEPTIDE1). Uniquely identifies this simple polymer in the context
+
+            of a single complex polymer.'
+          type: string
+        polymerType:
+          description: 'The HELM polymer type for this peptide or protein chain. This is always `PEPTIDE` for peptide simple
+
+            polymers.'
+          type: string
+        residues:
+          description: The amino acid residue sequence of this peptide or protein chain.
           type: string
       type: object
-    CanvasFeatureSpec:
-      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
-
-        entries or templates. Canvases allow apps to render custom interactive content.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        locations:
-          oneOf:
-          - items:
-              enum:
-              - ENTRY
-              - ENTRY_TEMPLATE
-              - APP_HOME
-              type: string
-            type: array
-          - type: 'null'
-        name:
-          type: string
-      type: object
-    LegacyAppInstallation:
-      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
-
-        are configured directly with webhook URLs and configuration specs rather than through
-
-        app definition versions. This type is maintained for backward compatibility with older
-
-        app integrations. For new apps, see `AppInstallation`.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        configurationSpecs:
-          items:
-            $ref: '#/components/schemas/AppConfigOption'
-          type: array
-        configurationValues:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        description:
-          type:
-          - 'null'
-          - string
-        featureSpecs:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CanvasFeatureSpec'
-            - $ref: '#/components/schemas/AssayRunFeatureSpec'
-            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
-            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
-            discriminator:
-              propertyName: __typename
-          type: array
-        featureValues:
-          items:
-            $ref: '#/components/schemas/AssayRunFeatureValue'
-          type: array
-        id:
-          type: string
-        messageSubscriptions:
-          items:
-            $ref: '#/components/schemas/AppMessageSubscription'
-          type: array
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        publicKey:
-          type:
-          - 'null'
-          - string
-        versionNumber:
-          type:
-          - 'null'
-          - string
-        webhookUrl:
-          type:
-          - 'null'
-          - string
-      type: object
-    RegistrationOrigin:
-      description: 'Captures the provenance of an entity''s registration into the registry. The `originEntry` links
-
-        to the `DocumentLike` (typically an entry or notebook) from which the entity was registered,
-
-        providing traceability back to the original experimental context. The `registeredAt` timestamp
-
-        records when the registration occurred. This information helps scientists understand where
-
-        registered entities came from and when they were added to the registry.'
-      properties:
-        __typename:
-          type: string
-        originEntry:
-          oneOf:
-          - $ref: '#/components/schemas/DocumentLikeRef'
-          - type: 'null'
-        registeredAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-      type: object
-    TextValue:
-      description: A type that represents text (string) values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    OligoDuplexPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/OligoDuplex'
-          type: array
-        nextToken:
-          type: string
+    Principal:
+      anyOf:
+      - $ref: '#/components/schemas/AppInstallation'
+      - $ref: '#/components/schemas/LegacyAppInstallation'
+      - $ref: '#/components/schemas/ServicePrincipal'
+      - $ref: '#/components/schemas/User'
+      discriminator:
+        mapping:
+          AppInstallation: '#/components/schemas/AppInstallation'
+          LegacyAppInstallation: '#/components/schemas/LegacyAppInstallation'
+          ServicePrincipal: '#/components/schemas/ServicePrincipal'
+          User: '#/components/schemas/User'
+        propertyName: __typename
       type: object
     AppInstallation:
       description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
@@ -1976,28 +1849,89 @@ components:
         name:
           type: string
       type: object
-    FolderRef:
+    MolecularConnection:
+      description: 'Represents a chemical bond between two polymers within a complex polymer structure.
+
+        Connections can be covalent bonds (including disulfide bonds) or hydrogen bonds
+
+        (for base pairing in duplexes). Each connection has source and target ConnectionSide
+
+        endpoints defining which polymers and residues are bonded. The attachmentStyle
+
+        indicates whether the connection was drawn graphically or specified via leaving groups.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        attachmentStyle:
+          description: 'The format in which the user has defined the connection (i.e. drawn vs leaving group style).
+
+            Only applicable to covalent bond type connections.'
+          enum:
+          - LEAVING_GROUP
+          - DRAWN
+          - null
+          type:
+          - 'null'
+          - string
+        connectionType:
+          description: The kind of chemical bond this connection represents.
+          enum:
+          - COVALENT_BOND
+          - HYDROGEN_BOND
           type: string
+        covalentBondType:
+          description: 'The type of covalent bond represented by the connection (i.e. disulfide bond or not).
+
+            Only applicable to covalent bond type connections.'
+          enum:
+          - DISULFIDE_BOND
+          - null
+          type:
+          - 'null'
+          - string
+        source:
+          $ref: '#/components/schemas/ConnectionSide'
+          description: '''source'' and ''target'' are interchangeable - connections are bidirectional.'
+        target:
+          $ref: '#/components/schemas/ConnectionSide'
       type: object
-    RegistryRef:
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+
+        tenant. The featureId identifies the feature from the app definition, and resourceId
+
+        references the tenant-specific resource it''s bound to.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
           type: string
+        resourceId:
+          type:
+          - 'null'
+          - string
       type: object
-    ObjectRef:
+    CanvasFeatureSpec:
+      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+
+        entries or templates. Canvases allow apps to render custom interactive content.'
       properties:
         __typename:
           type: string
-        id:
-          format: api_id
+        featureId:
+          type: string
+        locations:
+          oneOf:
+          - items:
+              enum:
+              - ENTRY
+              - ENTRY_TEMPLATE
+              - APP_HOME
+              type: string
+            type: array
+          - type: 'null'
+        name:
           type: string
       type: object
     BooleanValue:
@@ -2009,120 +1943,33 @@ components:
           description: The boolean value.
           type: boolean
       type: object
-    DropdownAppConfigSpec:
-      description: Specifies that an app configuration field should be a dropdown with predefined options.
+    AnyType: {}
+    DecimalValue:
+      description: A type that represents decimal value as strings.
       properties:
         __typename:
           type: string
-        options:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigDropdownOption'
-            type: array
-          - type: 'null'
-        requiredConfig:
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
           type:
           - 'null'
-          - boolean
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
       type: object
-    IOligoDuplex:
-      description: 'An oligo duplex is a specific type of complex polymer that consists of two complementary DNA/RNA strands, with
-
-        multiple attached molecules on either strand (aka conjugates).'
+    DateTimeValue:
+      description: A type that represents datetime values.
       properties:
         __typename:
           type: string
-        aliases:
-          oneOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        canonicalHelm:
-          type: string
-        conjugates:
-          oneOf:
-          - items:
-              anyOf:
-              - $ref: '#/components/schemas/NucleotideSimplePolymer'
-              - $ref: '#/components/schemas/ChemSimplePolymer'
-              description: Union of NucleotideSimplePolymer, ChemSimplePolymer
-              discriminator:
-                propertyName: __typename
-            type: array
-          - type: 'null'
-        createdAt:
+        value:
+          description: The datetime value with UTC as the timezone.
           format: datetime
           type: string
-        customFields:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/CustomField'
-            type: array
-          - type: 'null'
-        entityAssociations:
-          items:
-            $ref: '#/components/schemas/EntityAssociation'
-          type: array
-        entityRegistryId:
-          type:
-          - 'null'
-          - string
-        folder:
-          oneOf:
-          - $ref: '#/components/schemas/FolderRef'
-          - type: 'null'
-        forwardOffset:
-          type:
-          - 'null'
-          - integer
-        forwardStrand:
-          oneOf:
-          - $ref: '#/components/schemas/NucleotideSimplePolymer'
-          - type: 'null'
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        originalHelm:
-          type:
-          - 'null'
-          - string
-        outOfSync:
-          type: boolean
-        outOfSyncReason:
-          type:
-          - 'null'
-          - string
-        project:
-          oneOf:
-          - $ref: '#/components/schemas/ProjectRef'
-          - type: 'null'
-        registrationOrigin:
-          oneOf:
-          - $ref: '#/components/schemas/RegistrationOrigin'
-          - type: 'null'
-        registry:
-          oneOf:
-          - $ref: '#/components/schemas/RegistryRef'
-          - type: 'null'
-        reverseStrand:
-          oneOf:
-          - $ref: '#/components/schemas/NucleotideSimplePolymer'
-          - type: 'null'
-        schema:
-          $ref: '#/components/schemas/EntitySchemaRef'
-        structure:
-          $ref: '#/components/schemas/ComplexPolymerStructure'
       type: object
     User:
       description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
@@ -2168,7 +2015,32 @@ components:
         username:
           type: string
       type: object
-    OligoDuplexUpdate:
+    TextAppConfigSpec:
+      description: Specifies that an app configuration field should accept a text string.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these strings.
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    RegistryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    OligoDuplexCreate:
       additionalProperties: false
       properties:
         aliases:
@@ -2182,25 +2054,28 @@ components:
         componentMapping:
           additionalProperties:
             type: string
-          description: Mapping from schema component names to entity names. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
+          description: Mapping from schema component names to entity names.
           type: object
         connections:
-          description: Connection definitions for the duplex structure. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
+          description: 'Connection definitions for the duplex structure, as pipe-delimited entries. Each entry is `sourceLabel,targetLabel` for a shorthand covalent bond between two small molecules, or `sourceLabel,targetLabel,residueIndex:rGroupOrPair-residueIndex:rGroupOrPair` for a HELM-style attachment. Labels refer to component names from componentMapping, suffixed with `(N)` to disambiguate repeated entities (e.g. `molecule(2)`). For example: `oligoName,moleculeName,1:R1-?:?|moleculeName,molecule2Name`.'
           type: string
         customFields:
           additionalProperties:
             $ref: '#/components/schemas/FieldValueInput'
           type: object
         entityRegistryId:
+          description: Registry ID to assign to the entity. If one is specified, the labeling_strategy must be unspecified.
           type: string
         folderId:
           type: string
         forwardOffset:
-          description: Offset of the forward strand relative to the reverse strand, in residues. For example, -2 means the forward strand begins 2 positions before the reverse strand. To update the duplex structure, provide componentMapping, connections, and forwardOffset together.
+          description: Offset of the forward strand relative to the reverse strand, in residues. For example, -2 means the forward strand begins 2 positions before the reverse strand.
           type: integer
         name:
+          description: Name of the item.
           type: string
         namingStrategy:
+          description: Strategy to use for labeling the item in the registry. If one is specified, the entity_registry_id must be unspecified.
           enum:
           - NEW_IDS
           - IDS_FROM_NAMES
@@ -2211,6 +2086,7 @@ components:
           - REPLACE_ID_AND_NAME_FROM_PARTS
           type: string
         registryId:
+          description: A not null value means the entity should be registered. If not null, the value must match the registry of the item's schema.
           type:
           - 'null'
           - string
@@ -2219,70 +2095,345 @@ components:
             $ref: '#/components/schemas/FieldValueInput'
           type: object
         schemaId:
+          description: The ID of the schema to use for the oligo duplex.
           type: string
+      required:
+      - folderId
+      - name
+      - schemaId
+      - componentMapping
+      - connections
+      - forwardOffset
       type: object
-    AppConfigDropdownOption:
-      description: Defines an option within a dropdown-type app configuration field.
+    GeneralError:
       properties:
-        __typename:
-          type: string
-        description:
+        detail:
           type:
           - 'null'
           - string
-        name:
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    NucleotideSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BooleanAppConfigSpec:
+      description: Specifies that an app configuration field should accept a boolean value.
+      properties:
+        __typename:
           type: string
         requiredConfig:
           type:
           - 'null'
           - boolean
       type: object
-    NucleotideSimplePolymer:
-      description: 'Represents a nucleic acid strand (DNA or RNA) within a complex polymer structure. Contains the sequence
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    ProteinSimplePolymer:
+      description: 'Represents a protein nested by reference within a complex polymer structure, along with connections to other
 
-        residues, any chemical modifications (see ModifiedNucleotide), and connections to other polymers. The entity
+        polymers. The entity field links to the corresponding `Protein`, and the nested protein''s own structure stays on
 
-        field links to a corresponding DnaSequence, RnaSequence, DnaOligo, or RnaOligo. Used as the backbone component
-
-        in OligoConjugate and as forward/reverse strands in OligoDuplex.'
+        that protein rather than being copied into the containing structure.'
       properties:
         __typename:
           type: string
         connections:
+          description: This polymer's connections to other polymers in the complex polymer.
           items:
-            $ref: '#/components/schemas/ComplexPolymerConnection'
+            $ref: '#/components/schemas/MolecularConnection'
           type: array
         entity:
-          $ref: '#/components/schemas/NucleotideSequenceRef'
+          $ref: '#/components/schemas/ProteinRef'
+          description: 'The nested protein. This always reflects the protein''s current state, which can differ from
+
+            `nestedComplexPolymerVersion` if the protein has changed since the containing structure was written.'
         helmReference:
+          description: 'The HELM reference of this polymer (e.g. PROTEIN1). Uniquely identifies this simple polymer in the context
+
+            of a single complex polymer.'
           type: string
-        modifications:
-          description: Chemical modifications applied at specific positions on this strand.
-          items:
-            $ref: '#/components/schemas/ModifiedNucleotide'
-          type: array
-        nucleotideType:
-          description: Whether this strand is DNA or RNA.
-          enum:
-          - DNA
-          - RNA
-          type: string
+        nestedComplexPolymerVersion:
+          description: 'The version of the nested protein that the containing structure was written against. Null when the viewer cannot
+
+            read the nested protein.'
+          oneOf:
+          - $ref: '#/components/schemas/ProteinVersionRef'
+          - type: 'null'
         polymerType:
+          description: The HELM polymer type for this nested protein. This is always `PROTEIN` for protein simple polymers.
           type: string
-        residues:
-          description: The nucleotide base sequence of this strand.
+      type: object
+    EntitySchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    IOligoDuplex:
+      description: 'An oligo duplex is a specific type of complex polymer that consists of two complementary DNA/RNA strands, with
+
+        multiple attached molecules on either strand (aka conjugates).'
+      properties:
+        __typename:
+          type: string
+        aliases:
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        canonicalHelm:
+          type: string
+        conjugates:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/NucleotideSimplePolymer'
+            - $ref: '#/components/schemas/ChemSimplePolymer'
+            description: Union of NucleotideSimplePolymer, ChemSimplePolymer
+            discriminator:
+              mapping:
+                ChemSimplePolymer: '#/components/schemas/ChemSimplePolymer'
+                NucleotideSimplePolymer: '#/components/schemas/NucleotideSimplePolymer'
+              propertyName: __typename
+          type: array
+        createdAt:
+          format: datetime
+          type: string
+        customFields:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/CustomField'
+            type: array
+          - type: 'null'
+        entityRegistryId:
+          description: 'The registry-assigned identifier for this item (e.g. its registry ID shown in the UI),
+
+            present only once the item has been registered. Null if the item is not registered.'
+          type:
+          - 'null'
+          - string
+        folder:
+          oneOf:
+          - $ref: '#/components/schemas/FolderRef'
+          - type: 'null'
+        forwardOffset:
+          type:
+          - 'null'
+          - integer
+        forwardStrand:
+          $ref: '#/components/schemas/NucleotideSimplePolymer'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          description: Name of the item.
+          type: string
+        originalHelm:
+          type:
+          - 'null'
+          - string
+        outOfSync:
+          type: boolean
+        outOfSyncReason:
+          type:
+          - 'null'
+          - string
+        project:
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        registrationOrigin:
+          description: Provenance of this item's registration — where and when it was registered. Null if unregistered.
+          oneOf:
+          - $ref: '#/components/schemas/RegistrationOrigin'
+          - type: 'null'
+        registry:
+          description: The Registry this item belongs to, if registered. Null if unregistered.
+          oneOf:
+          - $ref: '#/components/schemas/RegistryRef'
+          - type: 'null'
+        reverseStrand:
+          $ref: '#/components/schemas/NucleotideSimplePolymer'
+        schema:
+          $ref: '#/components/schemas/EntitySchemaRef'
+          deprecated: true
+          description: Use typedSchema instead, which returns the per-type schema.
+        structure:
+          $ref: '#/components/schemas/OligoDuplexStructure'
+        typedSchema:
+          $ref: '#/components/schemas/OligoDuplexSchemaRef'
+      type: object
+    ArrayAppConfigOption:
+      description: 'A config option nested within an array-type app configuration field. Structurally
+
+        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
+
+        accepts the same config types as the top level except nested arrays (see
+
+        ArrayAppConfigElementSpec).'
+      properties:
+        __typename:
+          type: string
+        configSpec:
+          anyOf:
+          - $ref: '#/components/schemas/BooleanAppConfigSpec'
+          - $ref: '#/components/schemas/IntegerAppConfigSpec'
+          - $ref: '#/components/schemas/FloatAppConfigSpec'
+          - $ref: '#/components/schemas/TextAppConfigSpec'
+          - $ref: '#/components/schemas/SecureTextAppConfigSpec'
+          - $ref: '#/components/schemas/DateAppConfigSpec'
+          - $ref: '#/components/schemas/DateTimeAppConfigSpec'
+          - $ref: '#/components/schemas/JsonAppConfigSpec'
+          - $ref: '#/components/schemas/DropdownAppConfigSpec'
+          - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
+          - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+          - $ref: '#/components/schemas/SchemaAppConfigSpec'
+          - $ref: '#/components/schemas/ResourceAppConfigSpec'
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          discriminator:
+            mapping:
+              BooleanAppConfigSpec: '#/components/schemas/BooleanAppConfigSpec'
+              DateAppConfigSpec: '#/components/schemas/DateAppConfigSpec'
+              DateTimeAppConfigSpec: '#/components/schemas/DateTimeAppConfigSpec'
+              DropdownAppConfigSpec: '#/components/schemas/DropdownAppConfigSpec'
+              EntitySchemaAppConfigSpec: '#/components/schemas/EntitySchemaAppConfigSpec'
+              FloatAppConfigSpec: '#/components/schemas/FloatAppConfigSpec'
+              IntegerAppConfigSpec: '#/components/schemas/IntegerAppConfigSpec'
+              JsonAppConfigSpec: '#/components/schemas/JsonAppConfigSpec'
+              ResourceAppConfigSpec: '#/components/schemas/ResourceAppConfigSpec'
+              SchemaAppConfigSpec: '#/components/schemas/SchemaAppConfigSpec'
+              SecureTextAppConfigSpec: '#/components/schemas/SecureTextAppConfigSpec'
+              TextAppConfigSpec: '#/components/schemas/TextAppConfigSpec'
+              WorkflowTaskSchemaAppConfigSpec: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
+            propertyName: __typename
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+      type: object
+    AppConfigWorkflowTaskSchemaOutput:
+      description: Defines the output field structure for a workflow task schema configuration.
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+      type: object
+    AaSequenceRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    SecureTextAppConfigSpec:
+      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
+
+        Used for sensitive data like API keys or credentials.'
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AssayRunFeatureSpec:
+      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+
+        lab automation run data.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          type: string
+        name:
           type: string
       type: object
   parameters:
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: omit
+      name: modifiedAt.lt
       schema:
-        items:
-          type: string
-        type: array
+        format: datetime
+        type: string
     archiveReason.anyOf:
       description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
       explode: false
@@ -2293,44 +2444,51 @@ components:
           type: string
         maxItems: 10
         type: array
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
       in: query
-      name: creator.anyOf
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    authors.anyOf:
+      description: Restricts results to those whose author matches any of the specified user or author IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: authors.anyOf
       schema:
         items:
           type: string
         maxItems: 100
         type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+    mentionedIn.anyOf:
+      description: Restricts results to items mentioned in entries matching any of the specified entry IDs. Comma-separated list.
+      explode: false
       in: query
-      name: modifiedAt.gte
+      name: mentionedIn.anyOf
       schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
       in: query
-      name: modifiedAt.lt
+      name: name.anyOf
       schema:
-        format: datetime
-        type: string
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
+        items:
+          type: string
+        maxItems: 100
+        type: array
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
@@ -2338,10 +2496,37 @@ components:
       schema:
         format: datetime
         type: string
-    project.eq:
-      description: ID of a project. Restricts results to those in the project.
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: project.eq
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    entityRegistryIds.anyOf:
+      description: Restricts results to those that match any of the specified entity registry IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: entityRegistryIds.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    fieldset.anyOf:
+      description: Restricts results to those whose schema implements any of the specified fieldset API IDs (custom schema interfaces). Comma-separated list.
+      explode: false
+      in: query
+      name: fieldset.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    registry.eq:
+      description: ID of a registry. Restricts results to those registered in this registry. Specifying "null" returns unregistered items.
+      in: query
+      name: registry.eq
       schema:
         type: string
     createdAt.gt:
@@ -2351,26 +2536,26 @@ components:
       schema:
         format: datetime
         type: string
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf.caseSensitive
+      name: archived.anyOf
       schema:
         items:
-          type: string
-        maxItems: 100
+          type: boolean
+        maxItems: 2
         type: array
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+    schema.eq:
+      description: Single schema ID. Restricts results to those that match the specified schema exactly. Use only one `schema` filter arg at a time.
       in: query
-      name: modifiedAt.gt
+      name: schema.eq
+      schema:
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -2383,18 +2568,11 @@ components:
         items:
           type: string
         type: array
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    schema.anyOf:
+      description: Restricts results to those that match any of the specified schema IDs. Use only one `schema` filter arg at a time. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf
+      name: schema.anyOf
       schema:
         items:
           type: string
@@ -2410,15 +2588,22 @@ components:
           type: string
         maxItems: 100
         type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
       explode: false
       in: query
-      name: archived.anyOf
+      name: creator.anyOf
       schema:
         items:
-          type: boolean
-        maxItems: 2
+          type: string
+        maxItems: 100
         type: array
     pageSize:
       description: Number of results to return. Defaults to 50, maximum of 100.
@@ -2426,38 +2611,96 @@ components:
       name: pageSize
       schema:
         type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    project.eq:
+      description: ID of a project. Restricts results to those in the project.
+      in: query
+      name: project.eq
+      schema:
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    systemCategory.anyOf:
+      description: Restricts results to those whose schema implements any of the specified system category API IDs (non-exclusive static schema interfaces). Comma-separated list.
+      explode: false
+      in: query
+      name: systemCategory.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
   responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
-    BadRequest:
+    Conflict:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
+      description: Conflict
     Forbidden:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

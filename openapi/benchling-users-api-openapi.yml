@@ -365,38 +365,45 @@ paths:
       - Users
 components:
   schemas:
-    WarehouseCredentialSummary:
+    UserSummary:
+      allOf:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    BadRequestError:
       properties:
-        createdAt:
-          format: date-time
-          readOnly: true
-          type: string
-        id:
-          readOnly: true
-          type: string
-        label:
-          type: string
-        modifiedAt:
-          format: date-time
-          readOnly: true
-          type: string
-        userId:
-          readOnly: true
-          type: string
-        username:
-          description: The username to connect to the warehouse.
-          example: u$lpasteur_az
-          readOnly: true
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
       type: object
-    PartySummary:
+    Pagination:
       properties:
-        handle:
+        nextToken:
           type: string
-        id:
-          type: string
-        name:
-          type: string
+    UserBulkUpdate:
+      additionalProperties: false
+      allOf:
+      - properties:
+          id:
+            type: string
+        required:
+        - id
+        type: object
+      - $ref: '#/components/schemas/UserUpdate'
+    UserBulkUpdateRequest:
+      additionalProperties: false
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/UserBulkUpdate'
+          type: array
       type: object
     User:
       allOf:
@@ -430,18 +437,53 @@ components:
         userMessage:
           type: string
       type: object
-    UserBulkUpdateRequest:
-      additionalProperties: false
+    UserActivity:
       properties:
-        users:
-          items:
-            $ref: '#/components/schemas/UserBulkUpdate'
-          type: array
-      type: object
-    Pagination:
-      properties:
-        nextToken:
+        lastSeen:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        userId:
           type: string
+      type: object
+    WarehouseCredentialSummary:
+      properties:
+        createdAt:
+          format: date-time
+          readOnly: true
+          type: string
+        id:
+          readOnly: true
+          type: string
+        label:
+          type: string
+        modifiedAt:
+          format: date-time
+          readOnly: true
+          type: string
+        userId:
+          readOnly: true
+          type: string
+        username:
+          description: The username to connect to the warehouse.
+          example: u$lpasteur_az
+          readOnly: true
+          type: string
+      type: object
+    UsersPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          users:
+            items:
+              $ref: '#/components/schemas/User'
+            type: array
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
+      type: object
     ForbiddenError:
       properties:
         error:
@@ -464,54 +506,18 @@ components:
             $ref: '#/components/schemas/UserCreate'
           type: array
       type: object
-    BadRequestError:
+    NotFoundError:
       properties:
         error:
           allOf:
           - $ref: '#/components/schemas/BaseError'
           - properties:
+              invalidId:
+                type: string
               type:
                 enum:
                 - invalid_request_error
                 type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
-    UserActivity:
-      properties:
-        lastSeen:
-          format: date-time
-          type:
-          - string
-          - 'null'
-        userId:
-          type: string
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    UserUpdate:
-      additionalProperties: false
-      properties:
-        email:
-          description: Email of the User
-          type: string
-        handle:
-          description: Handle of the User
-          type: string
-        isSuspended:
-          description: Suspended status of the User
-          type: boolean
-        name:
-          description: Name of the User
-          type: string
       type: object
     UserCreate:
       additionalProperties: false
@@ -530,37 +536,31 @@ components:
       - email
       - handle
       type: object
-    NotFoundError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              invalidId:
-                type: string
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    UsersPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          users:
-            items:
-              $ref: '#/components/schemas/User'
-            type: array
-    UserBulkUpdate:
+    UserUpdate:
       additionalProperties: false
-      allOf:
-      - properties:
-          id:
-            type: string
-        required:
-        - id
-        type: object
-      - $ref: '#/components/schemas/UserUpdate'
+      properties:
+        email:
+          description: Email of the User
+          type: string
+        handle:
+          description: Handle of the User
+          type: string
+        isSuspended:
+          description: Suspended status of the User
+          type: boolean
+        name:
+          description: Name of the User
+          type: string
+      type: object
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API

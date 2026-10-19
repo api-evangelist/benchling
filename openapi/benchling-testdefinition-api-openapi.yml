@@ -7,7 +7,17 @@ info:
   version: 2.0.0
   description: 'A Test Definition is a configuration object that specifies a type of test or assay that can be
 
-    ordered against samples.'
+    ordered against samples. Each Test Definition is associated with a `ResultSchema` that defines
+
+    the structure of measurement data captured when the test is performed. Test Definitions serve
+
+    as templates—when a test needs to be performed on a sample, a `TestOrder` is created referencing
+
+    the appropriate Test Definition. Test Definitions are used within clinical and preclinical study
+
+    workflows (see `StudySampleTestPlan`) and can be linked to `Procedure` assays for execution.
+
+    Belongs to an `Organization` and can be archived when no longer needed.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +26,20 @@ security:
 tags:
 - description: 'A Test Definition is a configuration object that specifies a type of test or assay that can be
 
-    ordered against samples.'
+    ordered against samples. Each Test Definition is associated with a `ResultSchema` that defines
+
+    the structure of measurement data captured when the test is performed. Test Definitions serve
+
+    as templates—when a test needs to be performed on a sample, a `TestOrder` is created referencing
+
+    the appropriate Test Definition. Test Definitions are used within clinical and preclinical study
+
+    workflows (see `StudySampleTestPlan`) and can be linked to `Procedure` assays for execution.
+
+    Belongs to an `Organization` and can be archived when no longer needed.'
   name: TestDefinition
   x-bnch-organization: Benchling
+  x-displayName: Test Definition
 paths:
   /test-definition:
     post:
@@ -75,6 +96,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -82,7 +105,6 @@ paths:
       summary: Create TestDefinition
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 4
   /test-definition/items:
     get:
       description: List TestDefinition items.
@@ -144,7 +166,6 @@ paths:
       summary: List TestDefinition items
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 4
   /test-definition/{test_definition_id}:
     get:
       description: Get a single TestDefinition by ID.
@@ -185,7 +206,6 @@ paths:
       summary: Get TestDefinition by ID
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 5
     patch:
       description: 'Update an existing Test Definition.
 
@@ -211,7 +231,9 @@ paths:
         ## Constraints
 
 
-        - The caller must be able to read the target organization and result schema.
+        - The caller must have read access to the result schema.
+
+        - Moving the Test Definition to a different organization requires admin access to the target organization. Re-specifying the current organization only requires read access to it.
 
         - `resultSchemaId` cannot be changed after any Test Orders exist for the Test Definition.
 
@@ -252,6 +274,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -259,7 +283,6 @@ paths:
       summary: Update TestDefinition
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 4
   /test-definition:batch-create:
     post:
       description: 'Batch create Test Definitions synchronously in one transaction. Maximum 25 items per request.
@@ -310,6 +333,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -317,7 +342,6 @@ paths:
       summary: Batch create TestDefinition
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 3
   /test-definition:batch-update:
     patch:
       description: 'Batch update Test Definitions synchronously in one transaction. Maximum 25 items per request.
@@ -368,6 +392,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -375,7 +401,6 @@ paths:
       summary: Batch update TestDefinition
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 3
   /test-definition:bulk-create:
     post:
       description: 'Bulk create Test Definitions asynchronously from an uploaded file.
@@ -408,6 +433,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -415,7 +442,6 @@ paths:
       summary: Bulk create TestDefinition
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 2
   /test-definition:bulk-update:
     patch:
       description: 'Bulk update Test Definitions asynchronously from an uploaded file.
@@ -448,6 +474,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -455,13 +483,42 @@ paths:
       summary: Bulk update TestDefinition
       tags:
       - TestDefinition
-      x-bnch-rate-limit-tier: 2
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -471,6 +528,39 @@ components:
       name: nextToken
       schema:
         type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -479,16 +569,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -510,20 +590,17 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archiveReason.anyOf
+      name: modifiedAt.lte
       schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
@@ -537,70 +614,20 @@ components:
           type: string
         maxItems: 100
         type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     createdAt.lt:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
       name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -609,14 +636,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -629,6 +657,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -636,134 +676,6 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   schemas:
-    CreateTestDefinitionInput:
-      additionalProperties: false
-      example:
-        description: Standard blood chemistry measurements collected for study samples.
-        name: Blood Chemistry Panel
-        organizationId: org_v7Q9m2Kx
-        resultSchemaId: assaysch_Z3xY7vQb
-      properties:
-        description:
-          description: Human-readable description for the test definition. Empty strings are allowed; values must be at most 255 characters.
-          type: string
-        name:
-          description: Display name for the test definition. Must be non-empty after trimming whitespace and unique within the organization.
-          type: string
-        organizationId:
-          description: The API ID of the organization that owns the test definition. Use `GET /benchling/organization/items` to list available organizations.
-          type: string
-        resultSchemaId:
-          description: The API ID of the result schema that defines the shape of results captured for this test. Use `GET /benchling/result-schema/items` to list available result schemas.
-          type: string
-      required:
-      - name
-      - organizationId
-      - resultSchemaId
-      - description
-      type: object
-    UpdateTestDefinitionInput:
-      additionalProperties: false
-      example:
-        archived: false
-        description: Updated set of blood chemistry measurements collected for study samples.
-        name: Updated Blood Chemistry Panel
-        organizationId: org_v7Q9m2Kx
-        resultSchemaId: assaysch_Z3xY7vQb
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          description: Updated human-readable description. Empty strings are allowed; values must be at most 255 characters.
-          type: string
-        name:
-          description: Updated display name. When provided, it is trimmed and must be non-empty and unique within the organization.
-          type: string
-        organizationId:
-          description: Updated owning organization. Use `GET /benchling/organization/items` to find organization IDs.
-          type: string
-        resultSchemaId:
-          description: Updated result schema. Use `GET /benchling/result-schema/items` to find result schema IDs. Cannot be changed after test orders have been created for this test definition.
-          type: string
-      type: object
-    TestDefinitionPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/TestDefinition'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    UpdateTestDefinitionInputWithPathParams:
-      additionalProperties: false
-      example:
-        archived: false
-        description: Updated set of blood chemistry measurements collected for study samples.
-        id: tdef_J8mQ2xY7
-        name: Updated Blood Chemistry Panel
-        organizationId: org_v7Q9m2Kx
-        resultSchemaId: assaysch_Z3xY7vQb
-      properties:
-        archiveReason:
-          type: string
-        archived:
-          type: boolean
-        description:
-          description: Updated human-readable description. Empty strings are allowed; values must be at most 255 characters.
-          type: string
-        id:
-          description: The API ID of the test definition to update.
-          type: string
-        name:
-          description: Updated display name. When provided, it is trimmed and must be non-empty and unique within the organization.
-          type: string
-        organizationId:
-          description: Updated owning organization. Use `GET /benchling/organization/items` to find organization IDs.
-          type: string
-        resultSchemaId:
-          description: Updated result schema. Use `GET /benchling/result-schema/items` to find result schema IDs. Cannot be changed after test orders have been created for this test definition.
-          type: string
-      required:
-      - id
-      type: object
-    ResultSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -790,7 +702,15 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -798,6 +718,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -813,6 +735,130 @@ components:
       - detail
       - status
       - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TestDefinitionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TestDefinition'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdateTestDefinitionInput:
+      additionalProperties: false
+      example:
+        archived: false
+        description: Updated set of blood chemistry measurements collected for study samples.
+        name: Updated Blood Chemistry Panel
+        organizationId: org_v7Q9m2Kx
+        resultSchemaId: assaysch_Z3xY7vQb
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Updated human-readable description. Empty strings are allowed; values must be at most 255 characters.
+          type: string
+        name:
+          description: Updated display name. When provided, it is trimmed and must be non-empty and unique within the organization.
+          type: string
+        organizationId:
+          description: Updated owning organization. Moving to a different organization requires admin access to that organization.
+          type: string
+        resultSchemaId:
+          description: Updated result schema. Cannot be changed after test orders have been created for this test definition.
+          type: string
+      type: object
+    CreateTestDefinitionInput:
+      additionalProperties: false
+      example:
+        description: Standard blood chemistry measurements collected for study samples.
+        name: Blood Chemistry Panel
+        organizationId: org_v7Q9m2Kx
+        resultSchemaId: assaysch_Z3xY7vQb
+      properties:
+        description:
+          description: Human-readable description for the test definition. Empty strings are allowed; values must be at most 255 characters.
+          type: string
+        name:
+          description: Display name for the test definition. Must be non-empty after trimming whitespace and unique within the organization.
+          type: string
+        organizationId:
+          description: The API ID of the organization that owns the test definition.
+          type: string
+        resultSchemaId:
+          description: The API ID of the result schema that defines the shape of results captured for this test.
+          type: string
+      required:
+      - name
+      - organizationId
+      - resultSchemaId
+      - description
+      type: object
+    ResultSchemaRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     TestDefinition:
       description: 'A Test Definition is a configuration object that specifies a type of test or assay that can be
@@ -831,19 +877,10 @@ components:
       properties:
         __typename:
           type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
         archiveReason:
           type:
           - 'null'
           - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
         archived:
           type: boolean
         createdAt:
@@ -873,15 +910,44 @@ components:
           $ref: '#/components/schemas/ResultSchemaRef'
           description: The result schema of the test definition, defines the measurement data shape.
       type: object
-    OrganizationRef:
+    UpdateTestDefinitionInputWithPathParams:
+      additionalProperties: false
+      example:
+        archived: false
+        description: Updated set of blood chemistry measurements collected for study samples.
+        id: tdef_J8mQ2xY7
+        name: Updated Blood Chemistry Panel
+        organizationId: org_v7Q9m2Kx
+        resultSchemaId: assaysch_Z3xY7vQb
       properties:
-        __typename:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          description: Updated human-readable description. Empty strings are allowed; values must be at most 255 characters.
           type: string
         id:
-          format: api_id
+          description: The API ID of the test definition to update.
           type: string
+        name:
+          description: Updated display name. When provided, it is trimmed and must be non-empty and unique within the organization.
+          type: string
+        organizationId:
+          description: Updated owning organization. Moving to a different organization requires admin access to that organization.
+          type: string
+        resultSchemaId:
+          description: Updated result schema. Cannot be changed after test orders have been created for this test definition.
+          type: string
+      required:
+      - id
       type: object
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

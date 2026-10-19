@@ -5,7 +5,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  description: 'Operations tagged Authentication across 2 of this provider''s published API definitions: benchling-openapi.yaml, benchling-v3-openapi.yaml. Each path carries the servers of the definition it was published in.'
+  description: 'Operations tagged Authentication across 2 of this provider''s published API definitions: benchling-openapi.yaml, benchling-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: /api/v2
 - url: /api/v3
@@ -150,20 +150,16 @@ paths:
       x-operation-id-original: generateToken
 components:
   schemas:
-    TokenResponse:
+    OAuthUnauthorizedError:
       properties:
-        access_token:
-          example: eyJ...
-          type: string
-        expires_in:
-          description: Number of seconds that token is valid for
-          example: 900
-          type: integer
-        token_type:
-          enum:
-          - Bearer
-          example: Bearer
-          type: string
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_client
+                type: string
       type: object
     OAuthBadRequestError:
       properties:
@@ -188,17 +184,6 @@ components:
         userMessage:
           type: string
       type: object
-    OAuthUnauthorizedError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_client
-                type: string
-      type: object
     TokenCreate:
       properties:
         client_id:
@@ -219,6 +204,21 @@ components:
       required:
       - grant_type
       type: object
+    TokenResponse:
+      properties:
+        access_token:
+          example: eyJ...
+          type: string
+        expires_in:
+          description: Number of seconds that token is valid for
+          example: 900
+          type: integer
+        token_type:
+          enum:
+          - Bearer
+          example: Bearer
+          type: string
+      type: object
   securitySchemes:
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
@@ -235,9 +235,14 @@ components:
           scopes: {}
           tokenUrl: /api/v2/token
       type: oauth2
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
 externalDocs:
   description: Additional API Documentation
   url: https://docs.benchling.com
 x-refined-from:
 - benchling-openapi.yaml
-- benchling-v3-openapi.yaml
+- benchling-openapi.yml

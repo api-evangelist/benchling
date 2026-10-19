@@ -7,7 +7,21 @@ info:
   version: 2.0.0
   description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
 
-    management and data sharing.'
+    management and data sharing. Teams belong to exactly one organization, and users may
+
+    only join a team if they are already members of that team''s parent organization. Each
+
+    team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
+
+    team membership, while members receive standard access. Unlike Organizations, teams
+
+    cannot directly own Projects or Folders—they are used for collaboration and access
+
+    control purposes. Teams can be configured with `provisionedCapabilities` to grant
+
+    specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
+
+    flag controls whether team members can create and update automation, result, and request schemas.'
 servers:
 - url: /api/v3
 security:
@@ -16,10 +30,63 @@ security:
 tags:
 - description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
 
-    management and data sharing.'
+    management and data sharing. Teams belong to exactly one organization, and users may
+
+    only join a team if they are already members of that team''s parent organization. Each
+
+    team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
+
+    team membership, while members receive standard access. Unlike Organizations, teams
+
+    cannot directly own Projects or Folders—they are used for collaboration and access
+
+    control purposes. Teams can be configured with `provisionedCapabilities` to grant
+
+    specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
+
+    flag controls whether team members can create and update automation, result, and request schemas.'
   name: Team
   x-bnch-organization: Benchling
+  x-displayName: Team
 paths:
+  /team:
+    post:
+      description: Create Team.
+      operationId: Team.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create Team
+      tags:
+      - Team
   /team/items:
     get:
       description: List Team items.
@@ -51,12 +118,6 @@ paths:
           - modifiedAt:asc
           - modifiedAt:desc
           type: string
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -78,7 +139,6 @@ paths:
       summary: List Team items
       tags:
       - Team
-      x-bnch-rate-limit-tier: 4
   /team/{team_id}:
     get:
       description: Get a single Team by ID.
@@ -92,12 +152,6 @@ paths:
           type: string
       - $ref: '#/components/parameters/returning'
       - $ref: '#/components/parameters/omit'
-      - description: Set to true to access beta operations via /api/v3.
-        in: header
-        name: EARLY-ACCESS
-        required: false
-        schema:
-          type: string
       responses:
         '200':
           content:
@@ -119,11 +173,9 @@ paths:
       summary: Get Team by ID
       tags:
       - Team
-      x-bnch-rate-limit-tier: 5
-  /team/{team_id}/memberships/items:
-    get:
-      description: List GroupMembership items.
-      operationId: Team.memberships.List
+    patch:
+      description: Update Team.
+      operationId: Team.Update
       parameters:
       - description: ID of the Team.
         in: path
@@ -137,12 +189,73 @@ paths:
         required: false
         schema:
           type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeamInput'
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GroupMembershipUnpaginatedList'
+                $ref: '#/components/schemas/Team'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update Team
+      tags:
+      - Team
+  /team/{team_id}/memberships/items:
+    get:
+      description: List GroupMembership items.
+      operationId: Team.memberships.List
+      parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/memberId.eq'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: ID of the Team.
+        in: path
+        name: team_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMembershipPaginatedList'
           description: OK
           headers: {}
         '400':
@@ -158,9 +271,229 @@ paths:
       summary: List GroupMembership items
       tags:
       - Team
-      x-bnch-rate-limit-tier: 4
+  /team:batch-create:
+    post:
+      description: Batch create Team synchronously in one transaction. Maximum 25 items per request.
+      operationId: Team.BatchCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateTeamInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Team'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create Team
+      tags:
+      - Team
+  /team:batch-update:
+    patch:
+      description: Batch update Team synchronously in one transaction. Maximum 25 items per request.
+      operationId: Team.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateTeamInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Team'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update Team
+      tags:
+      - Team
+  /team:bulk-create:
+    post:
+      description: Bulk create Team.
+      operationId: Team.BulkCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create Team
+      tags:
+      - Team
+  /team:bulk-update:
+    patch:
+      description: Bulk update Team.
+      operationId: Team.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update Team
+      tags:
+      - Team
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -168,6 +501,28 @@ components:
       schema:
         format: datetime
         type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    memberId.eq:
+      description: Restricts results to memberships for the specified member (principal) ID.
+      in: query
+      name: memberId.eq
+      schema:
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -176,22 +531,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -213,38 +552,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -255,98 +566,79 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
-    Team:
-      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
-
-        management and data sharing. Teams belong to exactly one organization, and users may
-
-        only join a team if they are already members of that team''s parent organization. Each
-
-        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
-
-        team membership, while members receive standard access. Unlike Organizations, teams
-
-        cannot directly own Projects or Folders—they are used for collaboration and access
-
-        control purposes. Teams can be configured with `provisionedCapabilities` to grant
-
-        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
-
-        flag controls whether team members can create and modify certain schema types.'
-      properties:
-        __typename:
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        description:
-          type: string
-        id:
-          type: string
-        membersAreAdministratorsOfSchemas:
-          description: 'Indicates that members of the team are able to create and modify schemas that do not implement the
-
-            Collaboratable interface.'
-          type: boolean
-        memberships:
-          format: uri
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        organization:
-          $ref: '#/components/schemas/OrganizationRef'
-      type: object
-    GroupMembershipUnpaginatedList:
+    GroupMembershipPaginatedList:
       additionalProperties: false
       properties:
         items:
           items:
             $ref: '#/components/schemas/GroupMembership'
           type: array
-      type: object
-    TeamPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Team'
-          type: array
         nextToken:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
     InternalServerError:
       properties:
@@ -374,7 +666,57 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    Team:
+      description: 'Represents a subgroup of users within an `Organization`, enabling finer-grained user
+
+        management and data sharing. Teams belong to exactly one organization, and users may
+
+        only join a team if they are already members of that team''s parent organization. Each
+
+        team member has either ADMIN or MEMBER role (see `GroupMembership`): admins can manage
+
+        team membership, while members receive standard access. Unlike Organizations, teams
+
+        cannot directly own Projects or Folders—they are used for collaboration and access
+
+        control purposes. Teams can be configured with `provisionedCapabilities` to grant
+
+        specific Benchling capabilities to members upon joining. The `membersAreAdministratorsOfSchemas`
+
+        flag controls whether team members can create and update automation, result, and request schemas.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: Team members can create and update automation, result, and request schemas.
+          type: boolean
+        memberships:
+          format: uri
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        organization:
+          $ref: '#/components/schemas/OrganizationRef'
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -382,6 +724,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -398,12 +742,55 @@ components:
       - status
       - instance
       type: object
-    Group:
-      anyOf:
-      - $ref: '#/components/schemas/Organization'
-      - $ref: '#/components/schemas/Team'
-      discriminator:
-        propertyName: __typename
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    CreateTeamInput:
+      additionalProperties: false
+      properties:
+        description:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: Team members can create and update automation, result, and request schemas.
+          type: boolean
+        name:
+          type: string
+        organizationId:
+          type: string
+      required:
+      - name
+      - organizationId
       type: object
     Organization:
       description: 'Represents a group of users within Benchling, typically corresponding to a company,
@@ -471,7 +858,32 @@ components:
           - ADMIN
           type: string
       type: object
-    OrganizationRef:
+    UpdateTeamInputWithPathParams:
+      additionalProperties: false
+      properties:
+        description:
+          type: string
+        id:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: Team members can create and update automation, result, and request schemas.
+          type: boolean
+        name:
+          type: string
+      required:
+      - id
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    PrincipalRef:
       properties:
         __typename:
           type: string
@@ -479,38 +891,45 @@ components:
           format: api_id
           type: string
       type: object
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
+    Group:
+      anyOf:
+      - $ref: '#/components/schemas/Organization'
+      - $ref: '#/components/schemas/Team'
+      discriminator:
+        mapping:
+          Organization: '#/components/schemas/Organization'
+          Team: '#/components/schemas/Team'
+        propertyName: __typename
+      type: object
+    TeamPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Team'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdateTeamInput:
+      additionalProperties: false
+      properties:
+        description:
+          type: string
+        membersAreAdministratorsOfSchemas:
+          description: Team members can create and update automation, result, and request schemas.
+          type: boolean
+        name:
+          type: string
+      type: object
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

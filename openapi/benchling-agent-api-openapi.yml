@@ -77,99 +77,8 @@ paths:
       summary: Create or continue a chat with an agent
       tags:
       - Agent
-      x-bnch-rate-limit-tier: 2
 components:
   schemas:
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    PublicDataChatSourceInput:
-      additionalProperties: false
-      properties:
-        type:
-          enum:
-          - public_data
-          type: string
-      required:
-      - type
-      type: object
-    ConnectorsInput:
-      additionalProperties: false
-      properties:
-        mode:
-          description: '"none" disables connectors and "all_connected" enables all active connectors for the current user. A future "explicit" mode with an "ids" field is planned but is not currently supported.'
-          enum:
-          - none
-          - all_connected
-          type: string
-      required:
-      - mode
-      type: object
-    McpServerChatSourceInput:
-      additionalProperties: false
-      properties:
-        serverId:
-          description: API ID of the MCP server to enable (e.g. mcpconf_abc123).
-          type: string
-        type:
-          enum:
-          - mcp_server
-          type: string
-      required:
-      - type
-      - serverId
-      type: object
-    BaseCreateMessageBlockInput:
-      allOf:
-      - properties:
-          type:
-            enum:
-            - text
-            type: string
-        required:
-        - type
-      - oneOf:
-        - $ref: '#/components/schemas/CreateTextMessageBlockInput'
-      discriminator:
-        propertyName: type
-      type: object
-    ChatSourceInput:
-      allOf:
-      - properties:
-          type:
-            enum:
-            - mcp_server
-            - public_data
-            type: string
-        required:
-        - type
-      - oneOf:
-        - $ref: '#/components/schemas/McpServerChatSourceInput'
-        - $ref: '#/components/schemas/PublicDataChatSourceInput'
-      discriminator:
-        propertyName: type
-      type: object
     CreateAgentInput:
       additionalProperties: false
       properties:
@@ -204,32 +113,31 @@ components:
       required:
       - input
       type: object
-    EditingTargetInput:
-      allOf:
-      - properties:
-          type:
-            enum:
-            - entry
-            type: string
-        required:
-        - type
-      - oneOf:
-        - $ref: '#/components/schemas/EntryEditingTargetInput'
-      discriminator:
-        propertyName: type
-      type: object
-    CreateTextMessageBlockInput:
+    ConnectorsInput:
       additionalProperties: false
       properties:
-        text:
+        mode:
+          description: '"none" disables connectors and "all_connected" enables all active connectors for the current user. A future "explicit" mode with an "ids" field is planned but is not currently supported.'
+          enum:
+          - none
+          - all_connected
+          type: string
+      required:
+      - mode
+      type: object
+    McpServerChatSourceInput:
+      additionalProperties: false
+      properties:
+        serverId:
+          description: API ID of the MCP server to enable (e.g. mcpconf_abc123).
           type: string
         type:
           enum:
-          - text
+          - mcp_server
           type: string
       required:
       - type
-      - text
+      - serverId
       type: object
     InternalServerError:
       properties:
@@ -241,6 +149,58 @@ components:
         errorId:
           type: string
         instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -271,44 +231,156 @@ components:
       - type
       - id
       type: object
+    ChatSourceInput:
+      allOf:
+      - properties:
+          type:
+            enum:
+            - mcp_server
+            - public_data
+            type: string
+        required:
+        - type
+      - oneOf:
+        - $ref: '#/components/schemas/McpServerChatSourceInput'
+        - $ref: '#/components/schemas/PublicDataChatSourceInput'
+      discriminator:
+        mapping:
+          mcp_server: '#/components/schemas/McpServerChatSourceInput'
+          public_data: '#/components/schemas/PublicDataChatSourceInput'
+        propertyName: type
+      type: object
+    FileSourceInput:
+      $ref: '#/components/schemas/ScratchFileSourceInput'
+    CreateTextMessageBlockInput:
+      additionalProperties: false
+      properties:
+        text:
+          type: string
+        type:
+          enum:
+          - text
+          type: string
+      required:
+      - type
+      - text
+      type: object
+    CreateFileMessageBlockInput:
+      additionalProperties: false
+      properties:
+        filename:
+          description: Name to display for the attached file.
+          type: string
+        mediaType:
+          description: Media (MIME) type of the attached file, e.g. `text/csv` or `application/pdf`.
+          type: string
+        source:
+          $ref: '#/components/schemas/FileSourceInput'
+        type:
+          enum:
+          - file
+          type: string
+      required:
+      - type
+      - source
+      - filename
+      - mediaType
+      type: object
+    PublicDataChatSourceInput:
+      additionalProperties: false
+      properties:
+        type:
+          enum:
+          - public_data
+          type: string
+      required:
+      - type
+      type: object
+    BaseCreateMessageBlockInput:
+      allOf:
+      - properties:
+          type:
+            enum:
+            - file
+            - text
+            type: string
+        required:
+        - type
+      - oneOf:
+        - $ref: '#/components/schemas/CreateFileMessageBlockInput'
+        - $ref: '#/components/schemas/CreateTextMessageBlockInput'
+      discriminator:
+        mapping:
+          file: '#/components/schemas/CreateFileMessageBlockInput'
+          text: '#/components/schemas/CreateTextMessageBlockInput'
+        propertyName: type
+      type: object
+    EditingTargetInput:
+      $ref: '#/components/schemas/EntryEditingTargetInput'
+    ScratchFileSourceInput:
+      additionalProperties: false
+      properties:
+        scratchFileId:
+          description: API ID of a scratch file whose `uploadStatus` is `SUCCEEDED` (e.g. scrfile_abc123).
+          type: string
+        type:
+          enum:
+          - scratch_file
+          type: string
+      required:
+      - type
+      - scratchFileId
+      type: object
   responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
     PaymentRequired:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Payment Required
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/InternalServerError'
       description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

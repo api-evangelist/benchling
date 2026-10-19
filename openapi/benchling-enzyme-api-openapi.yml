@@ -7,7 +7,19 @@ info:
   version: 2.0.0
   description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
 
-    enzymes.'
+    enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+    that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+    has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+    details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+    site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+    pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+    during cloning workflow design.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +28,22 @@ security:
 tags:
 - description: 'Represents a restriction enzyme from Benchling''s global catalog of commercially available
 
-    enzymes.'
+    enzymes. Restriction enzymes (also known as restriction endonucleases) are molecular scissors
+
+    that recognize specific DNA sequences and cleave the DNA at defined positions. Each enzyme
+
+    has a recognition sequence (restrictionSiteBases), such as GAATTC for EcoRI, and cut site
+
+    details (see CutSiteDetail) specifying where the enzyme cuts relative to that recognition
+
+    site. Enzymes can produce blunt ends or sticky ends (overhangs) depending on their cut
+
+    pattern. Users can organize frequently used enzymes into EnzymeLists for convenient access
+
+    during cloning workflow design.'
   name: Enzyme
   x-bnch-organization: Benchling
+  x-displayName: Enzyme
 paths:
   /enzyme/items:
     get:
@@ -59,7 +84,6 @@ paths:
       summary: List Enzyme items
       tags:
       - Enzyme
-      x-bnch-rate-limit-tier: 4
   /enzyme/{enzyme_id}:
     get:
       description: Get a single Enzyme by ID.
@@ -100,7 +124,6 @@ paths:
       summary: Get Enzyme by ID
       tags:
       - Enzyme
-      x-bnch-rate-limit-tier: 5
   /enzyme/{enzyme_id}/isoschizomers/items:
     get:
       description: List Enzyme items.
@@ -139,7 +162,6 @@ paths:
       summary: List Enzyme items
       tags:
       - Enzyme
-      x-bnch-rate-limit-tier: 4
 components:
   parameters:
     pageSize:
@@ -154,6 +176,15 @@ components:
       name: nextToken
       schema:
         type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -163,11 +194,11 @@ components:
         items:
           type: string
         type: array
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf
+      name: name.anyOf.caseSensitive
       schema:
         items:
           type: string
@@ -183,26 +214,119 @@ components:
           type: string
         maxItems: 100
         type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: name.anyOf.caseSensitive
+      name: name.anyOf
       schema:
         items:
           type: string
         maxItems: 100
         type: array
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   schemas:
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    EnzymePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Enzyme'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     GeneralError:
       properties:
         detail:
@@ -211,6 +335,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -295,74 +421,12 @@ components:
           description: Location, relative to the restriction site bases, where the 5' cut is made.
           type: integer
       type: object
-    EnzymePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Enzyme'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-  responses:
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

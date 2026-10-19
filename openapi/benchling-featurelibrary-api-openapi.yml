@@ -5,17 +5,73 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Feature Library API
   version: 2.0.0
-  description: Represents a reusable collection of biological features for auto-annotating nucleotide and AA sequences.
+  description: 'Represents a reusable collection of biological features for auto-annotating nucleotide and AA sequences.
+
+    FeatureLibraries enable users to define common sequence motifs (such as genes, promoters, terminators, or
+
+    protein domains) with associated patterns, then automatically detect and annotate those features across many
+
+    sequences. Each library contains `FeatureLibraryItem`s that specify the pattern to match and the annotation
+
+    details to apply. Libraries can be shared with collaborators through ownership and permission controls, making
+
+    them useful for standardizing annotation practices across a team. When running auto-annotate on a sequence,
+
+    users select which libraries to search against.'
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: Represents a reusable collection of biological features for auto-annotating nucleotide and AA sequences.
+- description: 'Represents a reusable collection of biological features for auto-annotating nucleotide and AA sequences.
+
+    FeatureLibraries enable users to define common sequence motifs (such as genes, promoters, terminators, or
+
+    protein domains) with associated patterns, then automatically detect and annotate those features across many
+
+    sequences. Each library contains `FeatureLibraryItem`s that specify the pattern to match and the annotation
+
+    details to apply. Libraries can be shared with collaborators through ownership and permission controls, making
+
+    them useful for standardizing annotation practices across a team. When running auto-annotate on a sequence,
+
+    users select which libraries to search against.'
   name: FeatureLibrary
   x-bnch-organization: Benchling
+  x-displayName: Feature Library
 paths:
+  /feature-library:
+    post:
+      description: Create FeatureLibrary.
+      operationId: FeatureLibrary.Create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeatureLibraryInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureLibrary'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create FeatureLibrary
+      tags:
+      - FeatureLibrary
   /feature-library/items:
     get:
       description: List FeatureLibrary items.
@@ -30,6 +86,8 @@ paths:
       - $ref: '#/components/parameters/modifiedAt.gte'
       - $ref: '#/components/parameters/modifiedAt.lt'
       - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/omit'
       - $ref: '#/components/parameters/pageSize'
@@ -66,7 +124,6 @@ paths:
       summary: List FeatureLibrary items
       tags:
       - FeatureLibrary
-      x-bnch-rate-limit-tier: 4
   /feature-library/{feature_library_id}:
     get:
       description: Get a single FeatureLibrary by ID.
@@ -101,12 +158,57 @@ paths:
       summary: Get FeatureLibrary by ID
       tags:
       - FeatureLibrary
-      x-bnch-rate-limit-tier: 5
+    patch:
+      description: Update FeatureLibrary.
+      operationId: FeatureLibrary.Update
+      parameters:
+      - description: ID of the FeatureLibrary.
+        in: path
+        name: feature_library_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeatureLibraryInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureLibrary'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update FeatureLibrary
+      tags:
+      - FeatureLibrary
   /feature-library/{feature_library_id}/features/items:
     get:
       description: List FeatureLibraryItem items.
       operationId: FeatureLibrary.features.List
       parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/pageSize'
       - description: ID of the FeatureLibrary.
@@ -114,6 +216,17 @@ paths:
         name: feature_library_id
         required: true
         schema:
+          type: string
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
           type: string
       responses:
         '200':
@@ -136,45 +249,185 @@ paths:
       summary: List FeatureLibraryItem items
       tags:
       - FeatureLibrary
-      x-bnch-rate-limit-tier: 4
+  /feature-library:batch-create:
+    post:
+      description: Batch create FeatureLibrary synchronously in one transaction. Maximum 25 items per request.
+      operationId: FeatureLibrary.BatchCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateFeatureLibraryInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/FeatureLibrary'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create FeatureLibrary
+      tags:
+      - FeatureLibrary
+  /feature-library:batch-update:
+    patch:
+      description: Batch update FeatureLibrary synchronously in one transaction. Maximum 25 items per request.
+      operationId: FeatureLibrary.BatchUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateFeatureLibraryInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/FeatureLibrary'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update FeatureLibrary
+      tags:
+      - FeatureLibrary
+  /feature-library:bulk-create:
+    post:
+      description: Bulk create FeatureLibrary.
+      operationId: FeatureLibrary.BulkCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create FeatureLibrary
+      tags:
+      - FeatureLibrary
+  /feature-library:bulk-update:
+    patch:
+      description: Bulk update FeatureLibrary.
+      operationId: FeatureLibrary.BulkUpdate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update FeatureLibrary
+      tags:
+      - FeatureLibrary
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
       schema:
         format: datetime
         type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: omit
+      name: pageSize
       schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
       in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
+      name: modifiedAt.gt
       schema:
         format: datetime
         type: string
@@ -185,24 +438,23 @@ components:
       schema:
         format: datetime
         type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: modifiedAt.lt
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
       schema:
         format: datetime
         type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
       in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -215,12 +467,35 @@ components:
         items:
           type: string
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: pageSize
+      name: omit
       schema:
-        type: integer
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
     modifiedAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -228,63 +503,31 @@ components:
       schema:
         format: datetime
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
       in: query
-      name: createdAt.gte
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
-  schemas:
-    FeatureLibraryPaginatedList:
-      additionalProperties: false
-      properties:
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
         items:
-          items:
-            $ref: '#/components/schemas/FeatureLibrary'
-          type: array
-        nextToken:
           type: string
-      type: object
-    FeatureLibraryRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+  schemas:
     FeatureLibrary:
       description: 'Represents a reusable collection of biological features for auto-annotating nucleotide and AA sequences.
 
@@ -327,6 +570,38 @@ components:
         owner:
           $ref: '#/components/schemas/OwnerRef'
       type: object
+    FeatureLibraryItemPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/FeatureLibraryItem'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    CreateFeatureLibraryInput:
+      additionalProperties: false
+      example:
+        description: Promoter motifs used for auto-annotation across plasmids.
+        name: Common promoters
+        ownerId: ent_o2thOLlq
+      properties:
+        description:
+          description: Description of the Feature Library
+          type: string
+        name:
+          description: Library names must be non-empty after trimming whitespace, at most 128 characters, and unique within the owner (case-insensitive).
+          type: string
+        ownerId:
+          description: The API ID of the user or organization that owns the feature library.
+          type: string
+      required:
+      - name
+      - ownerId
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -353,46 +628,12 @@ components:
       - status
       - instance
       type: object
-    FeatureLibraryItemPaginatedList:
-      additionalProperties: false
+    AsyncTaskLink:
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/FeatureLibraryItem'
-          type: array
-        nextToken:
+        pollingUri:
+          format: uri
           type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    OwnerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
+        taskId:
           type: string
       type: object
     FeatureLibraryItem:
@@ -446,7 +687,181 @@ components:
           description: The pattern used for matching during auto-annotation
           type: string
       type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    FeatureLibraryRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    OwnerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    UpdateFeatureLibraryInputWithPathParams:
+      additionalProperties: false
+      example:
+        description: Updated promoter motifs for auto-annotation.
+        id: featlib_cWYhFmxq
+        name: Common promoters (v2)
+      properties:
+        description:
+          description: Description of the Feature Library
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        name:
+          description: Library names must be non-empty after trimming whitespace, at most 128 characters, and unique within the owner (case-insensitive).
+          type: string
+      required:
+      - id
+      type: object
+    FeatureLibraryPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/FeatureLibrary'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    UpdateFeatureLibraryInput:
+      additionalProperties: false
+      example:
+        description: Updated promoter motifs for auto-annotation.
+        name: Common promoters (v2)
+      properties:
+        description:
+          description: Description of the Feature Library
+          type:
+          - 'null'
+          - string
+        name:
+          description: Library names must be non-empty after trimming whitespace, at most 128 characters, and unique within the owner (case-insensitive).
+          type: string
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

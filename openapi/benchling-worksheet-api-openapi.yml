@@ -7,7 +7,17 @@ info:
   version: 2.0.0
   description: 'A structured document container used to organize and execute procedural work within
 
-    Benchling''s notebook system.'
+    Benchling''s notebook system. Worksheets contain ordered `WorksheetStepGroup`s, each
+
+    holding `WorksheetStep`s that represent individual tasks or documentation units. Each
+
+    step has an associated `Document` for capturing content. Worksheets support workflow
+
+    integration through associated `WorkflowTask`s, can be linked to `Study` objects for
+
+    experimental context, and include review capabilities (see `Review`). They are stored
+
+    within `Folder`s and support archival.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +26,20 @@ security:
 tags:
 - description: 'A structured document container used to organize and execute procedural work within
 
-    Benchling''s notebook system.'
+    Benchling''s notebook system. Worksheets contain ordered `WorksheetStepGroup`s, each
+
+    holding `WorksheetStep`s that represent individual tasks or documentation units. Each
+
+    step has an associated `Document` for capturing content. Worksheets support workflow
+
+    integration through associated `WorkflowTask`s, can be linked to `Study` objects for
+
+    experimental context, and include review capabilities (see `Review`). They are stored
+
+    within `Folder`s and support archival.'
   name: Worksheet
   x-bnch-organization: Benchling
+  x-displayName: Worksheet
 paths:
   /worksheet/items:
     get:
@@ -81,7 +102,6 @@ paths:
       summary: List Worksheet items
       tags:
       - Worksheet
-      x-bnch-rate-limit-tier: 4
   /worksheet/{worksheet_id}:
     get:
       description: Get a single Worksheet by ID.
@@ -122,7 +142,6 @@ paths:
       summary: Get Worksheet by ID
       tags:
       - Worksheet
-      x-bnch-rate-limit-tier: 5
   /worksheet/{worksheet_id}/applicable-review-processes/items:
     get:
       description: List ReviewProcess items.
@@ -134,6 +153,7 @@ paths:
         required: true
         schema:
           type: string
+      - $ref: '#/components/parameters/archived.anyOf'
       - description: Set to true to access beta operations via /api/v3.
         in: header
         name: EARLY-ACCESS
@@ -161,7 +181,6 @@ paths:
       summary: List ReviewProcess items
       tags:
       - Worksheet
-      x-bnch-rate-limit-tier: 4
   /worksheet/{worksheet_id}/authors/items:
     get:
       description: List Principal items.
@@ -200,156 +219,89 @@ paths:
       summary: List Principal items
       tags:
       - Worksheet
-      x-bnch-rate-limit-tier: 4
 components:
-  parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: createdAt.lte
-      schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    name.anyOf.caseSensitive:
-      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf.caseSensitive
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
-      in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-    creator.anyOf:
-      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: creator.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
-      schema:
-        format: datetime
-        type: string
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: createdAt.gt
-      schema:
-        format: datetime
-        type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
-      in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
   schemas:
+    LegacyAppInstallation:
+      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
+
+        are configured directly with webhook URLs and configuration specs rather than through
+
+        app definition versions. This type is maintained for backward compatibility with older
+
+        app integrations. For new apps, see `AppInstallation`.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configurationSpecs:
+          items:
+            $ref: '#/components/schemas/AppConfigOption'
+          type: array
+        configurationValues:
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        description:
+          type:
+          - 'null'
+          - string
+        featureSpecs:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/CanvasFeatureSpec'
+            - $ref: '#/components/schemas/AssayRunFeatureSpec'
+            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
+            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
+            discriminator:
+              mapping:
+                AppHomepageFeatureSpec: '#/components/schemas/AppHomepageFeatureSpec'
+                AssayRunFeatureSpec: '#/components/schemas/AssayRunFeatureSpec'
+                CanvasFeatureSpec: '#/components/schemas/CanvasFeatureSpec'
+              propertyName: __typename
+          type: array
+        featureValues:
+          items:
+            $ref: '#/components/schemas/AssayRunFeatureValue'
+          type: array
+        id:
+          type: string
+        messageSubscriptions:
+          items:
+            $ref: '#/components/schemas/AppMessageSubscription'
+          type: array
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        publicKey:
+          type:
+          - 'null'
+          - string
+        versionNumber:
+          type:
+          - 'null'
+          - string
+        webhookUrl:
+          type:
+          - 'null'
+          - string
+      type: object
     SchemaAppConfigSpec:
       description: 'Specifies that an app configuration field should reference one of the schema types
 
@@ -417,13 +369,317 @@ components:
           - 'null'
           - string
       type: object
-    PrincipalUnpaginatedList:
+    EntitySchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference an entity schema.
+
+        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        subtype:
+          description: 'Optional subtype constraint — if present, the referenced schema must be of this
+
+            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
+          enum:
+          - AA_SEQUENCE
+          - CUSTOM_ENTITY
+          - DNA_OLIGO
+          - DNA_SEQUENCE
+          - MIXTURE
+          - MOLECULE
+          - RNA_OLIGO
+          - RNA_SEQUENCE
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    FloatAppConfigSpec:
+      description: Specifies that an app configuration field should accept a floating-point number.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these floats.
+          oneOf:
+          - items:
+              type: number
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    JsonAppConfigSpec:
+      description: Specifies that an app configuration field should accept a JSON value.
+      properties:
+        __typename:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    ReviewRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    User:
+      description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
+
+        Users belong to one or more Organizations and may be members of Teams within those
+
+        organizations. As an Owner, users can own Projects, Folders, and other resources.
+
+        As a Principal, users can be assigned as reviewers, authors, or collaborators on
+
+        various items. Users have attributes like email and username for identification.
+
+        Users are distinct from `ServicePrincipal`, which represents non-human service
+
+        accounts used for integrations.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        email:
+          type: string
+        id:
+          type: string
+        lastSeen:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        status:
+          enum:
+          - ACTIVE
+          - SUSPENDED
+          type: string
+        username:
+          type: string
+      type: object
+    TextAppConfigSpec:
+      description: Specifies that an app configuration field should accept a text string.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these strings.
+          oneOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    WorksheetPaginatedList:
       additionalProperties: false
       properties:
         items:
           items:
-            $ref: '#/components/schemas/Principal'
+            $ref: '#/components/schemas/Worksheet'
           type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    WorkflowTaskSchemaAppConfigSpec:
+      description: 'Specifies that an app configuration field should reference a workflow task schema.
+
+        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+        output:
+          description: Output field definitions for the workflow task schema.
+          oneOf:
+          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    AppConfigFieldDefinition:
+      description: 'Defines a field within an app configuration that references schema fields. Specifies the
+
+        field name, type, whether it accepts multiple values, and whether it is required.'
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        isMulti:
+          description: Whether the field must be multi-valued — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        isRequired:
+          description: Whether the field must be required — null means either true or false is acceptable.
+          type:
+          - 'null'
+          - boolean
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+        type:
+          description: Type constraint for the field — null means any type is acceptable.
+          enum:
+          - DNA_SEQUENCE_LINK
+          - AA_SEQUENCE_LINK
+          - CUSTOM_ENTITY_LINK
+          - ENTITY_LINK
+          - MIXTURE_LINK
+          - MOLECULE_LINK
+          - DROPDOWN
+          - PART_LINK
+          - AA_PART_LINK
+          - TRANSLATION_LINK
+          - BLOB_LINK
+          - TEXT
+          - LONG_TEXT
+          - BATCH_LINK
+          - STORAGE_LINK
+          - ENTRY_LINK
+          - ASSAY_REQUEST_LINK
+          - ASSAY_RESULT_LINK
+          - ASSAY_RUN_LINK
+          - BOOLEAN
+          - FLOAT
+          - INTEGER
+          - DATETIME
+          - DATE
+          - JSON
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ReviewProcessUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewProcess'
+          type: array
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     ServicePrincipal:
       description: 'Represents a non-human identity used for system integrations and automated processes
@@ -456,137 +712,53 @@ components:
           - 'null'
           - string
       type: object
-    AssayRunFeatureValue:
-      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+    AppHomepageFeatureSpec:
+      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
 
-        tenant. The featureId identifies the feature from the app definition, and resourceId
-
-        references the tenant-specific resource it''s bound to.'
+        the Benchling application for the app''s functionality.'
       properties:
         __typename:
           type: string
         featureId:
-          description: Developer-specified feature ID as defined in the app manifest / app definition version
-          type: string
-        resourceId:
-          type:
-          - 'null'
-          - string
-      type: object
-    ReviewProcessVersion:
-      description: 'A specific version of a ReviewProcess configuration. Review processes are versioned
-
-        to allow changes to review requirements while preserving the rules that apply to
-
-        in-progress reviews. Each version defines the process type (self-review, parallel,
-
-        or sequential), the terminal state when complete, and the ordered list of
-
-        `ReviewProcessStage`s that must be completed.'
-      properties:
-        __typename:
-          type: string
-        processType:
-          description: Type of this review process
-          enum:
-          - SELF_REVIEW
-          - PARALLEL
-          - SEQUENTIAL
-          - null
-          type:
-          - 'null'
-          - string
-        reviewStages:
-          description: List of all stages the review must go through
-          items:
-            $ref: '#/components/schemas/ReviewProcessStageRef'
-          type: array
-        terminalState:
-          description: Stage of the reviewable at the end of the review process
-          enum:
-          - APPROVED
-          - COMPLETED
-          - ACCEPTED
-          - REVIEWED
-          - WITNESSED
-          - SELF_REVIEWED
-          type: string
-      type: object
-    BooleanAppConfigSpec:
-      description: Specifies that an app configuration field should accept a boolean value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    Worksheet:
-      description: 'A structured document container used to organize and execute procedural work within
-
-        Benchling''s notebook system. Worksheets contain ordered `WorksheetStepGroup`s, each
-
-        holding `WorksheetStep`s that represent individual tasks or documentation units. Each
-
-        step has an associated `Document` for capturing content. Worksheets support workflow
-
-        integration through associated `WorkflowTask`s, can be linked to `Study` objects for
-
-        experimental context, and include review capabilities (see `Review`). They are stored
-
-        within `Folder`s and support archival.'
-      properties:
-        __typename:
-          type: string
-        applicableReviewProcesses:
-          format: uri
-          type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        authors:
-          oneOf:
-          - format: uri
-            type: string
-          - type: 'null'
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        folder:
-          $ref: '#/components/schemas/FolderRef'
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
           type: string
         name:
           type: string
-        review:
-          oneOf:
-          - $ref: '#/components/schemas/ReviewRef'
-          - type: 'null'
-        reviewSource:
-          $ref: '#/components/schemas/ProjectRef'
       type: object
-    SecureTextAppConfigSpec:
-      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
-
-        Used for sensitive data like API keys or credentials.'
+    OrganizationRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ArrayAppConfigSpec:
+      description: Specifies that an app configuration field should accept an array of values.
+      properties:
+        __typename:
+          type: string
+        elementDefinition:
+          description: Defines the named config options allowed within this array and their type constraints.
+          items:
+            $ref: '#/components/schemas/ArrayAppConfigOption'
+          type: array
+        maxElements:
+          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
+          type:
+          - 'null'
+          - integer
+        minElements:
+          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
+          type:
+          - 'null'
+          - integer
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    DateAppConfigSpec:
+      description: Specifies that an app configuration field should accept a date value.
       properties:
         __typename:
           type: string
@@ -595,14 +767,10 @@ components:
           - 'null'
           - boolean
       type: object
-    ArrayAppConfigOption:
-      description: 'A config option nested within an array-type app configuration field. Structurally
+    AppConfigOption:
+      description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
 
-        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
-
-        accepts the same config types as the top level except nested arrays (see
-
-        ArrayAppConfigElementSpec).'
+        optional description, and a configSpec defining the expected value type and validation.'
       properties:
         __typename:
           type: string
@@ -616,13 +784,29 @@ components:
           - $ref: '#/components/schemas/DateAppConfigSpec'
           - $ref: '#/components/schemas/DateTimeAppConfigSpec'
           - $ref: '#/components/schemas/JsonAppConfigSpec'
+          - $ref: '#/components/schemas/ArrayAppConfigSpec'
           - $ref: '#/components/schemas/DropdownAppConfigSpec'
           - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
           - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
           - $ref: '#/components/schemas/SchemaAppConfigSpec'
           - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
           discriminator:
+            mapping:
+              ArrayAppConfigSpec: '#/components/schemas/ArrayAppConfigSpec'
+              BooleanAppConfigSpec: '#/components/schemas/BooleanAppConfigSpec'
+              DateAppConfigSpec: '#/components/schemas/DateAppConfigSpec'
+              DateTimeAppConfigSpec: '#/components/schemas/DateTimeAppConfigSpec'
+              DropdownAppConfigSpec: '#/components/schemas/DropdownAppConfigSpec'
+              EntitySchemaAppConfigSpec: '#/components/schemas/EntitySchemaAppConfigSpec'
+              FloatAppConfigSpec: '#/components/schemas/FloatAppConfigSpec'
+              IntegerAppConfigSpec: '#/components/schemas/IntegerAppConfigSpec'
+              JsonAppConfigSpec: '#/components/schemas/JsonAppConfigSpec'
+              ResourceAppConfigSpec: '#/components/schemas/ResourceAppConfigSpec'
+              SchemaAppConfigSpec: '#/components/schemas/SchemaAppConfigSpec'
+              SecureTextAppConfigSpec: '#/components/schemas/SecureTextAppConfigSpec'
+              TextAppConfigSpec: '#/components/schemas/TextAppConfigSpec'
+              WorkflowTaskSchemaAppConfigSpec: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
             propertyName: __typename
         description:
           type:
@@ -631,66 +815,88 @@ components:
         name:
           type: string
       type: object
-    AppMessageSubscription:
-      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
-
-        how notifications should be delivered (see `DeliveryMethod`).'
+    DateTimeAppConfigSpec:
+      description: Specifies that an app configuration field should accept a datetime value.
       properties:
         __typename:
           type: string
-        deliveryMethod:
-          enum:
-          - WEBHOOK
-          - WEBHOOK_INTERNAL
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
+    ReviewProcess:
+      description: 'Defines a review process configuration that specifies how entries and other
+
+        reviewable items should be reviewed. A ReviewProcess belongs to an Organization
+
+        and can be associated with one or more Projects. When a review is initiated,
+
+        it follows the stages defined in the current `ReviewProcessVersion`. Review
+
+        processes enable organizations to enforce compliance requirements by defining
+
+        who must review, in what order, and what actions are required. Also known as
+
+        "Review Lifecycle" in the backend.'
+      properties:
+        __typename:
           type: string
-        type:
-          enum:
-          - V2_BETA_CANVAS_CREATED
-          - V2_CANVAS_CREATED
-          - V2_CANVAS_USER_INTERACTED
-          - V2_CANVAS_INITIALIZED
-          - V2_APP_ACTIVATE_REQUESTED
-          - V2_APP_DEACTIVATED
-          - V2_APP_INSTALLED
-          - V2_BETA_APP_CONFIGURATION_UPDATED
-          - V2_ASSAY_RUN_CREATED
-          - V2_ASSAY_RUN_UPDATED_FIELDS
-          - V2_ENTITY_REGISTERED
-          - V2_ENTRY_CREATED
-          - V2_ENTRY_UPDATED_FIELDS
-          - V2_ENTRY_UPDATED_REVIEW_RECORD
-          - V2_REQUEST_CREATED
-          - V2_REQUEST_UPDATED_FIELDS
-          - V2_REQUEST_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_GROUP_CREATED
-          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
-          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
-          - V2_WORKFLOW_TASK_CREATED
-          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
-          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
-          - V2_WORKFLOW_TASK_UPDATED_STATUS
-          - V2_WORKFLOW_TASK_UPDATED_FIELDS
-          - V2_WORKFLOW_OUTPUT_CREATED
-          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
-          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
-          - V3_CUSTOM_ENTITY_CREATED
-          - V3_CUSTOM_ENTITY_UPDATED
-          - V3_DNA_OLIGO_CREATED
-          - V3_DNA_OLIGO_UPDATED
-          - V3_DNA_SEQUENCE_CREATED
-          - V3_DNA_SEQUENCE_UPDATED
-          - V3_ENTRY_CREATED
-          - V3_PROJECT_CREATED
-          - V3_PROJECT_UPDATED
-          - V3_RNA_OLIGO_CREATED
-          - V3_RNA_OLIGO_UPDATED
-          - V3_RNA_SEQUENCE_CREATED
-          - V3_RNA_SEQUENCE_UPDATED
-          - V3_RUN_CREATED
+        archiveReason:
+          description: Reason the review process was archived
+          type:
+          - 'null'
+          - string
+        archived:
+          description: Whether the review process is archived
+          type: boolean
+        createdAt:
+          description: Timestamp when this review process was created
+          format: datetime
           type: string
+        currentVersion:
+          description: Current version of this review process
+          oneOf:
+          - $ref: '#/components/schemas/ReviewProcessVersion'
+          - type: 'null'
+        id:
+          description: ID of the review process
+          type: string
+        modifiedAt:
+          description: Timestamp when this review process was last modified
+          format: datetime
+          type: string
+        name:
+          description: Title of the review process
+          type:
+          - 'null'
+          - string
+        organization:
+          description: The organization that owns this review process
+          oneOf:
+          - $ref: '#/components/schemas/OrganizationRef'
+          - type: 'null'
+        projects:
+          description: All projects that point to this review process
+          format: uri
+          type: string
+      type: object
+    IntegerAppConfigSpec:
+      description: Specifies that an app configuration field should accept an integer value.
+      properties:
+        __typename:
+          type: string
+        enum:
+          description: Optional enum constraint — if present, the value must be one of these integers.
+          oneOf:
+          - items:
+              type: integer
+            type: array
+          - type: 'null'
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
       type: object
     ResourceAppConfigSpec:
       description: 'Specifies that an app configuration field should reference a Benchling object instance.
@@ -753,265 +959,69 @@ components:
           - 'null'
           - string
       type: object
-    ReviewProcess:
-      description: 'Defines a review process configuration that specifies how entries and other
+    AppMessageSubscription:
+      description: 'Represents an app''s subscription to a specific event type, specifying the event type and
 
-        reviewable items should be reviewed. A ReviewProcess belongs to an Organization
-
-        and can be associated with one or more Projects. When a review is initiated,
-
-        it follows the stages defined in the current `ReviewProcessVersion`. Review
-
-        processes enable organizations to enforce compliance requirements by defining
-
-        who must review, in what order, and what actions are required. Also known as
-
-        "Review Lifecycle" in the backend.'
+        how notifications should be delivered (see `DeliveryMethod`).'
       properties:
         __typename:
           type: string
-        createdAt:
-          description: Timestamp when this review process was created
-          format: datetime
-          type: string
-        currentVersion:
-          description: Current version of this review process
-          oneOf:
-          - $ref: '#/components/schemas/ReviewProcessVersion'
-          - type: 'null'
-        id:
-          description: ID of the review process
-          type: string
-        modifiedAt:
-          description: Timestamp when this review process was last modified
-          format: datetime
-          type: string
-        name:
-          description: Title of the review process
-          type:
-          - 'null'
-          - string
-        organization:
-          description: The organization that owns this review process
-          oneOf:
-          - $ref: '#/components/schemas/OrganizationRef'
-          - type: 'null'
-        projects:
-          description: All projects that point to this review process
-          format: uri
-          type: string
-      type: object
-    FloatAppConfigSpec:
-      description: Specifies that an app configuration field should accept a floating-point number.
-      properties:
-        __typename:
-          type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these floats.
-          oneOf:
-          - items:
-              type: number
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    ArrayAppConfigSpec:
-      description: Specifies that an app configuration field should accept an array of values.
-      properties:
-        __typename:
-          type: string
-        elementDefinition:
-          description: Defines the named config options allowed within this array and their type constraints.
-          items:
-            $ref: '#/components/schemas/ArrayAppConfigOption'
-          type: array
-        maxElements:
-          description: Maximum number of elements allowed in the array (1-500); null means no maximum.
-          type:
-          - 'null'
-          - integer
-        minElements:
-          description: Minimum number of elements allowed in the array (0-500); null means no minimum.
-          type:
-          - 'null'
-          - integer
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    EntitySchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference an entity schema.
-
-        Kept separate from SchemaAppConfigSpec because it carries a subtype constraint.'
-      properties:
-        __typename:
-          type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-        subtype:
-          description: 'Optional subtype constraint — if present, the referenced schema must be of this
-
-            entity type (e.g. DNA_SEQUENCE, AA_SEQUENCE).'
+        deliveryMethod:
           enum:
-          - AA_SEQUENCE
-          - CUSTOM_ENTITY
-          - DNA_OLIGO
-          - DNA_SEQUENCE
-          - MIXTURE
-          - MOLECULE
-          - RNA_OLIGO
-          - RNA_SEQUENCE
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    WorksheetPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Worksheet'
-          type: array
-        nextToken:
+          - WEBHOOK
+          - WEBHOOK_INTERNAL
           type: string
-      type: object
-    ReviewRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DateTimeAppConfigSpec:
-      description: Specifies that an app configuration field should accept a datetime value.
-      properties:
-        __typename:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AssayRunFeatureSpec:
-      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
-
-        lab automation run data.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        name:
-          type: string
-      type: object
-    ProjectRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    AppConfigFieldDefinition:
-      description: 'Defines a field within an app configuration that references schema fields. Specifies the
-
-        field name, type, whether it accepts multiple values, and whether it is required.'
-      properties:
-        __typename:
-          type: string
-        description:
-          type:
-          - 'null'
-          - string
-        isMulti:
-          description: Whether the field must be multi-valued — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        isRequired:
-          description: Whether the field must be required — null means either true or false is acceptable.
-          type:
-          - 'null'
-          - boolean
-        name:
-          type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
         type:
-          description: Type constraint for the field — null means any type is acceptable.
           enum:
-          - DNA_SEQUENCE_LINK
-          - AA_SEQUENCE_LINK
-          - CUSTOM_ENTITY_LINK
-          - ENTITY_LINK
-          - MIXTURE_LINK
-          - MOLECULE_LINK
-          - DROPDOWN
-          - PART_LINK
-          - AA_PART_LINK
-          - TRANSLATION_LINK
-          - BLOB_LINK
-          - TEXT
-          - LONG_TEXT
-          - BATCH_LINK
-          - STORAGE_LINK
-          - ENTRY_LINK
-          - ASSAY_REQUEST_LINK
-          - ASSAY_RESULT_LINK
-          - ASSAY_RUN_LINK
-          - BOOLEAN
-          - FLOAT
-          - INTEGER
-          - DATETIME
-          - DATE
-          - JSON
-          - null
-          type:
-          - 'null'
-          - string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
+          - V2_BETA_CANVAS_CREATED
+          - V2_CANVAS_CREATED
+          - V2_CANVAS_USER_INTERACTED
+          - V2_CANVAS_INITIALIZED
+          - V2_APP_ACTIVATE_REQUESTED
+          - V2_APP_DEACTIVATED
+          - V2_APP_INSTALLED
+          - V2_BETA_APP_CONFIGURATION_UPDATED
+          - V2_ASSAY_RUN_CREATED
+          - V2_ASSAY_RUN_UPDATED_FIELDS
+          - V2_ENTITY_REGISTERED
+          - V2_ENTRY_CREATED
+          - V2_ENTRY_UPDATED_FIELDS
+          - V2_ENTRY_UPDATED_REVIEW_RECORD
+          - V2_REQUEST_CREATED
+          - V2_REQUEST_UPDATED_FIELDS
+          - V2_REQUEST_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_GROUP_CREATED
+          - V2_WORKFLOW_TASK_GROUP_MAPPING_COMPLETED
+          - V2_WORKFLOW_TASK_GROUP_UPDATED_WATCHERS
+          - V2_WORKFLOW_TASK_CREATED
+          - V2_WORKFLOW_TASK_UPDATED_ASSIGNEE
+          - V2_WORKFLOW_TASK_UPDATED_SCHEDULED_ON
+          - V2_WORKFLOW_TASK_UPDATED_STATUS
+          - V2_WORKFLOW_TASK_UPDATED_FIELDS
+          - V2_WORKFLOW_OUTPUT_CREATED
+          - V2_WORKFLOW_OUTPUT_UPDATED_FIELDS
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_RUNNING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_PENDING
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_SUCCEEDED
+          - V2_AUTOMATION_FILE_TRANSFORM_UPDATED_STATUS_FAILED
+          - V3_CUSTOM_ENTITY_CREATED
+          - V3_CUSTOM_ENTITY_UPDATED
+          - V3_DNA_OLIGO_CREATED
+          - V3_DNA_OLIGO_UPDATED
+          - V3_DNA_SEQUENCE_CREATED
+          - V3_DNA_SEQUENCE_UPDATED
+          - V3_ENTRY_CREATED
+          - V3_PROJECT_CREATED
+          - V3_PROJECT_UPDATED
+          - V3_RNA_OLIGO_CREATED
+          - V3_RNA_OLIGO_UPDATED
+          - V3_RNA_SEQUENCE_CREATED
+          - V3_RNA_SEQUENCE_UPDATED
+          - V3_RUN_CREATED
           type: string
-        id:
-          format: api_id
-          type: string
       type: object
-    ReviewProcessStageRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ReviewProcessUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewProcess'
-          type: array
-      type: object
-    JsonAppConfigSpec:
-      description: Specifies that an app configuration field should accept a JSON value.
+    BooleanAppConfigSpec:
+      description: Specifies that an app configuration field should accept a boolean value.
       properties:
         __typename:
           type: string
@@ -1019,155 +1029,6 @@ components:
           type:
           - 'null'
           - boolean
-      type: object
-    CanvasFeatureSpec:
-      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
-
-        entries or templates. Canvases allow apps to render custom interactive content.'
-      properties:
-        __typename:
-          type: string
-        featureId:
-          type: string
-        locations:
-          oneOf:
-          - items:
-              enum:
-              - ENTRY
-              - ENTRY_TEMPLATE
-              - APP_HOME
-              type: string
-            type: array
-          - type: 'null'
-        name:
-          type: string
-      type: object
-    InternalServerError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        errorId:
-          type: string
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    LegacyAppInstallation:
-      description: 'Represents a legacy (pre-App Store) Benchling App installation on a tenant. Legacy apps
-
-        are configured directly with webhook URLs and configuration specs rather than through
-
-        app definition versions. This type is maintained for backward compatibility with older
-
-        app integrations. For new apps, see `AppInstallation`.'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        configurationSpecs:
-          items:
-            $ref: '#/components/schemas/AppConfigOption'
-          type: array
-        configurationValues:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        description:
-          type:
-          - 'null'
-          - string
-        featureSpecs:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/CanvasFeatureSpec'
-            - $ref: '#/components/schemas/AssayRunFeatureSpec'
-            - $ref: '#/components/schemas/AppHomepageFeatureSpec'
-            description: Union of CanvasFeatureSpec, AssayRunFeatureSpec, AppHomepageFeatureSpec
-            discriminator:
-              propertyName: __typename
-          type: array
-        featureValues:
-          items:
-            $ref: '#/components/schemas/AssayRunFeatureValue'
-          type: array
-        id:
-          type: string
-        messageSubscriptions:
-          items:
-            $ref: '#/components/schemas/AppMessageSubscription'
-          type: array
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        publicKey:
-          type:
-          - 'null'
-          - string
-        versionNumber:
-          type:
-          - 'null'
-          - string
-        webhookUrl:
-          type:
-          - 'null'
-          - string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
       type: object
     Principal:
       anyOf:
@@ -1176,17 +1037,72 @@ components:
       - $ref: '#/components/schemas/ServicePrincipal'
       - $ref: '#/components/schemas/User'
       discriminator:
+        mapping:
+          AppInstallation: '#/components/schemas/AppInstallation'
+          LegacyAppInstallation: '#/components/schemas/LegacyAppInstallation'
+          ServicePrincipal: '#/components/schemas/ServicePrincipal'
+          User: '#/components/schemas/User'
         propertyName: __typename
       type: object
-    DateAppConfigSpec:
-      description: Specifies that an app configuration field should accept a date value.
+    Worksheet:
+      description: 'A structured document container used to organize and execute procedural work within
+
+        Benchling''s notebook system. Worksheets contain ordered `WorksheetStepGroup`s, each
+
+        holding `WorksheetStep`s that represent individual tasks or documentation units. Each
+
+        step has an associated `Document` for capturing content. Worksheets support workflow
+
+        integration through associated `WorkflowTask`s, can be linked to `Study` objects for
+
+        experimental context, and include review capabilities (see `Review`). They are stored
+
+        within `Folder`s and support archival.'
       properties:
         __typename:
           type: string
-        requiredConfig:
+        applicableReviewProcesses:
+          format: uri
+          type: string
+        archiveReason:
           type:
           - 'null'
-          - boolean
+          - string
+        archived:
+          type: boolean
+        authors:
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        folder:
+          $ref: '#/components/schemas/FolderRef'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        review:
+          oneOf:
+          - $ref: '#/components/schemas/ReviewRef'
+          - type: 'null'
+        reviewSource:
+          $ref: '#/components/schemas/ProjectRef'
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
       type: object
     AppInstallation:
       description: 'Represents an installed Benchling App on a tenant, created from an `AppDefinitionVersion`.
@@ -1229,6 +1145,22 @@ components:
         name:
           type: string
       type: object
+    AppConfigDropdownOption:
+      description: Defines an option within a dropdown-type app configuration field.
+      properties:
+        __typename:
+          type: string
+        description:
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        requiredConfig:
+          type:
+          - 'null'
+          - boolean
+      type: object
     FolderRef:
       properties:
         __typename:
@@ -1237,10 +1169,14 @@ components:
           format: api_id
           type: string
       type: object
-    AppConfigOption:
-      description: 'Defines a configuration option in an app''s configuration schema. Each option has a name,
+    ArrayAppConfigOption:
+      description: 'A config option nested within an array-type app configuration field. Structurally
 
-        optional description, and a configSpec defining the expected value type and validation.'
+        identical to AppConfigOption — it has a name and a configSpec — but its configSpec
+
+        accepts the same config types as the top level except nested arrays (see
+
+        ArrayAppConfigElementSpec).'
       properties:
         __typename:
           type: string
@@ -1254,14 +1190,27 @@ components:
           - $ref: '#/components/schemas/DateAppConfigSpec'
           - $ref: '#/components/schemas/DateTimeAppConfigSpec'
           - $ref: '#/components/schemas/JsonAppConfigSpec'
-          - $ref: '#/components/schemas/ArrayAppConfigSpec'
           - $ref: '#/components/schemas/DropdownAppConfigSpec'
           - $ref: '#/components/schemas/EntitySchemaAppConfigSpec'
           - $ref: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
           - $ref: '#/components/schemas/SchemaAppConfigSpec'
           - $ref: '#/components/schemas/ResourceAppConfigSpec'
-          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, ArrayAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
+          description: Union of BooleanAppConfigSpec, IntegerAppConfigSpec, FloatAppConfigSpec, TextAppConfigSpec, SecureTextAppConfigSpec, DateAppConfigSpec, DateTimeAppConfigSpec, JsonAppConfigSpec, DropdownAppConfigSpec, EntitySchemaAppConfigSpec, WorkflowTaskSchemaAppConfigSpec, SchemaAppConfigSpec, ResourceAppConfigSpec
           discriminator:
+            mapping:
+              BooleanAppConfigSpec: '#/components/schemas/BooleanAppConfigSpec'
+              DateAppConfigSpec: '#/components/schemas/DateAppConfigSpec'
+              DateTimeAppConfigSpec: '#/components/schemas/DateTimeAppConfigSpec'
+              DropdownAppConfigSpec: '#/components/schemas/DropdownAppConfigSpec'
+              EntitySchemaAppConfigSpec: '#/components/schemas/EntitySchemaAppConfigSpec'
+              FloatAppConfigSpec: '#/components/schemas/FloatAppConfigSpec'
+              IntegerAppConfigSpec: '#/components/schemas/IntegerAppConfigSpec'
+              JsonAppConfigSpec: '#/components/schemas/JsonAppConfigSpec'
+              ResourceAppConfigSpec: '#/components/schemas/ResourceAppConfigSpec'
+              SchemaAppConfigSpec: '#/components/schemas/SchemaAppConfigSpec'
+              SecureTextAppConfigSpec: '#/components/schemas/SecureTextAppConfigSpec'
+              TextAppConfigSpec: '#/components/schemas/TextAppConfigSpec'
+              WorkflowTaskSchemaAppConfigSpec: '#/components/schemas/WorkflowTaskSchemaAppConfigSpec'
             propertyName: __typename
         description:
           type:
@@ -1270,16 +1219,118 @@ components:
         name:
           type: string
       type: object
-    AppHomepageFeatureSpec:
-      description: 'Defines a homepage feature for a Benchling App, providing a dedicated landing page within
+    ReviewProcessVersion:
+      description: 'A specific version of a ReviewProcess configuration. Review processes are versioned
 
-        the Benchling application for the app''s functionality.'
+        to allow changes to review requirements while preserving the rules that apply to
+
+        in-progress reviews. Each version defines the process type (self-review, parallel,
+
+        or sequential), the terminal state when complete, and the ordered list of
+
+        `ReviewProcessStage`s that must be completed.'
+      properties:
+        __typename:
+          type: string
+        processType:
+          description: Type of this review process
+          enum:
+          - SELF_REVIEW
+          - PARALLEL
+          - SEQUENTIAL
+          - null
+          type:
+          - 'null'
+          - string
+        reviewStages:
+          description: List of all stages the review must go through
+          items:
+            $ref: '#/components/schemas/ReviewProcessStageRef'
+          type: array
+        terminalState:
+          description: Stage of the reviewable at the end of the review process
+          enum:
+          - APPROVED
+          - COMPLETED
+          - ACCEPTED
+          - REVIEWED
+          - WITNESSED
+          - SELF_REVIEWED
+          type: string
+      type: object
+    AssayRunFeatureValue:
+      description: 'Links an app''s assay run feature to a specific resource (typically a run schema) on a
+
+        tenant. The featureId identifies the feature from the app definition, and resourceId
+
+        references the tenant-specific resource it''s bound to.'
+      properties:
+        __typename:
+          type: string
+        featureId:
+          description: Developer-specified feature ID as defined in the app manifest / app definition version
+          type: string
+        resourceId:
+          type:
+          - 'null'
+          - string
+      type: object
+    AppConfigWorkflowTaskSchemaOutput:
+      description: Defines the output field structure for a workflow task schema configuration.
+      properties:
+        __typename:
+          type: string
+        fieldDefinitions:
+          oneOf:
+          - items:
+              $ref: '#/components/schemas/AppConfigFieldDefinition'
+            type: array
+          - type: 'null'
+      type: object
+    CanvasFeatureSpec:
+      description: 'Defines a canvas feature for a Benchling App, which provides an embedded UI surface within
+
+        entries or templates. Canvases allow apps to render custom interactive content.'
       properties:
         __typename:
           type: string
         featureId:
           type: string
+        locations:
+          oneOf:
+          - items:
+              enum:
+              - ENTRY
+              - ENTRY_TEMPLATE
+              - APP_HOME
+              type: string
+            type: array
+          - type: 'null'
         name:
+          type: string
+      type: object
+    PrincipalUnpaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Principal'
+          type: array
+      type: object
+    ReviewProcessStageRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
           type: string
       type: object
     DropdownAppConfigSpec:
@@ -1298,156 +1349,191 @@ components:
           - 'null'
           - boolean
       type: object
-    User:
-      description: 'Represents a human user in Benchling who can log in, perform actions, and own data.
+    SecureTextAppConfigSpec:
+      description: 'Specifies that an app configuration field should accept secure (encrypted) text.
 
-        Users belong to one or more Organizations and may be members of Teams within those
-
-        organizations. As an Owner, users can own Projects, Folders, and other resources.
-
-        As a Principal, users can be assigned as reviewers, authors, or collaborators on
-
-        various items. Users have attributes like email and username for identification.
-
-        Users are distinct from `ServicePrincipal`, which represents non-human service
-
-        accounts used for integrations.'
+        Used for sensitive data like API keys or credentials.'
       properties:
         __typename:
           type: string
-        createdAt:
-          format: datetime
-          type: string
-        email:
-          type: string
-        id:
-          type: string
-        lastSeen:
-          format: datetime
+        requiredConfig:
           type:
           - 'null'
-          - string
-        modifiedAt:
-          format: datetime
+          - boolean
+      type: object
+    AssayRunFeatureSpec:
+      description: 'Defines an assay run feature for a Benchling App, allowing the app to process or generate
+
+        lab automation run data.'
+      properties:
+        __typename:
+          type: string
+        featureId:
           type: string
         name:
-          type:
-          - 'null'
-          - string
-        status:
-          enum:
-          - ACTIVE
-          - SUSPENDED
-          type: string
-        username:
           type: string
       type: object
-    WorkflowTaskSchemaAppConfigSpec:
-      description: 'Specifies that an app configuration field should reference a workflow task schema.
-
-        Kept separate from SchemaAppConfigSpec because it supports output field definitions.'
-      properties:
-        __typename:
+  parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
           type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-        output:
-          description: Output field definitions for the workflow task schema.
-          oneOf:
-          - $ref: '#/components/schemas/AppConfigWorkflowTaskSchemaOutput'
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AppConfigDropdownOption:
-      description: Defines an option within a dropdown-type app configuration field.
-      properties:
-        __typename:
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
           type: string
-        description:
-          type:
-          - 'null'
-          - string
-        name:
+        type: array
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
           type: string
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    TextAppConfigSpec:
-      description: Specifies that an app configuration field should accept a text string.
-      properties:
-        __typename:
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
           type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these strings.
-          oneOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    AppConfigWorkflowTaskSchemaOutput:
-      description: Defines the output field structure for a workflow task schema configuration.
-      properties:
-        __typename:
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
           type: string
-        fieldDefinitions:
-          oneOf:
-          - items:
-              $ref: '#/components/schemas/AppConfigFieldDefinition'
-            type: array
-          - type: 'null'
-      type: object
-    IntegerAppConfigSpec:
-      description: Specifies that an app configuration field should accept an integer value.
-      properties:
-        __typename:
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    creator.anyOf:
+      description: Restricts results to those created by any of the specified user IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: creator.anyOf
+      schema:
+        items:
           type: string
-        enum:
-          description: Optional enum constraint — if present, the value must be one of these integers.
-          oneOf:
-          - items:
-              type: integer
-            type: array
-          - type: 'null'
-        requiredConfig:
-          type:
-          - 'null'
-          - boolean
-      type: object
-    OrganizationRef:
-      properties:
-        __typename:
+        maxItems: 100
+        type: array
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
           type: string
-        id:
-          format: api_id
-          type: string
-      type: object
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   responses:
     TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -1460,6 +1546,12 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -1467,6 +1559,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

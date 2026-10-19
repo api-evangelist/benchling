@@ -35,6 +35,7 @@ tags:
     like ACCEPTED or REJECTED.'
   name: Review
   x-bnch-organization: Benchling
+  x-displayName: Review
 paths:
   /review/items:
     get:
@@ -87,7 +88,6 @@ paths:
       summary: List Review items
       tags:
       - Review
-      x-bnch-rate-limit-tier: 4
   /review/{review_id}:
     get:
       description: Get a single Review by ID.
@@ -128,19 +128,34 @@ paths:
       summary: Get Review by ID
       tags:
       - Review
-      x-bnch-rate-limit-tier: 5
   /review/{review_id}/review-history/items:
     get:
       description: List ReviewChange items.
       operationId: Review.reviewHistory.List
       parameters:
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/reviewId.anyOf'
+      - $ref: '#/components/parameters/reviewableId.anyOf'
       - description: ID of the Review.
         in: path
         name: review_id
         required: true
         schema:
+          type: string
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is createdAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: createdAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
           type: string
       - description: Set to true to access beta operations via /api/v3.
         in: header
@@ -169,50 +184,16 @@ paths:
       summary: List ReviewChange items
       tags:
       - Review
-      x-bnch-rate-limit-tier: 4
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
       in: query
-      name: createdAt.lte
+      name: pageSize
       schema:
-        format: datetime
-        type: string
-    omit:
-      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
-      explode: false
-      in: query
-      name: omit
-      schema:
-        items:
-          type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    id.anyOf:
-      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
-      explode: false
-      in: query
-      name: id.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
+        type: integer
     reviewableId.anyOf:
-      description: Restricts results to review changes for items with any of the specified reviewable item IDs (e.g. entry IDs like etr_...). Comma-separated list.
+      description: Restricts results to any of the specified reviewable item IDs (e.g. entry or worksheet API IDs). Comma-separated list.
       explode: false
       in: query
       name: reviewableId.anyOf
@@ -221,10 +202,33 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+    nextToken:
+      description: Token for pagination
       in: query
-      name: createdAt.gt
+      name: nextToken
+      schema:
+        type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    reviewId.anyOf:
+      description: Restricts results to review changes for any of the specified Review API IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: reviewId.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -237,102 +241,40 @@ components:
         items:
           type: string
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
       in: query
-      name: pageSize
+      name: omit
       schema:
-        type: integer
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+        items:
+          type: string
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
       in: query
-      name: createdAt.gte
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
       schema:
         format: datetime
         type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
   schemas:
-    ReviewRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    Reviewer:
-      description: 'Represents a user assigned to review a specific stage of an Entry''s review process.
-
-        Each Reviewer is associated with a Review and tracks whether they have completed their
-
-        assigned action. The reviewer status progresses from BLOCKED (if sequential and waiting)
-
-        to PENDING (can act) to FINISHED or REJECTED. Reviewers are assigned based on the
-
-        `ReviewProcessStage` configuration and its `ReviewerType` requirements.'
-      properties:
-        __typename:
-          type: string
-        reviewProcessStageName:
-          description: Name of review process stage reviewer is meant to review
-          type:
-          - 'null'
-          - string
-        reviewerStatus:
-          description: The current status of this reviewer (FINISHED, PENDING, etc.)
-          enum:
-          - BLOCKED
-          - PENDING
-          - FINISHED
-          - REJECTED
-          - null
-          type:
-          - 'null'
-          - string
-        user:
-          description: User this reviewer represents
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     ReviewProcessRef:
       properties:
         __typename:
@@ -341,36 +283,25 @@ components:
           format: api_id
           type: string
       type: object
-    ReviewSnapshot:
-      description: 'A point-in-time snapshot of a reviewable item (e.g. an Entry) captured when a
-
-        review action was taken. Snapshots are a configurable feature enabled via
-
-        ENABLE_ELN_REVIEW_SNAPSHOTS. When status is SUCCEEDED, a time-limited downloadUrl is available.'
+    ReviewRef:
       properties:
         __typename:
           type: string
-        downloadUrl:
-          description: URL to download the snapshot export. Only present when status is SUCCEEDED.
+        id:
+          format: api_id
+          type: string
+      type: object
+    ReviewChangePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ReviewChange'
+          type: array
+        nextToken:
           type:
-          - 'null'
           - string
-        size:
-          description: Size of the snapshot export in bytes. Only present when status is SUCCEEDED.
-          type:
           - 'null'
-          - integer
-        status:
-          description: Status of the snapshot export
-          enum:
-          - PENDING
-          - RUNNING
-          - SUCCEEDED
-          - FAILED
-          - null
-          type:
-          - 'null'
-          - string
       type: object
     InternalServerError:
       properties:
@@ -398,7 +329,7 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -406,6 +337,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -422,64 +355,31 @@ components:
       - status
       - instance
       type: object
-    ReviewChange:
-      description: 'Represents a single action taken within a review. ReviewChanges form an ordered
-
-        history of all changes made to a review, including status transitions,
-
-        reviewer assignments, and comments. Each ReviewChange records the action taken,
-
-        any associated comment, whether it was electronically signed, and an optional
-
-        point-in-time snapshot.'
+    GeneralError:
       properties:
-        __typename:
-          type: string
-        action:
-          description: The action taken
-          enum:
-          - SEND_FOR_REVIEW
-          - REQUEST_CHANGES
-          - APPROVE
-          - REJECT
-          - RETRACT
-          - ACCEPT
-          - COMPLETE
-          - SIGN
-          - REVIEW
-          - WITNESS
-          - SELF_REVIEW
-          - COMMENT
-          - REASSIGN
-          - null
+        detail:
           type:
           - 'null'
           - string
-        comment:
-          description: Optional comment associated with this change
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
           type:
           - 'null'
           - string
-        createdAt:
-          description: When this change occurred
-          format: datetime
+        type:
           type: string
-        eSigned:
-          description: Whether this change was electronically signed
-          type:
-          - 'null'
-          - boolean
-        id:
-          description: ID of the review change
-          type: string
-        review:
-          $ref: '#/components/schemas/ReviewRef'
-          description: The review this change belongs to
-        snapshot:
-          description: A point-in-time snapshot of the reviewable item taken at the time of this action
-          oneOf:
-          - $ref: '#/components/schemas/ReviewSnapshot'
-          - type: 'null'
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
       type: object
     Review:
       description: 'Represents an active or completed review of a reviewable item such as an Entry or
@@ -551,6 +451,140 @@ components:
           - 'null'
           - string
       type: object
+    ReviewSnapshot:
+      description: 'A point-in-time snapshot of a reviewable item (e.g. an Entry) captured when a
+
+        review action was taken. Snapshots are a configurable feature enabled via
+
+        ENABLE_ELN_REVIEW_SNAPSHOTS. When status is SUCCEEDED, a time-limited downloadUrl is available.'
+      properties:
+        __typename:
+          type: string
+        downloadUrl:
+          description: URL to download the snapshot export. Only present when status is SUCCEEDED.
+          type:
+          - 'null'
+          - string
+        size:
+          description: Size of the snapshot export in bytes. Only present when status is SUCCEEDED.
+          type:
+          - 'null'
+          - integer
+        status:
+          description: Status of the snapshot export
+          enum:
+          - PENDING
+          - RUNNING
+          - SUCCEEDED
+          - FAILED
+          - null
+          type:
+          - 'null'
+          - string
+      type: object
+    ReviewChange:
+      description: 'Represents a single action taken within a review. ReviewChanges form an ordered
+
+        history of all changes made to a review, including status transitions,
+
+        reviewer assignments, and comments. Each ReviewChange records the action taken,
+
+        any associated comment, whether it was electronically signed, and an optional
+
+        point-in-time snapshot.'
+      properties:
+        __typename:
+          type: string
+        action:
+          description: The action taken
+          enum:
+          - SEND_FOR_REVIEW
+          - REQUEST_CHANGES
+          - APPROVE
+          - REJECT
+          - RETRACT
+          - ACCEPT
+          - COMPLETE
+          - COMPLETE_CYCLE
+          - SIGN
+          - REVIEW
+          - WITNESS
+          - SELF_REVIEW
+          - COMMENT
+          - REASSIGN
+          - null
+          type:
+          - 'null'
+          - string
+        comment:
+          description: Optional comment associated with this change
+          type:
+          - 'null'
+          - string
+        createdAt:
+          description: When this change occurred
+          format: datetime
+          type: string
+        eSigned:
+          description: Whether this change was electronically signed
+          type:
+          - 'null'
+          - boolean
+        id:
+          description: ID of the review change
+          type: string
+        review:
+          $ref: '#/components/schemas/ReviewRef'
+          description: The review this change belongs to
+        snapshot:
+          description: A point-in-time snapshot of the reviewable item taken at the time of this action
+          oneOf:
+          - $ref: '#/components/schemas/ReviewSnapshot'
+          - type: 'null'
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    Reviewer:
+      description: 'Represents a user assigned to review a specific stage of an Entry''s review process.
+
+        Each Reviewer is associated with a Review and tracks whether they have completed their
+
+        assigned action. The reviewer status progresses from BLOCKED (if sequential and waiting)
+
+        to PENDING (can act) to FINISHED or REJECTED. Reviewers are assigned based on the
+
+        `ReviewProcessStage` configuration and its `ReviewerType` requirements.'
+      properties:
+        __typename:
+          type: string
+        reviewProcessStageName:
+          description: Name of review process stage reviewer is meant to review
+          type:
+          - 'null'
+          - string
+        reviewerStatus:
+          description: The current status of this reviewer (FINISHED, PENDING, etc.)
+          enum:
+          - BLOCKED
+          - PENDING
+          - FINISHED
+          - REJECTED
+          - null
+          type:
+          - 'null'
+          - string
+        user:
+          description: User this reviewer represents
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+      type: object
     ReviewPaginatedList:
       additionalProperties: false
       properties:
@@ -559,19 +593,54 @@ components:
             $ref: '#/components/schemas/Review'
           type: array
         nextToken:
-          type: string
+          type:
+          - string
+          - 'null'
       type: object
-    ReviewChangePaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/ReviewChange'
-          type: array
-        nextToken:
-          type: string
-      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

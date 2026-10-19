@@ -1,0 +1,292 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Automation Step Data API
+  version: 2.0.0
+  description: 'Represents actual data attached to an input or output slot of an AutomationStep during execution.
+
+    Each AutomationStepData corresponds to a defined data shape (input or output) on the step''s
+
+    configuration and holds references to the raw data (see `RawStepData`) that fills that slot.
+
+    The name field identifies which data shape this instance fills. Multiple raw data items can
+
+    be attached when the data shape allows multiple values (isMulti). AutomationStepData enables
+
+    data flow between pipeline steps by tracking data lineage and provenance through the
+
+    provenanceUri field.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'Represents actual data attached to an input or output slot of an AutomationStep during execution.
+
+    Each AutomationStepData corresponds to a defined data shape (input or output) on the step''s
+
+    configuration and holds references to the raw data (see `RawStepData`) that fills that slot.
+
+    The name field identifies which data shape this instance fills. Multiple raw data items can
+
+    be attached when the data shape allows multiple values (isMulti). AutomationStepData enables
+
+    data flow between pipeline steps by tracking data lineage and provenance through the
+
+    provenanceUri field.'
+  name: AutomationStepData
+  x-bnch-organization: Benchling
+  x-displayName: Automation Step Data
+paths:
+  /automation-step-data/{automation_step_data_id}:
+    get:
+      description: Get a single AutomationStepData by ID.
+      operationId: AutomationStepData.Get
+      parameters:
+      - description: ID of the AutomationStepData.
+        in: path
+        name: automation_step_data_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomationStepData'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get AutomationStepData by ID
+      tags:
+      - AutomationStepData
+components:
+  schemas:
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AutomationStepData:
+      description: 'Represents actual data attached to an input or output slot of an AutomationStep during execution.
+
+        Each AutomationStepData corresponds to a defined data shape (input or output) on the step''s
+
+        configuration and holds references to the raw data (see `RawStepData`) that fills that slot.
+
+        The name field identifies which data shape this instance fills. Multiple raw data items can
+
+        be attached when the data shape allows multiple values (isMulti). AutomationStepData enables
+
+        data flow between pipeline steps by tracking data lineage and provenance through the
+
+        provenanceUri field.'
+      properties:
+        __typename:
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        parentStep:
+          $ref: '#/components/schemas/AutomationStepRef'
+        rawDatas:
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of Chart, DataFrame, ScratchFile, PlateRecord
+          type: array
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AutomationStepRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ObjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+  parameters:
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+  securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

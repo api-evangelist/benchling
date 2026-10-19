@@ -449,35 +449,6 @@ paths:
       - Feature Libraries
 components:
   schemas:
-    FeatureLibraryBase:
-      properties:
-        description:
-          description: The description for the feature library
-          type: string
-        name:
-          description: The name of the feature library
-          type: string
-      type: object
-    Pagination:
-      properties:
-        nextToken:
-          type: string
-    BadRequestError:
-      properties:
-        error:
-          allOf:
-          - $ref: '#/components/schemas/BaseError'
-          - properties:
-              type:
-                enum:
-                - invalid_request_error
-                type: string
-      type: object
-    AsyncTaskLink:
-      properties:
-        taskId:
-          type: string
-      type: object
     FeatureLibrary:
       allOf:
       - $ref: '#/components/schemas/FeatureLibraryBase'
@@ -504,35 +475,33 @@ components:
             type: string
       description: A feature library
       type: object
-    FeatureLibrariesPaginatedList:
-      allOf:
-      - $ref: '#/components/schemas/Pagination'
-      - properties:
-          featureLibraries:
-            items:
-              $ref: '#/components/schemas/FeatureLibrary'
-            type: array
-      description: A paginated list of feature libraries
+    AsyncTaskLink:
+      properties:
+        taskId:
+          type: string
       type: object
-    FeatureLibraryCreate:
+    FeatureLibraryUpdate:
       additionalProperties: false
       allOf:
       - $ref: '#/components/schemas/FeatureLibraryBase'
-      - properties:
-          organizationId:
-            description: 'The organization that will own the feature library. The requesting user must be an administrator of the organization. If unspecified and the organization allows personal ownables, then the requesting user will own the feature library
-
-              '
-            example: ent_a0SApq3z
-            type: string
-      - required:
-        - name
-        - description
-      description: Inputs for creating a feature library
+      description: Inputs for updating a feature library
       type: object
-    FeatureBulkCreate:
+    Feature:
       allOf:
-      - $ref: '#/components/schemas/FeatureCreate'
+      - $ref: '#/components/schemas/FeatureBase'
+      - properties:
+          id:
+            description: The id of the feature
+            example: feat_4YVqX98z
+            type: string
+          matchType:
+            description: The match type of the feature. Used to determine how auto-annotate matches are made.
+            enum:
+            - nucleotide
+            - protein
+            type: string
+      description: A feature from a feature library
+      type: object
     FeatureCreate:
       additionalProperties: false
       allOf:
@@ -552,29 +521,36 @@ components:
         - featureLibraryId
       description: Inputs for a new feature
       type: object
-    PartySummary:
+    Pagination:
       properties:
-        handle:
+        nextToken:
           type: string
-        id:
-          type: string
-        name:
-          type: string
-      type: object
-    FeatureLibraryUpdate:
-      additionalProperties: false
+    UserSummary:
       allOf:
-      - $ref: '#/components/schemas/FeatureLibraryBase'
-      description: Inputs for updating a feature library
-      type: object
-    BaseError:
+      - $ref: '#/components/schemas/PartySummary'
+      - example:
+          handle: lpasteur
+          id: ent_a0SApq3z
+          name: Louis Pasteur
+    FeaturesBulkCreateRequest:
+      additionalProperties: false
+      description: Inputs for bulk creating a new feature
       properties:
-        message:
-          type: string
-        type:
-          type: string
-        userMessage:
-          type: string
+        features:
+          items:
+            $ref: '#/components/schemas/FeatureBulkCreate'
+          maxItems: 1000
+          type: array
+      type: object
+    FeatureLibrariesPaginatedList:
+      allOf:
+      - $ref: '#/components/schemas/Pagination'
+      - properties:
+          featureLibraries:
+            items:
+              $ref: '#/components/schemas/FeatureLibrary'
+            type: array
+      description: A paginated list of feature libraries
       type: object
     Organization:
       properties:
@@ -596,15 +572,14 @@ components:
             type: array
       description: A paginated list of features
       type: object
-    FeaturesBulkCreateRequest:
-      additionalProperties: false
-      description: Inputs for bulk creating a new feature
+    FeatureLibraryBase:
       properties:
-        features:
-          items:
-            $ref: '#/components/schemas/FeatureBulkCreate'
-          maxItems: 1000
-          type: array
+        description:
+          description: The description for the feature library
+          type: string
+        name:
+          description: The name of the feature library
+          type: string
       type: object
     FeatureBase:
       properties:
@@ -630,6 +605,60 @@ components:
           description: The pattern used for matching during auto-annotation.
           type: string
       type: object
+    FeatureBulkCreate:
+      allOf:
+      - $ref: '#/components/schemas/FeatureCreate'
+    PartySummary:
+      properties:
+        handle:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    BadRequestError:
+      properties:
+        error:
+          allOf:
+          - $ref: '#/components/schemas/BaseError'
+          - properties:
+              type:
+                enum:
+                - invalid_request_error
+                type: string
+      type: object
+    FeatureLibraryCreate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureLibraryBase'
+      - properties:
+          organizationId:
+            description: 'The organization that will own the feature library. The requesting user must be an administrator of the organization. If unspecified and the organization allows personal ownables, then the requesting user will own the feature library
+
+              '
+            example: ent_a0SApq3z
+            type: string
+      - required:
+        - name
+        - description
+      description: Inputs for creating a feature library
+      type: object
+    FeatureUpdate:
+      additionalProperties: false
+      allOf:
+      - $ref: '#/components/schemas/FeatureBase'
+      description: Inputs for updating a feature
+      type: object
+    BaseError:
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+        userMessage:
+          type: string
+      type: object
     NotFoundError:
       properties:
         error:
@@ -642,35 +671,6 @@ components:
                 enum:
                 - invalid_request_error
                 type: string
-      type: object
-    Feature:
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      - properties:
-          id:
-            description: The id of the feature
-            example: feat_4YVqX98z
-            type: string
-          matchType:
-            description: The match type of the feature. Used to determine how auto-annotate matches are made.
-            enum:
-            - nucleotide
-            - protein
-            type: string
-      description: A feature from a feature library
-      type: object
-    UserSummary:
-      allOf:
-      - $ref: '#/components/schemas/PartySummary'
-      - example:
-          handle: lpasteur
-          id: ent_a0SApq3z
-          name: Louis Pasteur
-    FeatureUpdate:
-      additionalProperties: false
-      allOf:
-      - $ref: '#/components/schemas/FeatureBase'
-      description: Inputs for updating a feature
       type: object
   securitySchemes:
     basicApiKeyAuth:

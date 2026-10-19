@@ -1,0 +1,832 @@
+openapi: 3.2.0
+info:
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Benchling Salt API
+  version: 2.0.0
+  description: 'A Salt is an ionic compound used to represent the salt form of a chemical compound in a
+
+    tenant''s salt library. Salts are referenced when creating molecules to describe the final
+
+    form of a compound (e.g., hydrochloride, sulfate). Each salt has a required SMILES
+
+    representing the neutral form, from which the molecular formula is derived.'
+servers:
+- url: /api/v3
+security:
+- oAuth: []
+- basicApiKeyAuth: []
+tags:
+- description: 'A Salt is an ionic compound used to represent the salt form of a chemical compound in a
+
+    tenant''s salt library. Salts are referenced when creating molecules to describe the final
+
+    form of a compound (e.g., hydrochloride, sulfate). Each salt has a required SMILES
+
+    representing the neutral form, from which the molecular formula is derived.'
+  name: Salt
+  x-bnch-organization: Benchling
+  x-displayName: Salt
+paths:
+  /salt:
+    post:
+      description: 'Create a salt in the tenant''s salt library.
+
+
+        Salts and solvents require the salt/solvent forms feature to be enabled on your tenant; contact your Benchling representative to turn it on. Creating a salt requires tenant admin permissions. The salt structure is immutable after creation. The combined salt and solvent library is limited to 2000 non-archived items, and each structure is limited to 50 atoms. An optional `code` must be unique (case-insensitive) across all salts and solvents in the tenant. Within the salt library, names must be unique (case-insensitive) and each structure may appear only once; a solvent may reuse a salt''s name or structure. Archived salts still reserve their name and structure, so an archived match must be unarchived rather than recreated.'
+      operationId: Salt.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaltInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Salt'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create Salt
+      tags:
+      - Salt
+  /salt/items:
+    get:
+      description: List Salt items.
+      operationId: Salt.List
+      parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/createdAt.gt'
+      - $ref: '#/components/parameters/createdAt.gte'
+      - $ref: '#/components/parameters/createdAt.lt'
+      - $ref: '#/components/parameters/createdAt.lte'
+      - $ref: '#/components/parameters/id.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/name.anyOf'
+      - $ref: '#/components/parameters/name.anyOf.caseSensitive'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/pageSize'
+      - $ref: '#/components/parameters/returning'
+      - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - createdAt:asc
+          - createdAt:desc
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaltPaginatedList'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: List Salt items
+      tags:
+      - Salt
+  /salt/{salt_id}:
+    get:
+      description: Get a single Salt by ID.
+      operationId: Salt.Get
+      parameters:
+      - description: ID of the Salt.
+        in: path
+        name: salt_id
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/returning'
+      - $ref: '#/components/parameters/omit'
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Salt'
+          description: OK
+          headers: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Get Salt by ID
+      tags:
+      - Salt
+    patch:
+      description: Update a salt's name or code, or archive/unarchive it via the `archived` field. The salt structure is immutable and cannot be changed after creation. A new name must be unique (case-insensitive) within the salt library.
+      operationId: Salt.Update
+      parameters:
+      - description: ID of the Salt.
+        in: path
+        name: salt_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSaltInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Salt'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update Salt
+      tags:
+      - Salt
+  /salt:batch-create:
+    post:
+      description: Batch create Salt synchronously in one transaction. Maximum 4 items per request.
+      operationId: Salt.BatchCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateSaltInput'
+                  maxItems: 4
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Salt'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create Salt
+      tags:
+      - Salt
+  /salt:batch-update:
+    patch:
+      description: Batch update Salt synchronously in one transaction. Maximum 25 items per request.
+      operationId: Salt.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateSaltInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Salt'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update Salt
+      tags:
+      - Salt
+  /salt:bulk-create:
+    post:
+      description: 'Create multiple salts in a single request.
+
+
+        Salts and solvents require the salt/solvent forms feature to be enabled on your tenant; contact your Benchling representative to turn it on. Creating a salt requires tenant admin permissions. The salt structure is immutable after creation. The combined salt and solvent library is limited to 2000 non-archived items, and each structure is limited to 50 atoms. An optional `code` must be unique (case-insensitive) across all salts and solvents in the tenant. Within the salt library, names must be unique (case-insensitive) and each structure may appear only once; a solvent may reuse a salt''s name or structure. Archived salts still reserve their name and structure, so an archived match must be unarchived rather than recreated.'
+      operationId: Salt.BulkCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create Salt
+      tags:
+      - Salt
+  /salt:bulk-update:
+    patch:
+      description: Bulk update Salt.
+      operationId: Salt.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update Salt
+      tags:
+      - Salt
+components:
+  parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
+    omit:
+      description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
+      explode: false
+      in: query
+      name: omit
+      schema:
+        items:
+          type: string
+        type: array
+    name.anyOf.caseSensitive:
+      description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf.caseSensitive
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    id.anyOf:
+      description: Restricts results to those matching any of the specified IDs. Comma-separated list.
+      explode: false
+      in: query
+      name: id.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: modifiedAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: createdAt.gt
+      schema:
+        format: datetime
+        type: string
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+      explode: false
+      in: query
+      name: name.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 100
+        type: array
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: createdAt.lt
+      schema:
+        format: datetime
+        type: string
+  schemas:
+    Salt:
+      description: 'A Salt is an ionic compound used to represent the salt form of a chemical compound in a
+
+        tenant''s salt library. Salts are referenced when creating molecules to describe the final
+
+        form of a compound (e.g., hydrochloride, sulfate). Each salt has a required SMILES
+
+        representing the neutral form, from which the molecular formula is derived.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        calculatedMolecularWeight:
+          description: The molecular weight of the salt.
+          type:
+          - 'null'
+          - number
+        canonicalSmiles:
+          description: The SMILES representation of the salt after standardization.
+          type: string
+        code:
+          description: 'Optional configurable identifier for this salt (e.g., "HCl", "MS"). Unique across
+
+            both salts and solvents within a tenant.'
+          type:
+          - 'null'
+          - string
+        createdAt:
+          format: datetime
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        molecularFormula:
+          description: The molecular formula (e.g., "HCl").
+          type: string
+        molfile:
+          description: The molfile representation of the salt.
+          type: string
+        name:
+          type: string
+      type: object
+    InternalServerError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        errorId:
+          type: string
+        instance:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    CreateSaltInput:
+      additionalProperties: false
+      example:
+        code: HCl
+        name: Hydrochloride
+        smiles: Cl
+      properties:
+        code:
+          description: Optional configurable identifier for this salt (e.g., "HCl"). Must be unique (case-insensitive) across all salts and solvents in the tenant.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The name of the salt. Must be unique (case-insensitive) within the salt library.
+          type: string
+        smiles:
+          description: The SMILES of the salt's neutral form. The canonical SMILES and molecular formula are derived from it. Immutable after creation.
+          type: string
+      required:
+      - name
+      - smiles
+      type: object
+    UpdateSaltInput:
+      additionalProperties: false
+      example:
+        code: HCl
+        name: Hydrochloride
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        code:
+          description: Configurable identifier for this salt. Must be unique (case-insensitive) across all salts and solvents in the tenant.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The name of the salt. Must be unique (case-insensitive) within the salt library.
+          type: string
+      type: object
+    SaltPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Salt'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    UpdateSaltInputWithPathParams:
+      additionalProperties: false
+      example:
+        code: HCl
+        id: slt_Xk9mLpQr
+        name: Hydrochloride
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        code:
+          description: Configurable identifier for this salt. Must be unique (case-insensitive) across all salts and solvents in the tenant.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        name:
+          description: The name of the salt. Must be unique (case-insensitive) within the salt library.
+          type: string
+      required:
+      - id
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
+  securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
+    basicApiKeyAuth:
+      description: Use issued API key for standard access to the API
+      scheme: basic
+      type: http
+    basicClientIdSecretAuth:
+      description: Auth used as part of client credentials OAuth flow prior to receiving a bearer token.
+      scheme: basic
+      type: http
+    oAuth:
+      description: OAuth2 Client Credentials flow intended for service access
+      flows:
+        clientCredentials:
+          scopes: {}
+          tokenUrl: /oauth/token
+      type: oauth2

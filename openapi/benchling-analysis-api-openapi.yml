@@ -5,17 +5,56 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Benchling Analysis API
   version: 2.0.0
-  description: Operations for Analysis
+  description: Represents a data processing pipeline. Each Analysis contains a graph of AutomationSteps that works with data. An automation template (see `AutomationTemplate`) may be applied onto an analysis to provide a pre-configured graph of steps.
 servers:
 - url: /api/v3
 security:
 - oAuth: []
 - basicApiKeyAuth: []
 tags:
-- description: Operations for Analysis
+- description: Represents a data processing pipeline. Each Analysis contains a graph of AutomationSteps that works with data. An automation template (see `AutomationTemplate`) may be applied onto an analysis to provide a pre-configured graph of steps.
   name: Analysis
   x-bnch-organization: Benchling
+  x-displayName: Analysis
 paths:
+  /analysis:
+    post:
+      description: Create Analysis.
+      operationId: Analysis.Create
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnalysisInput'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analysis'
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Create Analysis
+      tags:
+      - Analysis
   /analysis/items:
     get:
       description: List Analysis items.
@@ -76,7 +115,6 @@ paths:
       summary: List Analysis items
       tags:
       - Analysis
-      x-bnch-rate-limit-tier: 4
   /analysis/{analysis_id}:
     get:
       description: Get a single Analysis by ID.
@@ -117,10 +155,52 @@ paths:
       summary: Get Analysis by ID
       tags:
       - Analysis
-      x-bnch-rate-limit-tier: 5
+    patch:
+      description: Update Analysis.
+      operationId: Analysis.Update
+      parameters:
+      - description: ID of the Analysis.
+        in: path
+        name: analysis_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAnalysisInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analysis'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update Analysis
+      tags:
+      - Analysis
   /analysis/{analysis_id}/steps/items:
     get:
-      description: List PipelineStep items.
+      description: List AutomationStep items.
       operationId: Analysis.steps.List
       parameters:
       - description: ID of the Analysis.
@@ -140,7 +220,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipelineStepUnpaginatedList'
+                $ref: '#/components/schemas/AutomationStepUnpaginatedList'
           description: OK
           headers: {}
         '400':
@@ -153,12 +233,350 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalServerError'
-      summary: List PipelineStep items
+      summary: List AutomationStep items
       tags:
       - Analysis
-      x-bnch-rate-limit-tier: 4
+  /analysis/{analysis_id}:apply-template:
+    post:
+      description: Apply a published automation template to an Analysis. Populates the Analysis with the template's pipeline steps, substituting the provided data frame and config variable bindings. The Analysis then runs asynchronously. The template must be published before it can be applied. Returns an async task link that can be polled for completion.
+      operationId: Analysis.ApplyTemplate
+      parameters:
+      - description: ID of the Analysis.
+        in: path
+        name: analysis_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyAutomationTemplateInput'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Apply an automation template
+      tags:
+      - Analysis
+  /analysis:batch-create:
+    post:
+      description: Batch create Analysis synchronously in one transaction. Maximum 25 items per request.
+      operationId: Analysis.BatchCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/CreateAnalysisInput'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Analysis'
+                    type: array
+                required:
+                - items
+                type: object
+          description: Created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch create Analysis
+      tags:
+      - Analysis
+  /analysis:batch-update:
+    patch:
+      description: Batch update Analysis synchronously in one transaction. Maximum 25 items per request.
+      operationId: Analysis.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdateAnalysisInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Analysis'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update Analysis
+      tags:
+      - Analysis
+  /analysis:bulk-create:
+    post:
+      description: Bulk create Analysis.
+      operationId: Analysis.BulkCreate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk create Analysis
+      tags:
+      - Analysis
+  /analysis:bulk-update:
+    patch:
+      description: Bulk update Analysis.
+      operationId: Analysis.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update Analysis
+      tags:
+      - Analysis
+  /tasks/analysis/apply-template/{task_id}:
+    get:
+      description: Poll status for Apply a published automation template to an Analysis. Populates the Analysis with the template's pipeline steps, substituting the provided data frame and config variable bindings. The Analysis then runs asynchronously. The template must be published before it can be applied. Returns an async task link that can be polled for completion..
+      operationId: Analysis.ApplyTemplate.Get
+      parameters:
+      - description: ID of the asynchronous task to poll.
+        in: path
+        name: task_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                  result:
+                    oneOf:
+                    - $ref: '#/components/schemas/Analysis'
+                    - type: 'null'
+                  status:
+                    enum:
+                    - NOT_STARTED
+                    - IN_PROGRESS
+                    - COMPLETED
+                    - FAILED
+                    type: string
+                required:
+                - status
+                - message
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Poll async task status
+      tags:
+      - Analysis
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -166,6 +584,22 @@ components:
       schema:
         format: datetime
         type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -174,22 +608,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -211,51 +629,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archiveReason.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 10
-        type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
-      in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -266,32 +643,20 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
@@ -300,14 +665,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -320,6 +686,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -327,24 +705,6 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   schemas:
-    AnalysisPaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/Analysis'
-          type: array
-        nextToken:
-          type: string
-      type: object
-    PrincipalRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -371,104 +731,8 @@ components:
       - status
       - instance
       type: object
-    PipelineRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    FolderRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    Analysis:
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        description:
-          type:
-          - 'null'
-          - string
-        folder:
-          $ref: '#/components/schemas/FolderRef'
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        statusCode:
-          enum:
-          - AI_PROPOSED
-          - BLOCKED
-          - FAILED
-          - HALTED
-          - RUNNING
-          - SUCCEEDED
-          - WAITING
-          type: string
-        steps:
-          format: uri
-          type: string
-        webUrl:
-          type: string
-      type: object
-    PipelineStep:
-      description: 'Represents a single operation node within a Pipeline''s directed acyclic graph (DAG). Each
-
-        step performs a specific transformation determined by its stepType (see `PipelineStepType`),
-
-        with configuration options stored in the config field. Steps receive data through
-
-        inputStepDatas and produce results via outputStepDatas (see `PipelineStepData`). The
-
-        incomingEdges and outgoingEdges (see `PipelineStepEdge`) define the data flow connections
-
-        to other steps. Execution state is tracked through statusCode and statusMessage. Steps
-
-        support provenance tracking through the provenanceUri field for tracing data lineage.'
+    AutomationStep:
+      description: Represents a single operation node within a Pipeline's directed acyclic graph (DAG). Each step performs a specific transformation determined by its stepType, with configuration stored in the config field. Steps receive data through inputStepDatas and produce results via outputStepDatas (see `AutomationStepData`). The incomingEdges and outgoingEdges (see `AutomationStepEdge`) define data flow connections to other steps. Execution state is tracked through statusCode and statusMessage.
       properties:
         __typename:
           type: string
@@ -533,10 +797,11 @@ components:
           - CREATE_ENTITIES
           - CREATE_METERING_USAGE_CHART
           - CREATE_PROCEDURE_DATASET
-          - DATASET_VIEW
           - DATA_CATALOG_DATASET
           - DATA_CATALOG_FILE
           - DATA_CATALOG_FILES
+          - DATASETS_TO_PLATES
+          - DATASET_VIEW
           - DEFINE_TEMPLATE_VARIABLES
           - EXPERIMENT_OPTIMIZATION_BOOTSTRAP
           - EXPERIMENT_OPTIMIZATION_CLEAN_DATA
@@ -579,6 +844,7 @@ components:
           - MODEL_RUN_INFERENCE
           - MOVE_INVENTORY_PLATES
           - COMPUTE_NDC_ENTITY_MERGED_COLUMNS
+          - NDC_CREATE_PROTEINS_FROM_DATASET
           - NDC_COMBINE_DOMAINS_TO_VARIABLE_PAIRS
           - NDC_EXPAND_VARIABLE_PAIRS_TO_DOMAINS
           - NDC_REFERENCE_EXISTING_COMPONENTS
@@ -596,15 +862,18 @@ components:
           - PROCEDURE_RUN_DATA_FRAMES
           - PROMOTE_DATASET
           - REGISTRY_SCHEMA_DATASET
-          - REGISTER_PLATES_IN_INVENTORY
+          - PUT_PLATES_IN_INVENTORY
           - REGRESSION
           - REGRESSION_INTERPOLATION
           - RENAME_COLUMNS
           - REORDER_COLUMNS
           - RETYPE_COLUMNS
+          - RUN_BENCHLING_BOLTZGEN
           - RUN_HAMILTON_METHOD
           - RUN_HIGHRES_PROTOCOL
           - RUN_OPENTRONS_PROTOCOL
+          - RUN_SCIENTIFIC_MODEL
+          - RUN_TECAN_METHOD
           - SAVE_STRUCTURE_PREDICTION
           - SAVE_TO_RESULTS
           - SEND_TO_CONNECTION
@@ -623,6 +892,7 @@ components:
           - UNION_DATASETS
           - UNPIVOT_DATASET
           - UPDATE_ENTITIES
+          - UPDATE_INVENTORY_PLATES
           - UPLOAD_CSV_DATASET
           - USER_DEFINED_FUNCTION
           - GENERATE_NDC_ERROR_CSV
@@ -634,15 +904,292 @@ components:
         stepVersion:
           type: integer
       type: object
-    PipelineStepUnpaginatedList:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    CreateAnalysisInput:
+      additionalProperties: false
+      properties:
+        description:
+          type:
+          - 'null'
+          - string
+        folderId:
+          type: string
+        name:
+          type: string
+        studyIds:
+          items:
+            type: string
+          type: array
+      required:
+      - name
+      - folderId
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AutomationStepUnpaginatedList:
       additionalProperties: false
       properties:
         items:
           items:
-            $ref: '#/components/schemas/PipelineStep'
+            $ref: '#/components/schemas/AutomationStep'
           type: array
       type: object
+    ApplyAutomationTemplateInput:
+      additionalProperties: false
+      properties:
+        dataFrameVariableBindings:
+          description: Bindings that map the template's data frame variables (see AutomationTemplateDataFrameVariable) to actual data frames. Each binding specifies which data frame to substitute for a template variable.
+          items:
+            $ref: '#/components/schemas/AutomationTemplateDataFrameVariableBindingInput'
+          type: array
+        templateId:
+          description: ID of the published automation template to apply.
+          type: string
+        templateVariableBindings:
+          description: Bindings that provide values for the template's config variables (see AutomationTemplateVariable). Every config variable on the template must have a value specified; use a null variableValue to leave a variable empty.
+          items:
+            $ref: '#/components/schemas/AutomationTemplateVariableBindingInput'
+          type: array
+      required:
+      - templateId
+      - dataFrameVariableBindings
+      type: object
+    AutomationTemplateDataFrameVariableBindingInput:
+      additionalProperties: false
+      properties:
+        columnMapping:
+          additionalProperties:
+            type:
+            - 'null'
+            - string
+          description: Optional mapping of template column names to actual DataFrame column names. Keys are template column system names; values are the corresponding column system names in the provided DataFrame.
+          type: object
+        dataFrameId:
+          description: ID of the DataFrame to substitute for this variable.
+          type: string
+        sourceStepDataId:
+          description: ID of an existing output AutomationStepData in the target Analysis whose raw data contains the DataFrame identified by dataFrameId.
+          type: string
+        variableId:
+          description: ID of the AutomationTemplateDataFrameVariable to bind.
+          type: string
+      required:
+      - variableId
+      - dataFrameId
+      - sourceStepDataId
+      type: object
+    UpdateAnalysisInput:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          type:
+          - 'null'
+          - string
+        folderId:
+          type: string
+        name:
+          type: string
+        studyIds:
+          items:
+            type: string
+          type: array
+      type: object
+    AutomationTemplateVariableBindingInput:
+      additionalProperties: false
+      properties:
+        variableId:
+          description: ID of the AutomationTemplateVariable to bind.
+          type: string
+        variableValue:
+          $ref: '#/components/schemas/AnyType'
+          description: The value for the config variable, as any JSON value.
+      required:
+      - variableId
+      - variableValue
+      type: object
+    Analysis:
+      description: Represents a data processing pipeline. Each Analysis contains a graph of AutomationSteps that works with data. An automation template (see `AutomationTemplate`) may be applied onto an analysis to provide a pre-configured graph of steps.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        description:
+          type:
+          - 'null'
+          - string
+        folder:
+          $ref: '#/components/schemas/FolderRef'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        statusCode:
+          enum:
+          - AI_PROPOSED
+          - BLOCKED
+          - FAILED
+          - HALTED
+          - RUNNING
+          - SUCCEEDED
+          - WAITING
+          type: string
+        steps:
+          format: uri
+          type: string
+        webUrl:
+          type: string
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    AnalysisPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Analysis'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdateAnalysisInputWithPathParams:
+      additionalProperties: false
+      properties:
+        archiveReason:
+          type: string
+        archived:
+          type: boolean
+        description:
+          type:
+          - 'null'
+          - string
+        folderId:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        studyIds:
+          items:
+            type: string
+          type: array
+      required:
+      - id
+      type: object
+    PipelineRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    FolderRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    AnyType: {}
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

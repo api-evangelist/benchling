@@ -35,6 +35,7 @@ tags:
     Policies are reusable and can be applied across many collaborations.'
   name: Policy
   x-bnch-organization: Benchling
+  x-displayName: Policy
 paths:
   /policy/items:
     get:
@@ -94,8 +95,51 @@ paths:
       summary: List Policy items
       tags:
       - Policy
-      x-bnch-rate-limit-tier: 4
   /policy/{policy_id}:
+    delete:
+      description: 'Delete a Policy.
+
+
+        ## Restrictions
+
+
+        - Only data policies can be deleted; requests targeting other policy types return a 404.
+
+        - A policy that is one of the tenant''s default policies cannot be deleted.
+
+        - A policy that is currently used in permissions cannot be deleted.'
+      operationId: Policy.Delete
+      parameters:
+      - description: ID of the Policy.
+        in: path
+        name: policy_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Delete Policy
+      tags:
+      - Policy
     get:
       description: Get a single Policy by ID.
       operationId: Policy.Get
@@ -135,13 +179,393 @@ paths:
       summary: Get Policy by ID
       tags:
       - Policy
-      x-bnch-rate-limit-tier: 5
+    patch:
+      description: 'Update a Policy.
+
+
+        ## Restrictions
+
+
+        - Only data policies can be updated; requests targeting other policy types are rejected.
+
+        - Only `name` and `description` may be modified.
+
+        - `name` must be unique among the tenant''s data policies.'
+      operationId: Policy.Update
+      parameters:
+      - description: ID of the Policy.
+        in: path
+        name: policy_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Update Policy
+      tags:
+      - Policy
+  /policy/{policy_id}:add-policy-statements:
+    patch:
+      description: 'Add policy statements to a DataPolicy. Acts as an upsert keyed on (itemType, action): for each incoming statement, any existing statement with the same item type and action is overwritten with the provided condition, and statements for other (itemType, action) pairs are left unchanged. Only DataPolicy objects can be edited.'
+      operationId: Policy.AddPolicyStatements
+      parameters:
+      - description: ID of the Policy.
+        in: path
+        name: policy_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPolicyStatementsInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Add DataPolicy statements
+      tags:
+      - Policy
+  /policy/{policy_id}:remove-policy-statements:
+    patch:
+      description: Remove policy statements from a DataPolicy. Each statement is matched on (itemType, action) and removed regardless of its condition; the absence of a statement means the action is not granted. Removing a statement that is not present is a no-op. Only DataPolicy objects can be edited.
+      operationId: Policy.RemovePolicyStatements
+      parameters:
+      - description: ID of the Policy.
+        in: path
+        name: policy_id
+        required: true
+        schema:
+          type: string
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemovePolicyStatementsInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Remove DataPolicy statements
+      tags:
+      - Policy
+  /policy:batch-delete:
+    post:
+      description: 'Batch delete Policies synchronously in one transaction. Maximum 25 items per request.
+
+
+        Each item follows the same restrictions as the single-delete endpoint: only data policies can be deleted, and default or in-use policies are rejected. If any item fails validation, the transaction fails and no policies are deleted.'
+      operationId: Policy.BatchDelete
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/DeletePolicyInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      additionalProperties: false
+                      properties:
+                        id:
+                          type: string
+                      required:
+                      - id
+                      type: object
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch delete Policy
+      tags:
+      - Policy
+  /policy:batch-update:
+    patch:
+      description: 'Batch update Policies synchronously in one transaction. Maximum 25 items per request.
+
+
+        Each item follows the same restrictions as the single-update endpoint: only data policies can be updated, and only `name` and `description` may be modified. If any item fails validation, the transaction fails and no policies are updated.'
+      operationId: Policy.BatchUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              properties:
+                items:
+                  items:
+                    $ref: '#/components/schemas/UpdatePolicyInputWithPathParams'
+                  maxItems: 25
+                  minItems: 1
+                  type: array
+              required:
+              - items
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                properties:
+                  items:
+                    items:
+                      $ref: '#/components/schemas/Policy'
+                    type: array
+                required:
+                - items
+                type: object
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Batch update Policy
+      tags:
+      - Policy
+  /policy:bulk-update:
+    patch:
+      description: Bulk update Policy.
+      operationId: Policy.BulkUpdate
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkImport'
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskLink'
+          description: Task started
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Bulk update Policy
+      tags:
+      - Policy
+  /policy:clone:
+    post:
+      description: Clone a DataPolicy, copying its statements into a new DataPolicy with the given name; only DataPolicy objects can be cloned. If description is omitted, the clone is created with no description rather than copying the source's.
+      operationId: Policy.Clone
+      parameters:
+      - description: Set to true to access beta operations via /api/v3.
+        in: header
+        name: EARLY-ACCESS
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClonePolicyInput'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: OK
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      summary: Clone a DataPolicy
+      tags:
+      - Policy
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
       name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
       schema:
         format: datetime
         type: string
@@ -154,21 +578,14 @@ components:
         items:
           type: string
         type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
       explode: false
       in: query
-      name: name.anyOf
+      name: returning
       schema:
         items:
           type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -190,31 +607,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -225,67 +621,37 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
-      schema:
-        format: datetime
-        type: string
-  responses:
-    TooManyRequests:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
-    InternalServerError:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/InternalServerError'
-      description: Internal Server Error
-    NotFound:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Not Found
-    Forbidden:
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Forbidden
   schemas:
+    ClonePolicyInput:
+      additionalProperties: false
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        policyId:
+          type: string
+      required:
+      - policyId
+      - name
+      type: object
     InternalServerError:
       properties:
         detail:
@@ -312,7 +678,287 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    AddPolicyStatementsInput:
+      additionalProperties: false
+      properties:
+        statements:
+          description: Policy statements to add. Any existing statement with the same item type and action is overwritten with the provided condition; other statements are left unchanged.
+          items:
+            $ref: '#/components/schemas/PolicyStatementInput'
+          type: array
+      required:
+      - statements
+      type: object
+    PolicyStatementReferenceInput:
+      additionalProperties: false
+      properties:
+        action:
+          description: The action the statement grants.
+          enum:
+          - READ
+          - APPEND
+          - WRITE
+          - ADMIN
+          - ARCHIVE
+          - CHANGE_ASSIGNMENT_OF_OBJECTS
+          - CHANGE_REGISTRY_IDENTIFIER
+          - CREATE
+          - CREATE_ENTRIES_FROM_DRAFT_TEMPLATES
+          - CREATE_LOCATION
+          - CREATE_REQUEST
+          - CREATE_RESULT
+          - CREATE_SUBFOLDER
+          - CREATE_TEST_ORDERS
+          - EDIT_BARCODES
+          - EDIT_CHEMICAL_STRUCTURE
+          - EDIT_CONTAINER
+          - EDIT_FIELDS_IF_PENDING_INVALID
+          - EDIT_FIELDS_IF_IN_PROGRESS
+          - EDIT_FIELDS_IF_TERMINAL
+          - EDIT_NAMES_AND_ALIASES
+          - EDIT_NAMES_AND_BARCODES
+          - EDIT_POLYMER_FEATURES
+          - EDIT_RESIDUES
+          - EDIT_RESTRICTED_SAMPLE_USERS
+          - EDIT_RESULT
+          - EDIT_SCHEMA_AND_FIELDS
+          - EDIT_STATUS
+          - EDIT_USER_EMAIL
+          - EXECUTE_REQUEST
+          - LIST_DEFINITION
+          - MANAGE_COLLABORATORS
+          - MANAGE_CAPABILITIES
+          - READ_APP_CONFIG
+          - READ_APP_SESSION
+          - REGISTER
+          - RETRACT_REVIEW
+          - RESTRICT_SAMPLES
+          - REVOKE_USER_CREDENTIALS
+          - SUSPEND_USER
+          - UNREGISTER
+          - UNRESTRICT_SAMPLES
+          - WRITE_APP_CONFIG
+          - WRITE_APP_SESSION
+          - UNKNOWN
+          type: string
+        itemType:
+          description: The type of item the statement applies to.
+          enum:
+          - AA_MONOMER
+          - AGENT_MEMORY
+          - AGENT_SKILL
+          - AI_MODEL
+          - ANALYSIS
+          - SQL_DASHBOARD
+          - PROTEIN_FORMAT
+          - APP_DEFINITION
+          - ASYNC_TASK
+          - AV_SCAN_RECORD
+          - BATCH
+          - APP_INSTALLATION
+          - APP_SESSION
+          - BIOENTITY
+          - BOX
+          - BUSINESS_RULE
+          - ASSEMBLY
+          - CHAT
+          - CHEMICAL_COUNTERPART
+          - CONFIG_MIGRATION_HISTORY
+          - CONNECTION
+          - CONTAINER
+          - EVENT_SUBSCRIPTION
+          - EXTENSION_DEFINITION
+          - FOLDER_OR_PROJECT
+          - FILE
+          - INSTRUMENT
+          - NON_LOCATION_STORABLE
+          - LEGACY_DATA_IMPORT_RUN
+          - LIBRARY_PARAMETER_DEFINITION
+          - LOCATION
+          - MCP_SERVER_CONFIG
+          - MCP_SERVER_USER_CONFIGURATION
+          - MODEL_RUN
+          - NUCLEOTIDE_MONOMER
+          - ENTRY
+          - ORGANIZATION
+          - PLATE
+          - PROCEDURE
+          - WORKFLOW_TASK_GROUP
+          - WORKFLOW_TASK
+          - WORKFLOW_OUTPUT
+          - PROTOCOL
+          - REGISTRY
+          - REVIEW_PROCESS
+          - LEGACY_REQUEST
+          - REQUEST_TEMPLATE
+          - REQUEST
+          - RESULT
+          - AGENT
+          - SAMPLE_TYPE
+          - SCHEMA
+          - STUDY
+          - TEAM
+          - TEMPLATE_COLLECTION
+          - TENANT
+          - TEST_ORDER
+          - USER
+          - WAREHOUSE_LOGIN
+          - WAREHOUSE_CUSTOM_VIEW
+          - WORKFLOW
+          - WORKLIST
+          - WORKSHEET
+          - OTHER
+          - UNIT_TYPE
+          - UNKNOWN
+          type: string
+      required:
+      - itemType
+      - action
+      type: object
+    PolicyStatementInput:
+      additionalProperties: false
+      properties:
+        action:
+          description: The action being granted on the item type.
+          enum:
+          - READ
+          - APPEND
+          - WRITE
+          - ADMIN
+          - ARCHIVE
+          - CHANGE_ASSIGNMENT_OF_OBJECTS
+          - CHANGE_REGISTRY_IDENTIFIER
+          - CREATE
+          - CREATE_ENTRIES_FROM_DRAFT_TEMPLATES
+          - CREATE_LOCATION
+          - CREATE_REQUEST
+          - CREATE_RESULT
+          - CREATE_SUBFOLDER
+          - CREATE_TEST_ORDERS
+          - EDIT_BARCODES
+          - EDIT_CHEMICAL_STRUCTURE
+          - EDIT_CONTAINER
+          - EDIT_FIELDS_IF_PENDING_INVALID
+          - EDIT_FIELDS_IF_IN_PROGRESS
+          - EDIT_FIELDS_IF_TERMINAL
+          - EDIT_NAMES_AND_ALIASES
+          - EDIT_NAMES_AND_BARCODES
+          - EDIT_POLYMER_FEATURES
+          - EDIT_RESIDUES
+          - EDIT_RESTRICTED_SAMPLE_USERS
+          - EDIT_RESULT
+          - EDIT_SCHEMA_AND_FIELDS
+          - EDIT_STATUS
+          - EDIT_USER_EMAIL
+          - EXECUTE_REQUEST
+          - LIST_DEFINITION
+          - MANAGE_COLLABORATORS
+          - MANAGE_CAPABILITIES
+          - READ_APP_CONFIG
+          - READ_APP_SESSION
+          - REGISTER
+          - RETRACT_REVIEW
+          - RESTRICT_SAMPLES
+          - REVOKE_USER_CREDENTIALS
+          - SUSPEND_USER
+          - UNREGISTER
+          - UNRESTRICT_SAMPLES
+          - WRITE_APP_CONFIG
+          - WRITE_APP_SESSION
+          - UNKNOWN
+          type: string
+        condition:
+          description: The condition under which the action is granted.
+          enum:
+          - ALWAYS
+          - IS_AUTHOR
+          - IS_ASSIGNEE
+          - UNKNOWN
+          type: string
+        itemType:
+          description: The type of item the statement applies to.
+          enum:
+          - AA_MONOMER
+          - AGENT_MEMORY
+          - AGENT_SKILL
+          - AI_MODEL
+          - ANALYSIS
+          - SQL_DASHBOARD
+          - PROTEIN_FORMAT
+          - APP_DEFINITION
+          - ASYNC_TASK
+          - AV_SCAN_RECORD
+          - BATCH
+          - APP_INSTALLATION
+          - APP_SESSION
+          - BIOENTITY
+          - BOX
+          - BUSINESS_RULE
+          - ASSEMBLY
+          - CHAT
+          - CHEMICAL_COUNTERPART
+          - CONFIG_MIGRATION_HISTORY
+          - CONNECTION
+          - CONTAINER
+          - EVENT_SUBSCRIPTION
+          - EXTENSION_DEFINITION
+          - FOLDER_OR_PROJECT
+          - FILE
+          - INSTRUMENT
+          - NON_LOCATION_STORABLE
+          - LEGACY_DATA_IMPORT_RUN
+          - LIBRARY_PARAMETER_DEFINITION
+          - LOCATION
+          - MCP_SERVER_CONFIG
+          - MCP_SERVER_USER_CONFIGURATION
+          - MODEL_RUN
+          - NUCLEOTIDE_MONOMER
+          - ENTRY
+          - ORGANIZATION
+          - PLATE
+          - PROCEDURE
+          - WORKFLOW_TASK_GROUP
+          - WORKFLOW_TASK
+          - WORKFLOW_OUTPUT
+          - PROTOCOL
+          - REGISTRY
+          - REVIEW_PROCESS
+          - LEGACY_REQUEST
+          - REQUEST_TEMPLATE
+          - REQUEST
+          - RESULT
+          - AGENT
+          - SAMPLE_TYPE
+          - SCHEMA
+          - STUDY
+          - TEAM
+          - TEMPLATE_COLLECTION
+          - TENANT
+          - TEST_ORDER
+          - USER
+          - WAREHOUSE_LOGIN
+          - WAREHOUSE_CUSTOM_VIEW
+          - WORKFLOW
+          - WORKLIST
+          - WORKSHEET
+          - OTHER
+          - UNIT_TYPE
+          - UNKNOWN
+          type: string
+      required:
+      - itemType
+      - action
+      - condition
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -320,6 +966,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -335,6 +983,72 @@ components:
       - detail
       - status
       - instance
+      type: object
+    UpdatePolicyInput:
+      additionalProperties: false
+      properties:
+        description:
+          description: The description of the Policy. Pass null to clear the description.
+          type:
+          - 'null'
+          - string
+        name:
+          description: The name of the Policy
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    PolicyPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Policy'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    UpdatePolicyInputWithPathParams:
+      additionalProperties: false
+      properties:
+        description:
+          description: The description of the Policy. Pass null to clear the description.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        name:
+          description: The name of the Policy
+          type: string
+      required:
+      - id
       type: object
     PolicyStatement:
       description: 'A single permission rule within a Policy. Combines an ItemType (what kind of object),
@@ -357,6 +1071,7 @@ components:
           - CHANGE_ASSIGNMENT_OF_OBJECTS
           - CHANGE_REGISTRY_IDENTIFIER
           - CREATE
+          - CREATE_ENTRIES_FROM_DRAFT_TEMPLATES
           - CREATE_LOCATION
           - CREATE_REQUEST
           - CREATE_RESULT
@@ -404,22 +1119,23 @@ components:
         itemType:
           enum:
           - AA_MONOMER
+          - AGENT_MEMORY
           - AGENT_SKILL
           - AI_MODEL
           - ANALYSIS
-          - ANALYTICS_DASHBOARD
-          - ANTIBODY_FORMAT
+          - SQL_DASHBOARD
+          - PROTEIN_FORMAT
           - APP_DEFINITION
           - ASYNC_TASK
           - AV_SCAN_RECORD
           - BATCH
-          - BENCHLING_APP
-          - BENCHLING_APP_SESSION
+          - APP_INSTALLATION
+          - APP_SESSION
           - BIOENTITY
           - BOX
           - BUSINESS_RULE
           - ASSEMBLY
-          - CHAT_SESSION
+          - CHAT
           - CHEMICAL_COUNTERPART
           - CONFIG_MIGRATION_HISTORY
           - CONNECTION
@@ -433,25 +1149,25 @@ components:
           - LEGACY_DATA_IMPORT_RUN
           - LIBRARY_PARAMETER_DEFINITION
           - LOCATION
-          - MCP_SERVER_INSTALLATION
-          - MCP_SERVER_USER_CONFIG
+          - MCP_SERVER_CONFIG
+          - MCP_SERVER_USER_CONFIGURATION
           - MODEL_RUN
-          - MONOMER
-          - NOTEBOOK
+          - NUCLEOTIDE_MONOMER
+          - ENTRY
           - ORGANIZATION
           - PLATE
           - PROCEDURE
-          - PROCESS_TASK_GROUP
-          - PROCESS_TASK
-          - PROCESS_OUTPUT
+          - WORKFLOW_TASK_GROUP
+          - WORKFLOW_TASK
+          - WORKFLOW_OUTPUT
           - PROTOCOL
           - REGISTRY
           - REVIEW_PROCESS
+          - LEGACY_REQUEST
+          - REQUEST_TEMPLATE
           - REQUEST
-          - REQUEST_V2_DEFINITION
-          - REQUEST_V2_SUBMISSION
           - RESULT
-          - ROUTINE
+          - AGENT
           - SAMPLE_TYPE
           - SCHEMA
           - STUDY
@@ -461,7 +1177,7 @@ components:
           - TEST_ORDER
           - USER
           - WAREHOUSE_LOGIN
-          - WAREHOUSE_USER_DEFINED_VIEW
+          - WAREHOUSE_CUSTOM_VIEW
           - WORKFLOW
           - WORKLIST
           - WORKSHEET
@@ -470,15 +1186,26 @@ components:
           - UNKNOWN
           type: string
       type: object
-    PolicyPaginatedList:
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
+      type: object
+    RemovePolicyStatementsInput:
       additionalProperties: false
       properties:
-        items:
+        statements:
+          description: Policy statements to remove, each identified by its item type and action. Statements for other (itemType, action) pairs are left unchanged.
           items:
-            $ref: '#/components/schemas/Policy'
+            $ref: '#/components/schemas/PolicyStatementReferenceInput'
           type: array
-        nextToken:
-          type: string
+      required:
+      - statements
       type: object
     Policy:
       description: 'Defines a named set of permissions that can be assigned to users or groups through
@@ -520,7 +1247,64 @@ components:
           - POLICY
           type: string
       type: object
+    DeletePolicyInputWithPathParams:
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+  responses:
+    TooManyRequests:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TooManyRequestsError'
+      description: Too Many Requests
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+    InternalServerError:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InternalServerError'
+      description: Internal Server Error
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

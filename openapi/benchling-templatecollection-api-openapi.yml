@@ -7,7 +7,19 @@ info:
   version: 2.0.0
   description: 'A container that organizes related templates, subtemplates, and other template-like
 
-    items.'
+    items. Template Collections provide a way to group and manage reusable content that
+
+    teams use to create standardized entries. Each collection has an owner (a User or
+
+    Organization) and can be shared with others through access controls (see
+
+    `Collaboration`). Collections can contain `EntryTemplate`s for creating new entries,
+
+    `EntrySubtemplate`s for inserting content, procedures, automation (analysis)
+
+    templates, request templates, and plate design templates. In the Benchling UI, these
+
+    appear in the "Template Collections" section.'
 servers:
 - url: /api/v3
 security:
@@ -16,9 +28,22 @@ security:
 tags:
 - description: 'A container that organizes related templates, subtemplates, and other template-like
 
-    items.'
+    items. Template Collections provide a way to group and manage reusable content that
+
+    teams use to create standardized entries. Each collection has an owner (a User or
+
+    Organization) and can be shared with others through access controls (see
+
+    `Collaboration`). Collections can contain `EntryTemplate`s for creating new entries,
+
+    `EntrySubtemplate`s for inserting content, procedures, automation (analysis)
+
+    templates, request templates, and plate design templates. In the Benchling UI, these
+
+    appear in the "Template Collections" section.'
   name: TemplateCollection
   x-bnch-organization: Benchling
+  x-displayName: Template Collection
 paths:
   /template-collection/items:
     get:
@@ -40,6 +65,7 @@ paths:
       - $ref: '#/components/parameters/name.anyOf.caseSensitive'
       - $ref: '#/components/parameters/nextToken'
       - $ref: '#/components/parameters/omit'
+      - $ref: '#/components/parameters/owner.anyOf'
       - $ref: '#/components/parameters/pageSize'
       - $ref: '#/components/parameters/returning'
       - description: 'Method by which to order results. Valid sorts are: createdAt (created time, oldest first) and modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
@@ -80,7 +106,6 @@ paths:
       summary: List TemplateCollection items
       tags:
       - TemplateCollection
-      x-bnch-rate-limit-tier: 4
   /template-collection/{template_collection_id}:
     get:
       description: Get a single TemplateCollection by ID.
@@ -121,12 +146,28 @@ paths:
       summary: Get TemplateCollection by ID
       tags:
       - TemplateCollection
-      x-bnch-rate-limit-tier: 5
   /template-collection/{template_collection_id}/items/items:
     get:
       description: List TemplateCollectible items.
       operationId: TemplateCollection.items.List
       parameters:
+      - $ref: '#/components/parameters/archiveReason.anyOf'
+      - $ref: '#/components/parameters/archived.anyOf'
+      - $ref: '#/components/parameters/modifiedAt.gt'
+      - $ref: '#/components/parameters/modifiedAt.gte'
+      - $ref: '#/components/parameters/modifiedAt.lt'
+      - $ref: '#/components/parameters/modifiedAt.lte'
+      - $ref: '#/components/parameters/nextToken'
+      - $ref: '#/components/parameters/pageSize'
+      - description: 'Method by which to order results. Valid sorts are: modifiedAt (modified time, oldest first). Use :asc or :desc to specify ascending or descending order. Default is modifiedAt:desc.'
+        in: query
+        name: sort
+        schema:
+          default: modifiedAt:desc
+          enum:
+          - modifiedAt:asc
+          - modifiedAt:desc
+          type: string
       - description: ID of the TemplateCollection.
         in: path
         name: template_collection_id
@@ -144,7 +185,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateCollectibleUnpaginatedList'
+                $ref: '#/components/schemas/TemplateCollectiblePaginatedList'
           description: OK
           headers: {}
         '400':
@@ -160,9 +201,51 @@ paths:
       summary: List TemplateCollectible items
       tags:
       - TemplateCollection
-      x-bnch-rate-limit-tier: 4
 components:
   parameters:
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
+      in: query
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    archived.anyOf:
+      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
+      explode: false
+      in: query
+      name: archived.anyOf
+      schema:
+        items:
+          type: boolean
+        maxItems: 2
+        type: array
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
+      schema:
+        format: datetime
+        type: string
+    nextToken:
+      description: Token for pagination
+      in: query
+      name: nextToken
+      schema:
+        type: string
     createdAt.lte:
       description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
       in: query
@@ -170,6 +253,32 @@ components:
       schema:
         format: datetime
         type: string
+    archiveReason.anyOf:
+      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+      explode: false
+      in: query
+      name: archiveReason.anyOf
+      schema:
+        items:
+          type: string
+        maxItems: 10
+        type: array
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -178,22 +287,6 @@ components:
       schema:
         items:
           type: string
-        type: array
-    nextToken:
-      description: Token for pagination
-      in: query
-      name: nextToken
-      schema:
-        type: string
-    name.anyOf:
-      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
-      explode: false
-      in: query
-      name: name.anyOf
-      schema:
-        items:
-          type: string
-        maxItems: 100
         type: array
     name.anyOf.caseSensitive:
       description: Restricts results to those that match any of the specified names. Case sensitive. Ensure only one name filter is used at a time. Comma-separated list.
@@ -215,51 +308,20 @@ components:
           type: string
         maxItems: 100
         type: array
-    archiveReason.anyOf:
-      description: Restricts items to those with any of the specified archive reasons. Use "NOT_ARCHIVED" to filter for unarchived items. Use "ANY_ARCHIVED" to filter for archived items regardless of reason. Use "ANY_ARCHIVED_OR_NOT_ARCHIVED" to return items for both archived and unarchived. Comma-separated list.
+    owner.anyOf:
+      description: Restricts results to those owned by any of the specified user or organization IDs. Comma-separated list.
       explode: false
       in: query
-      name: archiveReason.anyOf
+      name: owner.anyOf
       schema:
         items:
           type: string
-        maxItems: 10
+        maxItems: 100
         type: array
-    archived.anyOf:
-      description: If true, returns archived items. If false, returns unarchived items. If both true and false, returns archived and unarchived items. Comma-separated list.
-      explode: false
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: archived.anyOf
-      schema:
-        items:
-          type: boolean
-        maxItems: 2
-        type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -270,201 +332,110 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+    name.anyOf:
+      description: Restricts results to those that match any of the specified names. Case insensitive. Warning - this filter can be non-performant due to case insensitivity. Ensure only one name filter is used at a time. Comma-separated list.
       explode: false
       in: query
-      name: returning
+      name: name.anyOf
       schema:
         items:
           type: string
+        maxItems: 100
         type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
   schemas:
-    IntegerValue:
-      description: A type that represents integer values.
+    EntrySubtemplate:
+      description: 'A reusable content block that can be inserted into `DocumentLike` objects.
+
+        Subtemplates contain pre-defined note content (text, tables, etc.) that scientists
+
+        commonly need to repeat across multiple entries. Unlike `EntryTemplates` which create
+
+        entire new entries, subtemplates are inserted as sections within existing documents.
+
+        Subtemplates belong to a `TemplateCollection` and support versioned publishing (see
+
+        `PublishingRecord`) to ensure consistent use across the organization. In the UI,
+
+        these may be referred to simply as "Subtemplates" or "Insertable Content."'
       properties:
         __typename:
           type: string
-        value:
-          description: The integer value.
-          type: integer
-      type: object
-    ArrayValue:
-      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
-      properties:
-        __typename:
+        applicableReviewProcesses:
+          description: Review processes configured for this subtemplate's collection.
+          format: uri
           type: string
-        value:
-          items:
-            anyOf:
-            - $ref: '#/components/schemas/BooleanValue'
-            - $ref: '#/components/schemas/DateTimeValue'
-            - $ref: '#/components/schemas/DateValue'
-            - $ref: '#/components/schemas/DecimalValue'
-            - $ref: '#/components/schemas/IntegerValue'
-            - $ref: '#/components/schemas/JsonValue'
-            - $ref: '#/components/schemas/ObjectLinkValue'
-            - $ref: '#/components/schemas/ObjectLinkListValue'
-            - $ref: '#/components/schemas/TextAndUrlValue'
-            - $ref: '#/components/schemas/TextValue'
-            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
-            discriminator:
-              propertyName: __typename
-          type: array
-      type: object
-    ProcedureFlowchartRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    WorkflowTaskSchemaRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    TemplateCollectible:
-      anyOf:
-      - $ref: '#/components/schemas/AnalysisTemplate'
-      - $ref: '#/components/schemas/EntrySubtemplate'
-      - $ref: '#/components/schemas/EntryTemplate'
-      - $ref: '#/components/schemas/PlateDesignTemplate'
-      - $ref: '#/components/schemas/Procedure'
-      - $ref: '#/components/schemas/RequestV2Definition'
-      discriminator:
-        propertyName: __typename
-      type: object
-    Procedure:
-      description: 'A reusable template that defines a structured experimental workflow. Procedures specify a
-
-        sequence of method steps (see `ProcedureMethodDefinitionVersion`) connected in a flowchart
-
-        (see `workflowFlowchartConfig` and `WorkflowFlowchartConfigVersion`) that scientists follow when running
-
-        experiments. The `procedureType` determines whether this is a recipe (synthesis/production
-
-        workflow) or an assay (analytical workflow). Procedures belong to a `TemplateCollection` for
-
-        organization and access control, and support versioning through publishing (see `Publishable`
-
-        and `publishingRecords`). When scientists execute a procedure, they create a `ProcedureRun`
-
-        that tracks the actual experiment execution.'
-      properties:
-        __typename:
-          type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
         archiveReason:
           type:
           - 'null'
           - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
         archived:
           type: boolean
+        authors:
+          description: Users who submitted this subtemplate for review.
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
         createdAt:
+          description: DateTime the subtemplate was created at
           format: datetime
-          type: string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        id:
-          type: string
-        latestProcedureFlowchartConfigVersionProxy:
-          description: 'A simplified view of the latest version of the flowchart config. This is the
-
-            preferred way to access the latest flowchart config for procedures.'
-          oneOf:
-          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionProxyRef'
-          - type: 'null'
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        procedureFlowchart:
-          deprecated: true
-          description: Use latestProcedureFlowchartConfigVersionProxy for the latest flowchart version and publishedProcedureFlowchartConfigVersionProxy for the published flowchart version.
-          oneOf:
-          - $ref: '#/components/schemas/ProcedureFlowchartRef'
-          - type: 'null'
-        procedureType:
-          enum:
-          - RECIPE
-          - ASSAY
-          type: string
-        publishedProcedureFlowchartConfigVersionProxy:
-          description: 'A simplified view of the published version of the flowchart config. This is
-
-            the preferred way to access the published flowchart config for procedures.'
-          oneOf:
-          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionProxyRef'
-          - type: 'null'
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        webUrl:
           type:
           - 'null'
           - string
+        creator:
+          description: User that created the subtemplate
+          oneOf:
+          - $ref: '#/components/schemas/PrincipalRef'
+          - type: 'null'
+        id:
+          description: ID of the subtemplate
+          type: string
+        modifiedAt:
+          description: DateTime the subtemplate was last modified
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          description: Title of the subtemplate
+          type:
+          - 'null'
+          - string
+        review:
+          description: The active review for this subtemplate, if one exists.
+          oneOf:
+          - $ref: '#/components/schemas/ReviewRef'
+          - type: 'null'
+        reviewSource:
+          description: Subtemplates belong to template collections rather than projects, so this field is always null.
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+          description: Template collection that contains the template collectible
       type: object
-    TemplateCollectibleUnpaginatedList:
-      additionalProperties: false
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/TemplateCollectible'
-          type: array
-      type: object
-    ObjectLinkListValue:
-      description: A type that represents a list of links to other objects.
+    SchemaFieldDefinitionRef:
       properties:
         __typename:
           type: string
-        value:
-          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
-          items:
-            $ref: '#/components/schemas/ObjectRef'
-            description: Union of AaSequence, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, Plate, Result, RnaSequence, Run, DnaOligo, RnaOligo
-          type: array
+        id:
+          format: api_id
+          type: string
       type: object
-    TemplateCollectionPaginatedList:
-      additionalProperties: false
+    ReviewRef:
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/TemplateCollection'
-          type: array
-        nextToken:
+        __typename:
+          type: string
+        id:
+          format: api_id
           type: string
       type: object
     TemplateCollectionRef:
@@ -475,155 +446,13 @@ components:
           format: api_id
           type: string
       type: object
-    DecimalValue:
-      description: A type that represents decimal value as strings.
-      properties:
-        __typename:
-          type: string
-        numericValue:
-          deprecated: true
-          description: Deprecated. The float representation of the decimal value.
-          type:
-          - 'null'
-          - number
-        value:
-          description: The decimal value in a string representation
-          type:
-          - 'null'
-          - string
-      type: object
-    TextAndUrlValue:
-      description: A type that represents text (string) values with an associated URL.
-      properties:
-        __typename:
-          type: string
-        url:
-          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    JsonValue:
-      description: A type that represents JSON values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The JSON value.
-          type: object
-      type: object
-    RequestV2Definition:
-      description: 'A reusable template that defines the structure and configuration for requests
-
-        in Benchling. Also known as a "Request Template" in the UI. Each RequestV2Definition
-
-        specifies a `templateDocument` that serves as the document template for requests, a
-
-        `workflowTaskSchema` that defines the task structure and fields, and a `prefix` used
-
-        to generate human-readable display IDs (e.g., "REQ-001") for submissions created from
-
-        this template. Request templates are organized within `TemplateCollection` folders and
-
-        support collaboration features like starring (see `Starrable`). When users submit a
-
-        request, they create a `RequestV2Submission` based on this definition. The template
-
-        can include a `description` to explain its intended use and can be archived when no
-
-        longer needed.'
-      properties:
-        __typename:
-          type: string
-        archivableParent:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        description:
-          description: Description of the request template.
-          type:
-          - 'null'
-          - string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        prefix:
-          description: The prefix for the displayId of tasks of this schema.
-          type: string
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        webUrl:
-          type:
-          - 'null'
-          - string
-        workflowTaskSchema:
-          $ref: '#/components/schemas/WorkflowTaskSchemaRef'
-          description: The task schema backing this configuration.
-      type: object
-    PrincipalRef:
+    EntrySchemaRef:
       properties:
         __typename:
           type: string
         id:
           format: api_id
           type: string
-      type: object
-    AnalysisRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    CustomField:
-      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
-
-        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
-
-        datasets, and other Benchling objects without modifying their schemas. Objects that can
-
-        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
-
-        custom fields are not validated against a schema and can be freely added or modified.'
-      properties:
-        __typename:
-          type: string
-        name:
-          type:
-          - 'null'
-          - string
-        value:
-          type:
-          - 'null'
-          - string
       type: object
     InternalServerError:
       properties:
@@ -651,7 +480,47 @@ components:
       - status
       - instance
       type: object
-    EntrySchemaRef:
+    ObjectLinkValue:
+      description: A type that represents links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          $ref: '#/components/schemas/ObjectRef'
+          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
+      type: object
+    JsonValue:
+      description: A type that represents JSON values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The JSON value.
+          type: object
+      type: object
+    CustomField:
+      description: 'A name-value pair for storing additional metadata on objects that support custom fields.
+
+        CustomFields provide a flexible way to attach arbitrary string data to entities, containers,
+
+        datasets, and other Benchling objects without modifying their schemas. Objects that can
+
+        have custom fields implement the HasCustomFields interface. Unlike schema-defined fields,
+
+        custom fields are not validated against a schema and can be freely added or modified.'
+      properties:
+        __typename:
+          type: string
+        name:
+          type:
+          - 'null'
+          - string
+        value:
+          type:
+          - 'null'
+          - string
+      type: object
+    WorkflowTaskSchemaRef:
       properties:
         __typename:
           type: string
@@ -659,20 +528,229 @@ components:
           format: api_id
           type: string
       type: object
+    Procedure:
+      description: 'A reusable template that defines a structured experimental workflow. Procedures specify a
+
+        sequence of method steps (see `ProcedureMethodDefinitionVersion`) connected in a flowchart
+
+        (see `workflowFlowchartConfig` and `WorkflowFlowchartConfigVersion`) that scientists follow when running
+
+        experiments. The `procedureType` determines whether this is a recipe (synthesis/production
+
+        workflow) or an assay (analytical workflow). Procedures belong to a `TemplateCollection` for
+
+        organization and access control, and support versioning through publishing (see `Publishable`
+
+        and `publishingRecords`). When scientists execute a procedure, they create a `ProcedureRun`
+
+        that tracks the actual experiment execution.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type: string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        id:
+          type: string
+        latestProcedureFlowchartConfigVersion:
+          description: 'A simplified view of the latest version of the flowchart config. This is the
+
+            preferred way to access the latest flowchart config for procedures.'
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionRef'
+          - type: 'null'
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        procedureFlowchart:
+          deprecated: true
+          description: Use latestProcedureFlowchartConfigVersion for the latest flowchart version and publishedProcedureFlowchartConfigVersion for the published flowchart version.
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartRef'
+          - type: 'null'
+        procedureType:
+          enum:
+          - RECIPE
+          - ASSAY
+          type: string
+        publishedProcedureFlowchartConfigVersion:
+          description: 'A simplified view of the published version of the flowchart config. This is
+
+            the preferred way to access the published flowchart config for procedures.'
+          oneOf:
+          - $ref: '#/components/schemas/ProcedureFlowchartConfigVersionRef'
+          - type: 'null'
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+        webUrl:
+          type:
+          - 'null'
+          - string
+      type: object
+    AutomationTemplate:
+      description: A reusable pipeline configuration that can be instantiated to create new Analysis objects. AutomationTemplates define a data processing workflow with AutomationSteps (see `steps`) that can be parameterized through config variables (see `AutomationTemplateVariable`) and data frame variables (see `AutomationTemplateDataFrameVariable`). When users apply a template to an Analysis, they provide values for these variables, generating a pipeline populated with actual data. Templates are organized within TemplateCollections and must be published before they can be applied.
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        configVariables:
+          format: uri
+          type: string
+        createdAt:
+          format: datetime
+          type: string
+        createdFromPipeline:
+          oneOf:
+          - $ref: '#/components/schemas/AnalysisRef'
+          - type: 'null'
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        dataFrameVariables:
+          format: uri
+          type: string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type: string
+        name:
+          type: string
+        steps:
+          format: uri
+          type: string
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+        webUrl:
+          type:
+          - 'null'
+          - string
+      type: object
+    TooManyRequestsError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    ArrayValue:
+      description: A type that represents a list of BenchlingValues, used for multi-value cells (e.g. alias columns).
+      properties:
+        __typename:
+          type: string
+        value:
+          items:
+            anyOf:
+            - $ref: '#/components/schemas/BooleanValue'
+            - $ref: '#/components/schemas/DateTimeValue'
+            - $ref: '#/components/schemas/DateValue'
+            - $ref: '#/components/schemas/DecimalValue'
+            - $ref: '#/components/schemas/IntegerValue'
+            - $ref: '#/components/schemas/JsonValue'
+            - $ref: '#/components/schemas/ObjectLinkValue'
+            - $ref: '#/components/schemas/ObjectLinkListValue'
+            - $ref: '#/components/schemas/TextAndUrlValue'
+            - $ref: '#/components/schemas/TextValue'
+            description: Union of BooleanValue, DateTimeValue, DateValue, DecimalValue, IntegerValue, JsonValue, ObjectLinkValue, ObjectLinkListValue, TextAndUrlValue, TextValue
+            discriminator:
+              mapping:
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
+              propertyName: __typename
+          type: array
+      type: object
+    TextValue:
+      description: A type that represents text (string) values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    GeneralError:
+      properties:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
     TemplateCollection:
       description: 'A container that organizes related templates, subtemplates, and other template-like
 
         items. Template Collections provide a way to group and manage reusable content that
 
-        teams use to create standardized entries. Each collection has an owner (typically an
+        teams use to create standardized entries. Each collection has an owner (a User or
 
-        Organization or Team) and can be shared with others through access controls (see
+        Organization) and can be shared with others through access controls (see
 
         `Collaboration`). Collections can contain `EntryTemplate`s for creating new entries,
 
-        `EntrySubtemplate`s for inserting content, form definitions, procedures, and analysis
+        `EntrySubtemplate`s for inserting content, procedures, automation (analysis)
 
-        templates. In the Benchling UI, these appear in the "Template Collections" section.'
+        templates, request templates, and plate design templates. In the Benchling UI, these
+
+        appear in the "Template Collections" section.'
       properties:
         __typename:
           type: string
@@ -718,6 +796,119 @@ components:
           - $ref: '#/components/schemas/OwnerRef'
           - type: 'null'
       type: object
+    TemplateCollectiblePaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TemplateCollectible'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    ObjectLinkListValue:
+      description: A type that represents a list of links to other objects.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The list of objects that this value links to. Inaccessible objects may be returned instead if the object is not found with the current permission set.
+          items:
+            $ref: '#/components/schemas/ObjectRef'
+            description: Union of AaSequence, Attachment, Box, Container, CustomEntity, DnaSequence, DropdownOption, Entry, Location, Mixture, Molecule, OligoConjugate, OligoDuplex, WellPlate, MatrixPlate, Protein, Result, RnaSequence, Run, DnaOligo, RnaOligo
+          type: array
+      type: object
+    RequestV2Definition:
+      description: 'A reusable template that defines the structure and configuration for requests
+
+        in Benchling. Also known as a "Request Template" in the UI. Each RequestV2Definition
+
+        specifies a `templateDocument` that serves as the document template for requests, a
+
+        `workflowTaskSchema` that defines the task structure and fields, and a `prefix` used
+
+        to generate human-readable display IDs (e.g., "REQ-001") for submissions created from
+
+        this template. Request templates are organized within `TemplateCollection` folders and
+
+        support collaboration features like starring (see `Starrable`). When users submit a
+
+        request, they create a `RequestV2Submission` based on this definition. The template
+
+        can include a `description` to explain its intended use and can be archived when no
+
+        longer needed.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        description:
+          description: Description of the request template.
+          type:
+          - 'null'
+          - string
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        prefix:
+          description: The prefix for the displayId of tasks of this schema.
+          type: string
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+        webUrl:
+          type:
+          - 'null'
+          - string
+        workflowTaskSchema:
+          $ref: '#/components/schemas/WorkflowTaskSchemaRef'
+          description: The task schema backing this configuration.
+      type: object
+    TemplateCollectible:
+      anyOf:
+      - $ref: '#/components/schemas/AutomationTemplate'
+      - $ref: '#/components/schemas/EntrySubtemplate'
+      - $ref: '#/components/schemas/EntryTemplate'
+      - $ref: '#/components/schemas/PlateDesignTemplate'
+      - $ref: '#/components/schemas/Procedure'
+      - $ref: '#/components/schemas/RequestV2Definition'
+      discriminator:
+        mapping:
+          AutomationTemplate: '#/components/schemas/AutomationTemplate'
+          EntrySubtemplate: '#/components/schemas/EntrySubtemplate'
+          EntryTemplate: '#/components/schemas/EntryTemplate'
+          PlateDesignTemplate: '#/components/schemas/PlateDesignTemplate'
+          Procedure: '#/components/schemas/Procedure'
+          RequestV2Definition: '#/components/schemas/RequestV2Definition'
+        propertyName: __typename
+      type: object
+    OwnerRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
     SchemaFieldValue:
       description: 'Represents a field value on a schematized object, pairing a `fieldDefinition` (describing the
 
@@ -755,196 +946,20 @@ components:
             - $ref: '#/components/schemas/TextValue'
             - $ref: '#/components/schemas/ArrayValue'
             discriminator:
+              mapping:
+                ArrayValue: '#/components/schemas/ArrayValue'
+                BooleanValue: '#/components/schemas/BooleanValue'
+                DateTimeValue: '#/components/schemas/DateTimeValue'
+                DateValue: '#/components/schemas/DateValue'
+                DecimalValue: '#/components/schemas/DecimalValue'
+                IntegerValue: '#/components/schemas/IntegerValue'
+                JsonValue: '#/components/schemas/JsonValue'
+                ObjectLinkListValue: '#/components/schemas/ObjectLinkListValue'
+                ObjectLinkValue: '#/components/schemas/ObjectLinkValue'
+                TextAndUrlValue: '#/components/schemas/TextAndUrlValue'
+                TextValue: '#/components/schemas/TextValue'
               propertyName: __typename
           - type: 'null'
-      type: object
-    ObjectLinkValue:
-      description: A type that represents links to other objects.
-      properties:
-        __typename:
-          type: string
-        value:
-          $ref: '#/components/schemas/ObjectRef'
-          description: The object that this value links to, or an Inaccessible object if not found with the current permission set.
-      type: object
-    PlateDesignTemplate:
-      description: 'A named plate design template backed by a scratch plate that lives in a template collection.
-
-        Plate design templates allow scratch plates to be organized and reused as templates.'
-      properties:
-        __typename:
-          type: string
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        createdAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          type: string
-        scratchPlate:
-          $ref: '#/components/schemas/ScratchPlateRef'
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        webUrl:
-          type:
-          - 'null'
-          - string
-      type: object
-    ScratchPlateRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    TextValue:
-      description: A type that represents text (string) values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The text value. It may or may not be an empty string.
-          type: string
-      type: object
-    GeneralError:
-      properties:
-        detail:
-          type:
-          - 'null'
-          - string
-          - object
-        instance:
-          type: string
-        status:
-          type: integer
-        title:
-          type:
-          - 'null'
-          - string
-        type:
-          type: string
-      required:
-      - type
-      - title
-      - detail
-      - status
-      - instance
-      type: object
-    OwnerRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    DateValue:
-      description: A type that represents date values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The date value.
-          format: date
-          type: string
-      type: object
-    AnalysisTemplate:
-      description: 'A reusable pipeline configuration that can be instantiated to create new Analysis objects.
-
-        AnalysisTemplates define a complete data processing workflow with PipelineSteps (see `steps`)
-
-        that can be parameterized through configVariables (see `AnalysisTemplateVariable`) and
-
-        dataFrameVariables (see `AnalysisTemplateDataFrameVariable`). When users apply a template,
-
-        they provide values for these variables, generating a new Analysis with the template''s
-
-        pipeline structure populated with actual data. Templates are organized within
-
-        TemplateCollections and support versioning through the createdFromPipeline reference.'
-      properties:
-        __typename:
-          type: string
-        archivableChildren:
-          oneOf:
-          - format: uri
-            type: string
-          - type: 'null'
-        archivableParent:
-          oneOf:
-          - $ref: '#/components/schemas/TemplateCollectionRef'
-          - type: 'null'
-        archiveDatetime:
-          format: datetime
-          type:
-          - 'null'
-          - string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archiveUser:
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        archived:
-          type: boolean
-        configVariables:
-          format: uri
-          type: string
-        createdAt:
-          format: datetime
-          type: string
-        createdFromPipeline:
-          oneOf:
-          - $ref: '#/components/schemas/AnalysisRef'
-          - type: 'null'
-        creator:
-          $ref: '#/components/schemas/PrincipalRef'
-        dataFrameVariables:
-          format: uri
-          type: string
-        id:
-          type: string
-        modifiedAt:
-          format: datetime
-          type: string
-        name:
-          type: string
-        steps:
-          format: uri
-          type: string
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-        webUrl:
-          type:
-          - 'null'
-          - string
       type: object
     ObjectRef:
       properties:
@@ -952,93 +967,6 @@ components:
           type: string
         id:
           format: api_id
-          type: string
-      type: object
-    BooleanValue:
-      description: A type that represents boolean values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The boolean value.
-          type: boolean
-      type: object
-    SchemaFieldDefinitionRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    ProcedureFlowchartConfigVersionProxyRef:
-      properties:
-        __typename:
-          type: string
-        id:
-          format: api_id
-          type: string
-      type: object
-    EntrySubtemplate:
-      description: 'A reusable content block that can be inserted into `DocumentLike` objects.
-
-        Subtemplates contain pre-defined note content (text, tables, etc.) that scientists
-
-        commonly need to repeat across multiple entries. Unlike `EntryTemplates` which create
-
-        entire new entries, subtemplates are inserted as sections within existing documents.
-
-        Subtemplates belong to a `TemplateCollection` and support versioned publishing (see
-
-        `PublishingRecord`) to ensure consistent use across the organization. In the UI,
-
-        these may be referred to simply as "Subtemplates" or "Insertable Content."'
-      properties:
-        __typename:
-          type: string
-        archiveReason:
-          type:
-          - 'null'
-          - string
-        archived:
-          type: boolean
-        createdAt:
-          description: DateTime the subtemplate was created at
-          format: datetime
-          type:
-          - 'null'
-          - string
-        creator:
-          description: User that created the subtemplate
-          oneOf:
-          - $ref: '#/components/schemas/PrincipalRef'
-          - type: 'null'
-        id:
-          description: ID of the subtemplate
-          type: string
-        modifiedAt:
-          description: DateTime the subtemplate was last modified
-          format: datetime
-          type:
-          - 'null'
-          - string
-        name:
-          description: Title of the subtemplate
-          type:
-          - 'null'
-          - string
-        templateCollection:
-          $ref: '#/components/schemas/TemplateCollectionRef'
-          description: Template collection that contains the template collectible
-      type: object
-    DateTimeValue:
-      description: A type that represents datetime values.
-      properties:
-        __typename:
-          type: string
-        value:
-          description: The datetime value with UTC as the timezone.
-          format: datetime
           type: string
       type: object
     EntryTemplate:
@@ -1058,12 +986,22 @@ components:
       properties:
         __typename:
           type: string
+        applicableReviewProcesses:
+          description: Review processes configured for this template's collection.
+          format: uri
+          type: string
         archiveReason:
           type:
           - 'null'
           - string
         archived:
           type: boolean
+        authors:
+          description: Users who submitted this template for review.
+          oneOf:
+          - format: uri
+            type: string
+          - type: 'null'
         createdAt:
           description: DateTime the template was created at
           format: datetime
@@ -1095,6 +1033,18 @@ components:
           type:
           - 'null'
           - string
+        review:
+          description: The active review for this template, if one exists.
+          oneOf:
+          - $ref: '#/components/schemas/ReviewRef'
+          - type: 'null'
+        reviewSource:
+          description: 'Project associated with the template. Templates belong to template collections rather than projects,
+
+            so this field is always null.'
+          oneOf:
+          - $ref: '#/components/schemas/ProjectRef'
+          - type: 'null'
         schema:
           description: Entry schema if set
           oneOf:
@@ -1110,19 +1060,185 @@ components:
           $ref: '#/components/schemas/TemplateCollectionRef'
           description: Template collection that contains the template collectible
       type: object
+    ProcedureFlowchartRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PlateDesignTemplate:
+      description: 'A named plate design template backed by a plate record that lives in a template collection.
+
+        Plate design templates allow plate records to be organized and reused as templates.'
+      properties:
+        __typename:
+          type: string
+        archiveReason:
+          type:
+          - 'null'
+          - string
+        archived:
+          type: boolean
+        createdAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        creator:
+          $ref: '#/components/schemas/PrincipalRef'
+        id:
+          type: string
+        modifiedAt:
+          format: datetime
+          type:
+          - 'null'
+          - string
+        name:
+          type: string
+        plateRecord:
+          $ref: '#/components/schemas/PlateRecordRef'
+        templateCollection:
+          $ref: '#/components/schemas/TemplateCollectionRef'
+        webUrl:
+          type:
+          - 'null'
+          - string
+      type: object
+    DateValue:
+      description: A type that represents date values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The date value.
+          format: date
+          type: string
+      type: object
+    AnalysisRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    ProcedureFlowchartConfigVersionRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    PrincipalRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    TextAndUrlValue:
+      description: A type that represents text (string) values with an associated URL.
+      properties:
+        __typename:
+          type: string
+        url:
+          description: The URL associated with the value. Please use `TextValue` if you don't want a URL.
+          type: string
+        value:
+          description: The text value. It may or may not be an empty string.
+          type: string
+      type: object
+    TemplateCollectionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TemplateCollection'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
+      type: object
+    BooleanValue:
+      description: A type that represents boolean values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The boolean value.
+          type: boolean
+      type: object
+    IntegerValue:
+      description: A type that represents integer values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The integer value.
+          type: integer
+      type: object
+    ProjectRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DecimalValue:
+      description: A type that represents decimal value as strings.
+      properties:
+        __typename:
+          type: string
+        numericValue:
+          deprecated: true
+          description: Deprecated. The float representation of the decimal value.
+          type:
+          - 'null'
+          - number
+        value:
+          description: The decimal value in a string representation
+          type:
+          - 'null'
+          - string
+      type: object
+    PlateRecordRef:
+      properties:
+        __typename:
+          type: string
+        id:
+          format: api_id
+          type: string
+      type: object
+    DateTimeValue:
+      description: A type that represents datetime values.
+      properties:
+        __typename:
+          type: string
+        value:
+          description: The datetime value with UTC as the timezone.
+          format: datetime
+          type: string
+      type: object
   responses:
     TooManyRequests:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -1135,6 +1251,12 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -1142,6 +1264,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic

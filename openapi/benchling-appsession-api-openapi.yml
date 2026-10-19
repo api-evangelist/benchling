@@ -31,6 +31,7 @@ tags:
     which can change the status, timeout, and displayed messages.'
   name: AppSession
   x-bnch-organization: Benchling
+  x-displayName: App Session
 paths:
   /app-session:
     post:
@@ -61,6 +62,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -68,7 +71,6 @@ paths:
       summary: Create AppSession
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 4
   /app-session/items:
     get:
       description: List AppSession items.
@@ -125,7 +127,6 @@ paths:
       summary: List AppSession items
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 4
   /app-session/{app_session_id}:
     get:
       description: Get a single AppSession by ID.
@@ -166,7 +167,6 @@ paths:
       summary: Get AppSession by ID
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 5
     patch:
       description: Update AppSession.
       operationId: AppSession.Update
@@ -201,6 +201,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -208,7 +210,6 @@ paths:
       summary: Update AppSession
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 4
   /app-session:batch-create:
     post:
       description: Batch create AppSession synchronously in one transaction. Maximum 25 items per request.
@@ -256,6 +257,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -263,7 +266,6 @@ paths:
       summary: Batch create AppSession
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 3
   /app-session:batch-update:
     patch:
       description: Batch update AppSession synchronously in one transaction. Maximum 25 items per request.
@@ -311,6 +313,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -318,7 +322,6 @@ paths:
       summary: Batch update AppSession
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 3
   /app-session:bulk-create:
     post:
       description: Bulk create AppSession.
@@ -348,6 +351,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -355,7 +360,6 @@ paths:
       summary: Bulk create AppSession
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 2
   /app-session:bulk-update:
     patch:
       description: Bulk update AppSession.
@@ -385,6 +389,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -392,13 +398,32 @@ paths:
       summary: Bulk update AppSession
       tags:
       - AppSession
-      x-bnch-rate-limit-tier: 2
 components:
   parameters:
-    createdAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+    modifiedAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
       in: query
-      name: createdAt.lte
+      name: modifiedAt.lt
+      schema:
+        format: datetime
+        type: string
+    pageSize:
+      description: Number of results to return. Defaults to 50, maximum of 100.
+      in: query
+      name: pageSize
+      schema:
+        type: integer
+    modifiedAt.gt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
+      in: query
+      name: modifiedAt.gt
+      schema:
+        format: datetime
+        type: string
+    modifiedAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: modifiedAt.gte
       schema:
         format: datetime
         type: string
@@ -408,6 +433,29 @@ components:
       name: nextToken
       schema:
         type: string
+    createdAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or before the specified time. e.g. <= 2017-04-30.
+      in: query
+      name: createdAt.lte
+      schema:
+        format: datetime
+        type: string
+    createdAt.gte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
+      in: query
+      name: createdAt.gte
+      schema:
+        format: datetime
+        type: string
+    returning:
+      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
+      explode: false
+      in: query
+      name: returning
+      schema:
+        items:
+          type: string
+        type: array
     omit:
       description: Comma-separated list of top-level fields to omit from each returned item. Cannot overlap with returning.
       explode: false
@@ -427,31 +475,10 @@ components:
           type: string
         maxItems: 100
         type: array
-    createdAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
+    modifiedAt.lte:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
       in: query
-      name: createdAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: modifiedAt.gte
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.lt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified before the specified time. e.g. < 2017-04-30.
-      in: query
-      name: modifiedAt.lt
-      schema:
-        format: datetime
-        type: string
-    modifiedAt.gt:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified after the specified time. e.g. > 2017-04-30.
-      in: query
-      name: modifiedAt.gt
+      name: modifiedAt.lte
       schema:
         format: datetime
         type: string
@@ -462,60 +489,14 @@ components:
       schema:
         format: datetime
         type: string
-    returning:
-      description: Comma-separated list of top-level fields to include in each returned item. Cannot overlap with omit.
-      explode: false
+    createdAt.lt:
+      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created before the specified time. e.g. < 2017-04-30.
       in: query
-      name: returning
-      schema:
-        items:
-          type: string
-        type: array
-    pageSize:
-      description: Number of results to return. Defaults to 50, maximum of 100.
-      in: query
-      name: pageSize
-      schema:
-        type: integer
-    modifiedAt.lte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those modified at or before the specified time. e.g. <= 2017-04-30.
-      in: query
-      name: modifiedAt.lte
-      schema:
-        format: datetime
-        type: string
-    createdAt.gte:
-      description: Datetime, in RFC 3339 format. Time zone defaults to UTC. Restricts results to those created at or after the specified time. e.g. >= 2017-04-30.
-      in: query
-      name: createdAt.gte
+      name: createdAt.lt
       schema:
         format: datetime
         type: string
   schemas:
-    AppSessionMessage:
-      description: 'A status message displayed to the user within an app session. Messages convey progress,
-
-        warnings, results, or errors from a running Benchling App. Each message has a textual
-
-        content body and a visual style. Message content may contain inline chip references to
-
-        Benchling objects using the `{id:<api_id>}` syntax.'
-      properties:
-        __typename:
-          type: string
-        content:
-          description: The text body of the message, which may contain chip references like `{id:ent_abc123}`.
-          type: string
-        style:
-          description: The visual style applied to this message.
-          enum:
-          - NONE
-          - INFO
-          - WARNING
-          - SUCCESS
-          - ERROR
-          type: string
-      type: object
     AppSession:
       description: 'Represents a running or completed session for a Benchling App. App sessions track
 
@@ -562,46 +543,6 @@ components:
             age exceeds this value and the session has not been finalized, its status becomes TIMEOUT.'
           type: integer
       type: object
-    AsyncTaskLink:
-      properties:
-        pollingUri:
-          format: uri
-          type: string
-        taskId:
-          type: string
-      type: object
-    BulkImport:
-      example:
-        fileId: scrfile_jdf8BV24kLmN
-      properties:
-        fileId:
-          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
-          type: string
-      required:
-      - fileId
-      type: object
-    CreateAppSessionInput:
-      additionalProperties: false
-      properties:
-        appId:
-          description: API ID of the Benchling App that owns this session.
-          type: string
-        messages:
-          description: Initial messages to display. If omitted, the session starts with no messages.
-          items:
-            $ref: '#/components/schemas/AppSessionMessageInput'
-          type: array
-        name:
-          description: Human-readable name for this session.
-          type: string
-        timeoutSeconds:
-          description: Maximum session duration in seconds before automatic timeout (1 to 2592000).
-          type: integer
-      required:
-      - appId
-      - name
-      - timeoutSeconds
-      type: object
     InternalServerError:
       properties:
         detail:
@@ -628,7 +569,15 @@ components:
       - status
       - instance
       type: object
-    GeneralError:
+    AsyncTaskLink:
+      properties:
+        pollingUri:
+          format: uri
+          type: string
+        taskId:
+          type: string
+      type: object
+    TooManyRequestsError:
       properties:
         detail:
           type:
@@ -636,6 +585,8 @@ components:
           - string
           - object
         instance:
+          type: string
+        invalidId:
           type: string
         status:
           type: integer
@@ -652,14 +603,54 @@ components:
       - status
       - instance
       type: object
-    AppSessionPaginatedList:
-      additionalProperties: false
+    GeneralError:
       properties:
-        items:
-          items:
-            $ref: '#/components/schemas/AppSession'
-          type: array
-        nextToken:
+        detail:
+          type:
+          - 'null'
+          - string
+          - object
+        instance:
+          type: string
+        invalidId:
+          type: string
+        status:
+          type: integer
+        title:
+          type:
+          - 'null'
+          - string
+        type:
+          type: string
+      required:
+      - type
+      - title
+      - detail
+      - status
+      - instance
+      type: object
+    AppSessionMessage:
+      description: 'A status message displayed to the user within an app session. Messages convey progress,
+
+        warnings, results, or errors from a running Benchling App. Each message has a textual
+
+        content body and a visual style. Message content may contain inline chip references to
+
+        Benchling objects using the `{id:<api_id>}` syntax.'
+      properties:
+        __typename:
+          type: string
+        content:
+          description: The text body of the message, which may contain chip references like `{id:ent_abc123}`.
+          type: string
+        style:
+          description: The visual style applied to this message.
+          enum:
+          - NONE
+          - INFO
+          - WARNING
+          - SUCCESS
+          - ERROR
           type: string
       type: object
     AppSessionMessageInput:
@@ -678,6 +669,38 @@ components:
           type: string
       required:
       - content
+      type: object
+    CreateAppSessionInput:
+      additionalProperties: false
+      properties:
+        appId:
+          description: API ID of the Benchling App that owns this session.
+          type: string
+        messages:
+          description: Initial messages to display. If omitted, the session starts with no messages.
+          items:
+            $ref: '#/components/schemas/AppSessionMessageInput'
+          type: array
+        name:
+          description: Human-readable name for this session.
+          type: string
+        timeoutSeconds:
+          description: Maximum session duration in seconds before automatic timeout (1 to 2592000).
+          type: integer
+      required:
+      - appId
+      - name
+      - timeoutSeconds
+      type: object
+    BulkImport:
+      example:
+        fileId: scrfile_jdf8BV24kLmN
+      properties:
+        fileId:
+          description: The API ID of the scratch file (`scrfile_XXXXXXXX`) containing the items to import. The referenced file must be a scratch file whose upload has completed successfully.
+          type: string
+      required:
+      - fileId
       type: object
     UpdateAppSessionInputWithPathParams:
       additionalProperties: false
@@ -701,6 +724,18 @@ components:
           type: integer
       required:
       - id
+      type: object
+    AppSessionPaginatedList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AppSession'
+          type: array
+        nextToken:
+          type:
+          - string
+          - 'null'
       type: object
     IAppInstallationRef:
       properties:
@@ -734,14 +769,15 @@ components:
       content:
         application/problem+json:
           schema:
-            $ref: '#/components/schemas/GeneralError'
+            $ref: '#/components/schemas/TooManyRequestsError'
       description: Too Many Requests
-    BadRequest:
-      content:
-        application/problem+json:
+      headers:
+        Retry-After:
+          description: Minimum number of seconds to wait before retrying. Only included when the request exceeded a rate limit specific to the caller. Limits shared with other callers, such as tenant-wide limits, omit this header because the wait depends on their traffic.
+          required: false
           schema:
-            $ref: '#/components/schemas/GeneralError'
-      description: Bad Request
+            minimum: 1
+            type: integer
     InternalServerError:
       content:
         application/problem+json:
@@ -754,6 +790,18 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
       description: Not Found
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Conflict
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+      description: Bad Request
     Forbidden:
       content:
         application/problem+json:
@@ -761,6 +809,11 @@ components:
             $ref: '#/components/schemas/GeneralError'
       description: Forbidden
   securitySchemes:
+    BearerAuth:
+      description: Use a short-lived V3 API Explorer token.
+      scheme: bearer
+      type: http
+      x-fern-playground-description: Copy a short-lived V3 API Explorer token from the user's settings page
     basicApiKeyAuth:
       description: Use issued API key for standard access to the API
       scheme: basic
